@@ -147,3 +147,6 @@ function pmcm_get_course_edition($course_slug) {
 function wcem_get_course_edition($course_slug) {
     return pmcm_get_course_edition($course_slug);
 }
+
+
+// code added to check if is working or not 
