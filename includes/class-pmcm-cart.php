@@ -193,17 +193,12 @@ class PMCM_Cart {
             $order->update_meta_data('_wcem_courses_data', json_encode($courses_in_order));
         }
 
-        // Check and store ASiT coupon usage
-        $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
-        $coupons = $order->get_coupon_codes();
-
-        foreach ($coupons as $coupon_code) {
-            if (strtolower($coupon_code) === $asit_coupon_code) {
-                $order->update_meta_data('_wcem_asit_member', 'yes');
-                $order->update_meta_data('_wcem_asit_coupon_used', $coupon_code);
-                PMCM_Core::log_activity('Order #' . $order_id . ' - ASiT coupon used: ' . $coupon_code, 'info');
-                break;
-            }
+        // Check for ASiT membership number (already saved by PMCM_ASiT class)
+        $asit_number = $order->get_meta('_asit_membership_number');
+        if (!empty($asit_number)) {
+            $order->update_meta_data('_wcem_asit_member', 'yes');
+            $order->update_meta_data('_wcem_asit_number', $asit_number);
+            PMCM_Core::log_activity('Order #' . $order_id . ' - ASiT member: ' . $asit_number, 'info');
         }
 
         $order->save();
@@ -263,14 +258,17 @@ class PMCM_Cart {
             }
         }
 
-        // Show ASiT Member status
+        // Show ASiT Member status with membership number
         $is_asit_member = $order->get_meta('_wcem_asit_member');
-        $asit_coupon_used = $order->get_meta('_wcem_asit_coupon_used');
+        $asit_number = $order->get_meta('_wcem_asit_number');
+        if (empty($asit_number)) {
+            $asit_number = $order->get_meta('_asit_membership_number');
+        }
 
-        if ($is_asit_member === 'yes') {
+        if ($is_asit_member === 'yes' || !empty($asit_number)) {
             $output .= '<p style="margin:10px 0 5px;"><span style="display:inline-block;padding:3px 10px;background:linear-gradient(135deg,#8d2063,#442e8c);color:#fff;border-radius:4px;font-size:12px;font-weight:600;">ASiT Member</span>';
-            if ($asit_coupon_used) {
-                $output .= ' <span style="color:#666;">(Coupon: ' . esc_html($asit_coupon_used) . ')</span>';
+            if ($asit_number) {
+                $output .= ' <span style="color:#333;font-weight:600;font-size:14px;">#' . esc_html($asit_number) . '</span>';
             }
             $output .= '</p>';
         }

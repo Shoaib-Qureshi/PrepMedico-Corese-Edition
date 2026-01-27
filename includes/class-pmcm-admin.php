@@ -1148,9 +1148,8 @@ class PMCM_Admin {
         }
 
         $mode = sanitize_text_field($_POST['mode'] ?? 'scan');
-        $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
 
-        // Get all orders with the ASiT coupon
+        // Get all orders
         $args = [
             'limit' => -1,
             'status' => ['completed', 'processing'],
@@ -1167,27 +1166,24 @@ class PMCM_Admin {
             $order = wc_get_order($order_id);
             if (!$order) continue;
 
-            $coupons = $order->get_coupon_codes();
-            $has_asit = false;
-
-            foreach ($coupons as $coupon_code) {
-                if (strtolower($coupon_code) === $asit_coupon_code) {
-                    $has_asit = true;
-                    break;
-                }
+            // Check for ASiT membership number
+            $asit_number = $order->get_meta('_asit_membership_number');
+            if (empty($asit_number)) {
+                $asit_number = $order->get_meta('_wcem_asit_number');
             }
 
-            if ($has_asit) {
-                // Mark order as ASiT member if not already
-                if ($order->get_meta('_wcem_asit_member') !== 'yes') {
+            if (!empty($asit_number)) {
+                // Ensure _wcem_asit_number is set
+                if ($order->get_meta('_wcem_asit_number') !== $asit_number) {
                     $order->update_meta_data('_wcem_asit_member', 'yes');
-                    $order->update_meta_data('_wcem_asit_coupon_used', $coupon_code);
+                    $order->update_meta_data('_wcem_asit_number', $asit_number);
                     $order->save();
                 }
 
                 $asit_orders[] = [
                     'id' => $order_id,
                     'email' => $order->get_billing_email(),
+                    'asit_number' => $asit_number,
                     'synced' => $order->get_meta('_wcem_asit_fluentcrm_synced') === 'yes'
                 ];
 
@@ -1235,6 +1231,8 @@ class PMCM_Admin {
                 continue;
             }
 
+            $asit_number = $order_data['asit_number'];
+
             try {
                 $subscriber = \FluentCrm\App\Models\Subscriber::where('email', $email)->first();
 
@@ -1250,9 +1248,9 @@ class PMCM_Admin {
                 }
 
                 if ($subscriber) {
-                    // Update asit custom field
+                    // Update asit custom field with the membership number
                     if (method_exists($subscriber, 'syncCustomFieldValues')) {
-                        $subscriber->syncCustomFieldValues(['asit' => 'Yes'], false);
+                        $subscriber->syncCustomFieldValues(['asit' => $asit_number], false);
                     } else {
                         global $wpdb;
                         $table = $wpdb->prefix . 'fc_subscriber_meta';
@@ -1267,7 +1265,7 @@ class PMCM_Admin {
                             if ($exists) {
                                 $wpdb->update(
                                     $table,
-                                    ['value' => 'Yes', 'updated_at' => current_time('mysql')],
+                                    ['value' => $asit_number, 'updated_at' => current_time('mysql')],
                                     ['subscriber_id' => $subscriber->id, 'key' => 'asit']
                                 );
                             } else {
@@ -1276,7 +1274,7 @@ class PMCM_Admin {
                                     [
                                         'subscriber_id' => $subscriber->id,
                                         'key' => 'asit',
-                                        'value' => 'Yes',
+                                        'value' => $asit_number,
                                         'object_type' => 'custom_field',
                                         'created_at' => current_time('mysql'),
                                         'updated_at' => current_time('mysql')
@@ -1292,7 +1290,7 @@ class PMCM_Admin {
                     $order->save();
 
                     $synced++;
-                    PMCM_Core::log_activity('Bulk ASiT sync: Updated FluentCRM asit field for ' . $email . ' (Order #' . $order_data['id'] . ')', 'success');
+                    PMCM_Core::log_activity('Bulk ASiT sync: Updated FluentCRM asit=' . $asit_number . ' for ' . $email . ' (Order #' . $order_data['id'] . ')', 'success');
                 } else {
                     $errors++;
                 }

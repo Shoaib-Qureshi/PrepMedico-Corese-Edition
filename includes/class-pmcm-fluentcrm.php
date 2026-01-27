@@ -116,16 +116,15 @@ class PMCM_FluentCRM {
                 );
             }
 
-            // Check if ASiT coupon was used and update the asit custom field
-            $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
-            $coupons = $order->get_coupon_codes();
+            // Check for ASiT membership number and update the asit custom field
+            $asit_number = $order->get_meta('_wcem_asit_number');
+            if (empty($asit_number)) {
+                $asit_number = $order->get_meta('_asit_membership_number');
+            }
 
-            foreach ($coupons as $coupon_code) {
-                if (strtolower($coupon_code) === $asit_coupon_code) {
-                    self::update_custom_field($subscriber, 'asit', 'Yes');
-                    PMCM_Core::log_activity('Updated FluentCRM asit field for ' . $email . ' (ASiT coupon used)', 'success');
-                    break;
-                }
+            if (!empty($asit_number)) {
+                self::update_custom_field($subscriber, 'asit', $asit_number);
+                PMCM_Core::log_activity('Updated FluentCRM asit field for ' . $email . ' with number: ' . $asit_number, 'success');
             }
 
             return true;

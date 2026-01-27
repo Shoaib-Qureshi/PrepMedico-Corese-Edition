@@ -150,28 +150,24 @@ class PMCM_Frontend {
      * Display ASiT member info in WooCommerce emails
      */
     public static function display_asit_in_email($order, $sent_to_admin, $plain_text) {
-        $is_asit_member = $order->get_meta('_wcem_asit_member');
+        // Get ASiT number from order meta
+        $asit_number = $order->get_meta('_wcem_asit_number');
+        if (empty($asit_number)) {
+            $asit_number = $order->get_meta('_asit_membership_number');
+        }
 
-        if ($is_asit_member !== 'yes') {
+        if (empty($asit_number)) {
             return;
         }
 
-        $asit_coupon_used = $order->get_meta('_wcem_asit_coupon_used');
-
         if ($plain_text) {
             echo "\n" . __('ASiT MEMBER', 'prepmedico-course-management') . "\n";
-            echo __('You have registered as an ASiT member.', 'prepmedico-course-management');
-            if ($asit_coupon_used) {
-                echo ' ' . sprintf(__('Coupon used: %s', 'prepmedico-course-management'), $asit_coupon_used);
-            }
+            echo sprintf(__('Membership Number: %s', 'prepmedico-course-management'), $asit_number);
             echo "\n\n";
         } else {
             echo '<div style="margin: 20px 0; padding: 15px; background: linear-gradient(135deg, #8d2063, #442e8c); border-radius: 8px; text-align: center;">';
             echo '<h3 style="margin: 0 0 5px; color: #fff; font-size: 16px;">' . __('ASiT Member', 'prepmedico-course-management') . '</h3>';
-            echo '<p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 14px;">' . __('You have registered as an ASiT member.', 'prepmedico-course-management') . '</p>';
-            if ($asit_coupon_used) {
-                echo '<p style="margin: 5px 0 0; color: rgba(255,255,255,0.7); font-size: 12px;">' . sprintf(__('Coupon: %s', 'prepmedico-course-management'), esc_html($asit_coupon_used)) . '</p>';
-            }
+            echo '<p style="margin: 0; color: #fff; font-size: 18px; font-weight: 700;">#' . esc_html($asit_number) . '</p>';
             echo '</div>';
         }
     }
@@ -186,20 +182,19 @@ class PMCM_Frontend {
             return;
         }
 
-        $is_asit_member = $order->get_meta('_wcem_asit_member');
+        // Get ASiT number from order meta
+        $asit_number = $order->get_meta('_wcem_asit_number');
+        if (empty($asit_number)) {
+            $asit_number = $order->get_meta('_asit_membership_number');
+        }
 
-        if ($is_asit_member !== 'yes') {
+        if (empty($asit_number)) {
             return;
         }
 
-        $asit_coupon_used = $order->get_meta('_wcem_asit_coupon_used');
-
         echo '<div class="woocommerce-message" style="background: linear-gradient(135deg, #8d2063, #442e8c); border: none; color: #fff; padding: 15px 20px; margin-bottom: 20px;">';
-        echo '<strong>' . __('ASiT Member', 'prepmedico-course-management') . '</strong> - ';
-        echo __('Thank you for registering as an ASiT member!', 'prepmedico-course-management');
-        if ($asit_coupon_used) {
-            echo ' <span style="opacity: 0.8;">(' . sprintf(__('Coupon: %s', 'prepmedico-course-management'), esc_html($asit_coupon_used)) . ')</span>';
-        }
+        echo '<strong>' . __('ASiT Member', 'prepmedico-course-management') . '</strong>';
+        echo ' <span style="font-size: 18px; font-weight: 700;">#' . esc_html($asit_number) . '</span>';
         echo '</div>';
     }
 }
