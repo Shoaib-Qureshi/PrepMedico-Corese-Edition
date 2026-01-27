@@ -1,0 +1,199 @@
+/**
+ * WooCommerce Edition Management - Frontend Styles
+ */
+
+/* Edition Info Box */
+.wcem-edition-info {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #007cba;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.wcem-edition-info .wcem-edition-title {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.wcem-edition-info .wcem-edition-title strong {
+    color: #007cba;
+    font-size: 16px;
+}
+
+.wcem-edition-info .wcem-edition-dates {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Current Edition Badge */
+.wcem-current-edition {
+    display: inline-block;
+    font-weight: 600;
+    color: #007cba;
+    padding: 4px 12px;
+    background: rgba(0, 124, 186, 0.1);
+    border-radius: 4px;
+}
+
+/* Cart Edition Display */
+.woocommerce-cart .cart-edition-info,
+.woocommerce-checkout .cart-edition-info {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Product Page Edition Box */
+.single-product .wcem-edition-info {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Enrollment Period Badge */
+.wcem-enrollment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #e8f4f8;
+    border: 1px solid #b8daff;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #004085;
+}
+
+.wcem-enrollment-badge::before {
+    content: "📅";
+}
+
+/* Registration Status Styles */
+.wcem-registration-status {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wcem-status-live {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+.wcem-status-closed {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border: 1px solid #dc3545;
+}
+
+.wcem-status-upcoming {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.wcem-status-early-bird {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    border: 1px solid #17a2b8;
+}
+
+/* Early Bird Message */
+.wcem-early-bird-message {
+    margin: 15px 0;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+    border-left: 4px solid #ffc107;
+    border-radius: 0 8px 8px 0;
+    color: #856404;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wcem-early-bird-icon {
+    font-size: 18px;
+}
+
+.wcem-early-bird-message strong {
+    color: #664d03;
+}
+
+/* Course Registration Info Box */
+.wcem-course-registration-info {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #007cba;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.wcem-course-registration-info .wcem-edition-title {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #007cba;
+}
+
+.wcem-course-registration-info .wcem-edition-dates {
+    margin: 0 0 12px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.wcem-course-registration-info .wcem-registration-status {
+    margin-bottom: 0;
+}
+
+.wcem-course-registration-info .wcem-early-bird-message {
+    margin-top: 15px;
+    margin-bottom: 0;
+}
+
+/* Edition Number Standalone */
+.wcem-edition-number {
+    font-weight: 700;
+    color: #007cba;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .wcem-edition-info {
+        padding: 15px;
+    }
+
+    .wcem-edition-info .wcem-edition-title {
+        font-size: 14px;
+    }
+
+    .wcem-edition-info .wcem-edition-dates {
+        font-size: 13px;
+    }
+
+    .wcem-course-registration-info {
+        padding: 15px;
+    }
+
+    .wcem-course-registration-info .wcem-edition-title {
+        font-size: 16px;
+    }
+
+    .wcem-early-bird-message {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+
+    .wcem-registration-status {
+        font-size: 12px;
+        padding: 5px 12px;
+    }
+}

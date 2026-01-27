@@ -1,0 +1,381 @@
+/**
+ * WooCommerce Edition Management - Admin Styles
+ */
+
+/* General Wrapper */
+.wcem-admin-wrap {
+    max-width: 1400px;
+    margin-top: 20px;
+}
+
+.wcem-admin-wrap h1 {
+    margin-bottom: 20px;
+}
+
+/* Header Info Box */
+.wcem-header-info {
+    background: #fff;
+    padding: 15px 20px;
+    border-left: 4px solid #2271b1;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wcem-header-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #50575e;
+}
+
+/* Status Overview Table */
+.wcem-status-overview {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wcem-status-overview h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+/* Status Badges */
+.wcem-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wcem-status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.wcem-status-expired {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.wcem-status-ending-soon {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.wcem-warning {
+    color: #856404;
+    font-weight: 500;
+}
+
+/* Course Cards Grid */
+.wcem-courses-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 25px;
+    margin: 25px 0;
+}
+
+/* Individual Course Card */
+.wcem-course-card {
+    background: #fff;
+    padding: 25px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    transition: border-color 0.2s ease;
+}
+
+.wcem-course-card:hover {
+    border-color: #2271b1;
+}
+
+.wcem-course-card h3 {
+    margin: 0 0 5px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #2271b1;
+    color: #1d2327;
+    font-size: 18px;
+}
+
+.wcem-course-card .description {
+    color: #646970;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.wcem-course-card code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+/* Edition Groups */
+.wcem-edition-group {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #e5e5e5;
+}
+
+.wcem-edition-group h4 {
+    margin: 0 0 15px 0;
+    color: #1d2327;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.wcem-edition-group .form-table {
+    margin: 0;
+}
+
+.wcem-edition-group .form-table th {
+    padding: 10px 10px 10px 0;
+    width: 130px;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.wcem-edition-group .form-table td {
+    padding: 10px 0;
+}
+
+.wcem-edition-group input[type="number"] {
+    width: 80px;
+}
+
+.wcem-edition-group input[type="date"] {
+    width: 150px;
+}
+
+/* Course Actions */
+.wcem-course-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+    text-align: right;
+}
+
+.wcem-course-actions .button {
+    background: #f6f7f7;
+}
+
+.wcem-course-actions .button:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
+/* Submit Button */
+.wcem-admin-wrap .submit {
+    margin-top: 30px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+/* FluentCRM Status Section */
+.wcem-fluentcrm-status {
+    background: #fff;
+    padding: 25px;
+    margin-top: 30px;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wcem-fluentcrm-status h2 {
+    margin-top: 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.wcem-fluentcrm-status h3 {
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.wcem-success {
+    color: #155724;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcem-success .dashicons {
+    color: #28a745;
+    font-size: 20px;
+}
+
+/* Setup Columns */
+.wcem-setup-columns {
+    display: flex;
+    gap: 50px;
+    margin-top: 20px;
+}
+
+.wcem-setup-column {
+    flex: 1;
+}
+
+.wcem-setup-column h4 {
+    margin: 0 0 10px 0;
+    color: #1d2327;
+}
+
+.wcem-setup-column ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.wcem-setup-column li {
+    margin-bottom: 8px;
+    color: #50575e;
+}
+
+.wcem-setup-column code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+/* Edition Log Section */
+.wcem-edition-log {
+    background: #fff;
+    padding: 25px;
+    margin-top: 30px;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wcem-edition-log h2 {
+    margin-top: 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.wcem-edition-log table {
+    margin-top: 15px;
+}
+
+/* Cron Status Section */
+.wcem-cron-status {
+    background: #fff;
+    padding: 25px;
+    margin-top: 30px;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wcem-cron-status h2 {
+    margin-top: 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.wcem-cron-status p {
+    margin: 15px 0;
+}
+
+/* Order Edition Display */
+.wcem-order-editions {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+}
+
+.wcem-order-editions h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.wcem-order-editions p {
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.wcem-order-editions em {
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Frontend Styles */
+.wcem-edition-info {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-left: 4px solid #2271b1;
+    border-radius: 0 4px 4px 0;
+}
+
+.wcem-edition-info .wcem-edition-title {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+}
+
+.wcem-edition-info .wcem-edition-dates {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.wcem-current-edition {
+    font-weight: 600;
+    color: #2271b1;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 1200px) {
+    .wcem-courses-settings {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .wcem-setup-columns {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .wcem-edition-group .form-table th {
+        display: block;
+        width: 100%;
+        padding-bottom: 5px;
+    }
+    
+    .wcem-edition-group .form-table td {
+        display: block;
+        padding-top: 0;
+    }
+}
+
+/* Animations */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+.wcem-status-ending-soon {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Notice Styles */
+.wcem-admin-wrap .notice {
+    margin: 15px 0;
+}
+
+/* Button Loading State */
+.button:disabled {
+    cursor: wait !important;
+}
