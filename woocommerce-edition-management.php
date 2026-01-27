@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: PrepMedico Course Management
  * Description: Manages course editions for WooCommerce products with FluentCRM integration, ASiT membership discounts, and Early Bird offers. Tracks which edition a customer purchased and enables precise segmentation.
@@ -32,7 +33,8 @@ define('WCEM_PLUGIN_BASENAME', PMCM_PLUGIN_BASENAME);
 /**
  * Load plugin files
  */
-function pmcm_load_files() {
+function pmcm_load_files()
+{
     // Load class files
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-core.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-shortcodes.php';
@@ -47,10 +49,11 @@ function pmcm_load_files() {
 /**
  * Initialize the plugin
  */
-function pmcm_init() {
+function pmcm_init()
+{
     // Check if WooCommerce is active
     if (!class_exists('WooCommerce')) {
-        add_action('admin_notices', function() {
+        add_action('admin_notices', function () {
             echo '<div class="notice notice-error"><p>' . __('PrepMedico Course Management requires WooCommerce to be installed and active.', 'prepmedico-course-management') . '</p></div>';
         });
         return;
@@ -73,7 +76,8 @@ add_action('plugins_loaded', 'pmcm_init', 20);
 /**
  * Plugin activation
  */
-function pmcm_activate() {
+function pmcm_activate()
+{
     // Load files first
     pmcm_load_files();
 
@@ -122,7 +126,8 @@ register_activation_hook(__FILE__, 'pmcm_activate');
 /**
  * Plugin deactivation
  */
-function pmcm_deactivate() {
+function pmcm_deactivate()
+{
     // Load files first
     pmcm_load_files();
 
@@ -136,7 +141,8 @@ register_deactivation_hook(__FILE__, 'pmcm_deactivate');
  * @param string $course_slug The course slug
  * @return array|null Course edition data
  */
-function pmcm_get_course_edition($course_slug) {
+function pmcm_get_course_edition($course_slug)
+{
     if (!class_exists('PMCM_Core')) {
         pmcm_load_files();
     }
@@ -144,9 +150,7 @@ function pmcm_get_course_edition($course_slug) {
 }
 
 // Backwards compatibility alias
-function wcem_get_course_edition($course_slug) {
+function wcem_get_course_edition($course_slug)
+{
     return pmcm_get_course_edition($course_slug);
 }
-
-
-// code added to check if is working or not 

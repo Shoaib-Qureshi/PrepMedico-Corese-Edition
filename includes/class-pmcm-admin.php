@@ -27,6 +27,7 @@ class PMCM_Admin {
         add_action('wp_ajax_wcem_run_cron', [__CLASS__, 'ajax_run_cron']);
         add_action('wp_ajax_wcem_sync_order', [__CLASS__, 'ajax_sync_order_to_fluentcrm']);
         add_action('wp_ajax_wcem_update_order_edition', [__CLASS__, 'ajax_update_order_edition']);
+        add_action('wp_ajax_wcem_bulk_sync_asit', [__CLASS__, 'ajax_bulk_sync_asit_orders']);
     }
 
     /**
@@ -771,6 +772,90 @@ class PMCM_Admin {
                     <li><?php printf(__('When Early Bird is <strong>not active</strong>: ASiT members get <strong>%d%%</strong> discount', 'prepmedico-course-management'), $discount_normal); ?></li>
                 </ul>
             </div>
+
+            <!-- Bulk Sync ASiT Orders to FluentCRM -->
+            <div class="wcem-status-overview">
+                <h2><?php _e('Sync ASiT Orders to FluentCRM', 'prepmedico-course-management'); ?></h2>
+                <p><?php _e('Scan old orders for ASiT coupon usage and sync them to FluentCRM. This will update the "asit" custom field for all contacts who used the ASiT coupon.', 'prepmedico-course-management'); ?></p>
+
+                <div id="wcem-asit-sync-results" style="margin: 15px 0; padding: 15px; background: #f6f7f7; border-radius: 4px; display: none;">
+                    <div id="wcem-asit-sync-progress"></div>
+                </div>
+
+                <p>
+                    <button type="button" id="wcem-scan-asit-orders" class="button button-secondary">
+                        <?php _e('Scan Orders for ASiT Coupon', 'prepmedico-course-management'); ?>
+                    </button>
+                    <button type="button" id="wcem-bulk-sync-asit" class="button button-primary" style="margin-left: 10px;" disabled>
+                        <?php _e('Sync All to FluentCRM', 'prepmedico-course-management'); ?>
+                    </button>
+                </p>
+
+                <script>
+                jQuery(document).ready(function($) {
+                    var asitOrders = [];
+
+                    $('#wcem-scan-asit-orders').on('click', function() {
+                        var btn = $(this);
+                        btn.prop('disabled', true).text('<?php _e('Scanning...', 'prepmedico-course-management'); ?>');
+                        $('#wcem-asit-sync-results').show();
+                        $('#wcem-asit-sync-progress').html('<p><?php _e('Scanning orders for ASiT coupon usage...', 'prepmedico-course-management'); ?></p>');
+
+                        $.post(ajaxurl, {
+                            action: 'wcem_bulk_sync_asit',
+                            mode: 'scan',
+                            nonce: '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>'
+                        }, function(response) {
+                            btn.prop('disabled', false).text('<?php _e('Scan Orders for ASiT Coupon', 'prepmedico-course-management'); ?>');
+
+                            if (response.success) {
+                                asitOrders = response.data.orders;
+                                var html = '<p><strong>' + response.data.found + '</strong> <?php _e('orders found with ASiT coupon.', 'prepmedico-course-management'); ?></p>';
+                                html += '<p><?php _e('Already synced:', 'prepmedico-course-management'); ?> <strong>' + response.data.already_synced + '</strong></p>';
+                                html += '<p><?php _e('Need to sync:', 'prepmedico-course-management'); ?> <strong>' + response.data.need_sync + '</strong></p>';
+
+                                if (response.data.need_sync > 0) {
+                                    $('#wcem-bulk-sync-asit').prop('disabled', false);
+                                }
+
+                                $('#wcem-asit-sync-progress').html(html);
+                            } else {
+                                $('#wcem-asit-sync-progress').html('<p style="color:red;">' + response.data.message + '</p>');
+                            }
+                        });
+                    });
+
+                    $('#wcem-bulk-sync-asit').on('click', function() {
+                        if (!confirm('<?php _e('This will sync all ASiT orders to FluentCRM. Continue?', 'prepmedico-course-management'); ?>')) {
+                            return;
+                        }
+
+                        var btn = $(this);
+                        btn.prop('disabled', true).text('<?php _e('Syncing...', 'prepmedico-course-management'); ?>');
+
+                        $.post(ajaxurl, {
+                            action: 'wcem_bulk_sync_asit',
+                            mode: 'sync',
+                            nonce: '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>'
+                        }, function(response) {
+                            btn.prop('disabled', true).text('<?php _e('Sync All to FluentCRM', 'prepmedico-course-management'); ?>');
+
+                            if (response.success) {
+                                var html = '<p style="color:green;"><strong><?php _e('Sync completed!', 'prepmedico-course-management'); ?></strong></p>';
+                                html += '<p><?php _e('Orders processed:', 'prepmedico-course-management'); ?> <strong>' + response.data.processed + '</strong></p>';
+                                html += '<p><?php _e('Contacts updated:', 'prepmedico-course-management'); ?> <strong>' + response.data.synced + '</strong></p>';
+                                if (response.data.errors > 0) {
+                                    html += '<p style="color:orange;"><?php _e('Errors:', 'prepmedico-course-management'); ?> <strong>' + response.data.errors + '</strong></p>';
+                                }
+                                $('#wcem-asit-sync-progress').html(html);
+                            } else {
+                                $('#wcem-asit-sync-progress').html('<p style="color:red;">' + response.data.message + '</p>');
+                            }
+                        });
+                    });
+                });
+                </script>
+            </div>
         </div>
 
         <style>
@@ -1049,6 +1134,182 @@ class PMCM_Admin {
 
         wp_send_json_success([
             'message' => 'Edition data updated for: ' . implode(', ', $updated_courses) . '. You can now sync to FluentCRM.'
+        ]);
+    }
+
+    /**
+     * AJAX: Bulk sync ASiT orders to FluentCRM
+     */
+    public static function ajax_bulk_sync_asit_orders() {
+        check_ajax_referer('wcem_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => 'Permission denied']);
+        }
+
+        $mode = sanitize_text_field($_POST['mode'] ?? 'scan');
+        $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
+
+        // Get all orders with the ASiT coupon
+        $args = [
+            'limit' => -1,
+            'status' => ['completed', 'processing'],
+            'return' => 'ids'
+        ];
+
+        $order_ids = wc_get_orders($args);
+
+        $asit_orders = [];
+        $already_synced = 0;
+        $need_sync = 0;
+
+        foreach ($order_ids as $order_id) {
+            $order = wc_get_order($order_id);
+            if (!$order) continue;
+
+            $coupons = $order->get_coupon_codes();
+            $has_asit = false;
+
+            foreach ($coupons as $coupon_code) {
+                if (strtolower($coupon_code) === $asit_coupon_code) {
+                    $has_asit = true;
+                    break;
+                }
+            }
+
+            if ($has_asit) {
+                // Mark order as ASiT member if not already
+                if ($order->get_meta('_wcem_asit_member') !== 'yes') {
+                    $order->update_meta_data('_wcem_asit_member', 'yes');
+                    $order->update_meta_data('_wcem_asit_coupon_used', $coupon_code);
+                    $order->save();
+                }
+
+                $asit_orders[] = [
+                    'id' => $order_id,
+                    'email' => $order->get_billing_email(),
+                    'synced' => $order->get_meta('_wcem_asit_fluentcrm_synced') === 'yes'
+                ];
+
+                if ($order->get_meta('_wcem_asit_fluentcrm_synced') === 'yes') {
+                    $already_synced++;
+                } else {
+                    $need_sync++;
+                }
+            }
+        }
+
+        if ($mode === 'scan') {
+            wp_send_json_success([
+                'orders' => $asit_orders,
+                'found' => count($asit_orders),
+                'already_synced' => $already_synced,
+                'need_sync' => $need_sync
+            ]);
+            return;
+        }
+
+        // Sync mode
+        if (!PMCM_FluentCRM::is_active()) {
+            wp_send_json_error(['message' => 'FluentCRM is not active']);
+        }
+
+        $processed = 0;
+        $synced = 0;
+        $errors = 0;
+
+        foreach ($asit_orders as $order_data) {
+            if ($order_data['synced']) {
+                continue;
+            }
+
+            $order = wc_get_order($order_data['id']);
+            if (!$order) {
+                $errors++;
+                continue;
+            }
+
+            $email = $order->get_billing_email();
+            if (empty($email)) {
+                $errors++;
+                continue;
+            }
+
+            try {
+                $subscriber = \FluentCrm\App\Models\Subscriber::where('email', $email)->first();
+
+                if (!$subscriber) {
+                    // Create subscriber
+                    $subscriber = \FluentCrm\App\Models\Subscriber::create([
+                        'email' => $email,
+                        'first_name' => $order->get_billing_first_name(),
+                        'last_name' => $order->get_billing_last_name(),
+                        'status' => 'subscribed',
+                        'source' => 'woocommerce'
+                    ]);
+                }
+
+                if ($subscriber) {
+                    // Update asit custom field
+                    if (method_exists($subscriber, 'syncCustomFieldValues')) {
+                        $subscriber->syncCustomFieldValues(['asit' => 'Yes'], false);
+                    } else {
+                        global $wpdb;
+                        $table = $wpdb->prefix . 'fc_subscriber_meta';
+
+                        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") === $table) {
+                            $exists = $wpdb->get_var($wpdb->prepare(
+                                "SELECT id FROM $table WHERE subscriber_id = %d AND `key` = %s",
+                                $subscriber->id,
+                                'asit'
+                            ));
+
+                            if ($exists) {
+                                $wpdb->update(
+                                    $table,
+                                    ['value' => 'Yes', 'updated_at' => current_time('mysql')],
+                                    ['subscriber_id' => $subscriber->id, 'key' => 'asit']
+                                );
+                            } else {
+                                $wpdb->insert(
+                                    $table,
+                                    [
+                                        'subscriber_id' => $subscriber->id,
+                                        'key' => 'asit',
+                                        'value' => 'Yes',
+                                        'object_type' => 'custom_field',
+                                        'created_at' => current_time('mysql'),
+                                        'updated_at' => current_time('mysql')
+                                    ]
+                                );
+                            }
+                        }
+                    }
+
+                    // Mark as synced
+                    $order->update_meta_data('_wcem_asit_fluentcrm_synced', 'yes');
+                    $order->update_meta_data('_wcem_asit_fluentcrm_sync_time', current_time('mysql'));
+                    $order->save();
+
+                    $synced++;
+                    PMCM_Core::log_activity('Bulk ASiT sync: Updated FluentCRM asit field for ' . $email . ' (Order #' . $order_data['id'] . ')', 'success');
+                } else {
+                    $errors++;
+                }
+            } catch (Exception $e) {
+                $errors++;
+                PMCM_Core::log_activity('Bulk ASiT sync error for ' . $email . ': ' . $e->getMessage(), 'error');
+            }
+
+            $processed++;
+        }
+
+        PMCM_Core::log_activity('Bulk ASiT sync completed: ' . $synced . ' synced, ' . $errors . ' errors', 'success');
+
+        wp_send_json_success([
+            'processed' => $processed,
+            'synced' => $synced,
+            'errors' => $errors
         ]);
     }
 }

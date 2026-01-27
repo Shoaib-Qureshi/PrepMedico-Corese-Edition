@@ -116,6 +116,18 @@ class PMCM_FluentCRM {
                 );
             }
 
+            // Check if ASiT coupon was used and update the asit custom field
+            $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
+            $coupons = $order->get_coupon_codes();
+
+            foreach ($coupons as $coupon_code) {
+                if (strtolower($coupon_code) === $asit_coupon_code) {
+                    self::update_custom_field($subscriber, 'asit', 'Yes');
+                    PMCM_Core::log_activity('Updated FluentCRM asit field for ' . $email . ' (ASiT coupon used)', 'success');
+                    break;
+                }
+            }
+
             return true;
 
         } catch (Exception $e) {
