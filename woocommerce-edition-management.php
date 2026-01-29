@@ -44,6 +44,7 @@ function pmcm_load_files()
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-cart.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-frontend.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-cron.php';
+    require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-product-expiration.php';
 }
 
 /**
@@ -62,6 +63,11 @@ function pmcm_init()
     // Load plugin files
     pmcm_load_files();
 
+    // Run migration if not done yet (for existing sites)
+    if (!PMCM_Core::is_migrated()) {
+        PMCM_Core::migrate_to_database();
+    }
+
     // Initialize all components
     PMCM_Shortcodes::init();
     PMCM_Admin::init();
@@ -70,6 +76,7 @@ function pmcm_init()
     PMCM_Cart::init();
     PMCM_Frontend::init();
     PMCM_Cron::init();
+    PMCM_Product_Expiration::init();
 }
 add_action('plugins_loaded', 'pmcm_init', 20);
 
@@ -80,6 +87,9 @@ function pmcm_activate()
 {
     // Load files first
     pmcm_load_files();
+
+    // Migrate hardcoded courses to database (runs once)
+    PMCM_Core::migrate_to_database();
 
     // Set default options for all courses
     foreach (PMCM_Core::get_courses() as $category_slug => $course) {
@@ -118,6 +128,7 @@ function pmcm_activate()
 
     // Schedule cron
     PMCM_Cron::schedule_cron();
+    PMCM_Product_Expiration::schedule_cron();
 
     flush_rewrite_rules();
 }
@@ -133,6 +144,7 @@ function pmcm_deactivate()
 
     // Unschedule cron
     PMCM_Cron::unschedule_cron();
+    PMCM_Product_Expiration::unschedule_cron();
 }
 register_deactivation_hook(__FILE__, 'pmcm_deactivate');
 

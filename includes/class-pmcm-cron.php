@@ -54,15 +54,15 @@ class PMCM_Cron {
     /**
      * Check and update editions via cron
      * Logic:
-     * - When Current Edition End Date has passed
-     * - Increment current edition by 1
-     * - Clear edition dates (admin needs to set new dates)
-     * - Clear Early Bird settings
+     * - When Current Edition End Date has passed:
+     *   - If Next Edition is enabled: Promote Next to Current, clear Next slot
+     *   - If Next Edition not enabled: Increment current edition by 1, clear dates
      */
     public static function check_and_update_editions() {
         $today = current_time('Y-m-d');
         $today_timestamp = strtotime($today);
         $switched = [];
+        $promoted = [];
 
         PMCM_Core::log_activity('Edition check started. Today: ' . $today, 'info');
 
@@ -71,13 +71,44 @@ class PMCM_Cron {
 
             $current_edition = intval(get_option($prefix . 'current_edition', 1));
             $edition_end = get_option($prefix . 'edition_end', '');
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
 
             // Log current state for debugging
-            PMCM_Core::log_activity($course['name'] . ': Edition ' . $current_edition . ', End Date: ' . ($edition_end ?: 'not set'), 'info');
+            PMCM_Core::log_activity($course['name'] . ': Edition ' . $current_edition . ', End Date: ' . ($edition_end ?: 'not set') . ', Next Enabled: ' . $next_enabled, 'info');
 
             // Check if Current Edition End Date has passed
             if (!empty($edition_end) && $today_timestamp > strtotime($edition_end)) {
                 $old_edition = $current_edition;
+
+                // Check if Next Edition is enabled and should be promoted
+                if ($next_enabled === 'yes') {
+                    $next_edition = intval(get_option($prefix . 'next_edition', 0));
+
+                    if ($next_edition > 0) {
+                        // Promote Next Edition to Current
+                        update_option($prefix . 'current_edition', $next_edition);
+                        update_option($prefix . 'edition_start', get_option($prefix . 'next_start', ''));
+                        update_option($prefix . 'edition_end', get_option($prefix . 'next_end', ''));
+                        update_option($prefix . 'early_bird_enabled', get_option($prefix . 'next_early_bird_enabled', 'no'));
+                        update_option($prefix . 'early_bird_start', get_option($prefix . 'next_early_bird_start', ''));
+                        update_option($prefix . 'early_bird_end', get_option($prefix . 'next_early_bird_end', ''));
+
+                        // Clear Next Edition slot
+                        update_option($prefix . 'next_enabled', 'no');
+                        update_option($prefix . 'next_edition', '');
+                        update_option($prefix . 'next_start', '');
+                        update_option($prefix . 'next_end', '');
+                        update_option($prefix . 'next_early_bird_enabled', 'no');
+                        update_option($prefix . 'next_early_bird_start', '');
+                        update_option($prefix . 'next_early_bird_end', '');
+
+                        $promoted[] = ['course' => $course['name'], 'from' => $old_edition, 'to' => $next_edition];
+                        PMCM_Core::log_activity('Promoted Next Edition for ' . $course['name'] . ': Edition ' . $old_edition . ' → ' . $next_edition . ' (Next slot promoted to Current)', 'success');
+                        continue;
+                    }
+                }
+
+                // No Next Edition - simple increment
                 $new_edition = $current_edition + 1;
 
                 // Increment edition number by 1
@@ -97,26 +128,42 @@ class PMCM_Cron {
             }
         }
 
-        if (!empty($switched)) {
-            self::send_edition_switch_notification($switched);
+        // Clear the course cache after updates
+        PMCM_Core::clear_cache();
+
+        if (!empty($switched) || !empty($promoted)) {
+            self::send_edition_switch_notification($switched, $promoted);
         } else {
-            PMCM_Core::log_activity('Edition check completed. No editions needed incrementing.', 'info');
+            PMCM_Core::log_activity('Edition check completed. No editions needed updating.', 'info');
         }
     }
 
     /**
      * Send edition switch notification
      */
-    private static function send_edition_switch_notification($switched) {
+    private static function send_edition_switch_notification($switched, $promoted = []) {
         $admin_email = get_option('admin_email');
-        $subject = '[PrepMedico] Edition Auto-Increment Completed';
+        $subject = '[PrepMedico] Edition Update Completed';
 
-        $message = "The following course editions have been automatically incremented:\n\n";
-        foreach ($switched as $switch) {
-            $message .= sprintf("%s: Edition %d → Edition %d\n", $switch['course'], $switch['from'], $switch['to']);
+        $message = "";
+
+        if (!empty($promoted)) {
+            $message .= "The following course editions have been PROMOTED from Next slot:\n\n";
+            foreach ($promoted as $promo) {
+                $message .= sprintf("%s: Edition %d → Edition %d (Next slot promoted to Current)\n", $promo['course'], $promo['from'], $promo['to']);
+            }
+            $message .= "\n";
         }
-        $message .= "\nIMPORTANT: Please set the new edition dates for these courses.";
-        $message .= "\n\n" . admin_url('admin.php?page=prepmedico-management');
+
+        if (!empty($switched)) {
+            $message .= "The following course editions have been AUTO-INCREMENTED:\n\n";
+            foreach ($switched as $switch) {
+                $message .= sprintf("%s: Edition %d → Edition %d\n", $switch['course'], $switch['from'], $switch['to']);
+            }
+            $message .= "\nIMPORTANT: Please set the new edition dates for these courses.\n";
+        }
+
+        $message .= "\nManage editions: " . admin_url('admin.php?page=prepmedico-management');
 
         wp_mail($admin_email, $subject, $message);
     }

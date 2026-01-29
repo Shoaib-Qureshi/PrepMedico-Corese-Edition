@@ -30,6 +30,10 @@ class PMCM_Cart {
     public static function save_edition_to_cart($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
         $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
 
+        // Check if user selected a specific edition slot
+        $selected_slot = isset($_POST['pmcm_selected_edition']) ? sanitize_text_field($_POST['pmcm_selected_edition']) : 'current';
+        $selected_course = isset($_POST['pmcm_selected_course']) ? sanitize_text_field($_POST['pmcm_selected_course']) : '';
+
         foreach ($categories as $category_slug) {
             $course_data = PMCM_Core::get_course_for_category($category_slug);
 
@@ -39,10 +43,29 @@ class PMCM_Cart {
                 $prefix = $course['settings_prefix'];
                 $is_child = $course_data['is_child'];
 
-                $edition_number = get_option($prefix . 'current_edition', 1);
-
                 // Check if course has edition management
                 $has_edition_management = isset($course['edition_management']) && $course['edition_management'] === true;
+
+                // Determine which edition slot to use
+                $use_slot = 'current';
+                if ($has_edition_management && $selected_course === $parent_slug && $selected_slot === 'next') {
+                    // Verify next edition is actually enabled
+                    $next_enabled = get_option($prefix . 'next_enabled', 'no');
+                    if ($next_enabled === 'yes') {
+                        $use_slot = 'next';
+                    }
+                }
+
+                // Get edition data from the appropriate slot
+                if ($use_slot === 'next') {
+                    $edition_number = intval(get_option($prefix . 'next_edition', 0));
+                    $edition_start = get_option($prefix . 'next_start', '');
+                    $edition_end = get_option($prefix . 'next_end', '');
+                } else {
+                    $edition_number = intval(get_option($prefix . 'current_edition', 1));
+                    $edition_start = get_option($prefix . 'edition_start', '');
+                    $edition_end = get_option($prefix . 'edition_end', '');
+                }
 
                 // For backend storage: all courses with edition_management get full edition name
                 // For Library Subscription (no edition_management): just the course name
@@ -61,8 +84,9 @@ class PMCM_Cart {
                     'course_name' => $course['name'],
                     'edition_number' => $edition_number_to_store,
                     'edition_name' => $edition_name,
-                    'edition_start' => get_option($prefix . 'edition_start', ''),
-                    'edition_end' => get_option($prefix . 'edition_end', '')
+                    'edition_start' => $edition_start,
+                    'edition_end' => $edition_end,
+                    'edition_slot' => $use_slot
                 ];
 
                 WC()->session->set('wcem_edition_' . $cart_item_key, $edition_data);
