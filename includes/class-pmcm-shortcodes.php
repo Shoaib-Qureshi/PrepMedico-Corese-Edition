@@ -22,6 +22,13 @@ class PMCM_Shortcodes {
         add_shortcode('registration_status', [__CLASS__, 'registration_status']);
         add_shortcode('early_bird_message', [__CLASS__, 'early_bird_message']);
         add_shortcode('course_registration_info', [__CLASS__, 'course_registration_info']);
+
+        // Elementor table shortcodes for custom edition tables
+        add_shortcode('pmcm_edition_url', [__CLASS__, 'edition_url']);
+        add_shortcode('pmcm_edition_ordinal', [__CLASS__, 'edition_ordinal']);
+        add_shortcode('pmcm_edition_dates', [__CLASS__, 'edition_dates']);
+        add_shortcode('pmcm_edition_status', [__CLASS__, 'edition_status']);
+        add_shortcode('pmcm_edition_button', [__CLASS__, 'edition_button']);
     }
 
     /**
@@ -284,5 +291,301 @@ class PMCM_Shortcodes {
             'label' => __('Registration is Live', 'prepmedico-course-management'),
             'class' => 'wcem-status-live'
         ];
+    }
+
+    /**
+     * =====================================================
+     * ELEMENTOR TABLE SHORTCODES
+     * For custom edition tables built in Elementor
+     * =====================================================
+     */
+
+    /**
+     * Get edition URL with edition parameter
+     * Usage: [pmcm_edition_url course="frcs" slot="current" product="frcs-course"]
+     *
+     * @param array $atts Shortcode attributes
+     * @return string URL with edition parameter
+     */
+    public static function edition_url($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current',
+            'product' => ''
+        ], $atts, 'pmcm_edition_url');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+        $product_slug = sanitize_text_field($atts['product']);
+
+        if (empty($course_slug) || empty($product_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+
+        // Get edition number based on slot
+        if ($slot === 'next') {
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($next_enabled !== 'yes') {
+                return ''; // Next slot not enabled
+            }
+            $edition = intval(get_option($prefix . 'next_edition', 0));
+            if ($edition === 0) {
+                return '';
+            }
+        } else {
+            $edition = intval(get_option($prefix . 'current_edition', 1));
+        }
+
+        // Build URL with edition parameter
+        $product_url = home_url('/product/' . $product_slug . '/');
+        return esc_url($product_url . '?edition=' . $edition);
+    }
+
+    /**
+     * Get edition ordinal number (11th, 12th, etc.)
+     * Usage: [pmcm_edition_ordinal course="frcs" slot="current"]
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Ordinal edition number
+     */
+    public static function edition_ordinal($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current'
+        ], $atts, 'pmcm_edition_ordinal');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+
+        if (empty($course_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+
+        if ($slot === 'next') {
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($next_enabled !== 'yes') {
+                return '';
+            }
+            $edition = intval(get_option($prefix . 'next_edition', 0));
+            if ($edition === 0) {
+                return '';
+            }
+        } else {
+            $edition = intval(get_option($prefix . 'current_edition', 1));
+        }
+
+        return PMCM_Core::get_ordinal($edition);
+    }
+
+    /**
+     * Get edition dates
+     * Usage: [pmcm_edition_dates course="frcs" slot="current" format="range"]
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Date range or single date
+     */
+    public static function edition_dates($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current',
+            'format' => 'range' // range, start, end
+        ], $atts, 'pmcm_edition_dates');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+        $format = sanitize_text_field($atts['format']);
+
+        if (empty($course_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+
+        if ($slot === 'next') {
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($next_enabled !== 'yes') {
+                return '';
+            }
+            $start = get_option($prefix . 'next_start', '');
+            $end = get_option($prefix . 'next_end', '');
+        } else {
+            $start = get_option($prefix . 'edition_start', '');
+            $end = get_option($prefix . 'edition_end', '');
+        }
+
+        if ($format === 'start') {
+            return $start ? date_i18n('F j, Y', strtotime($start)) : '';
+        } elseif ($format === 'end') {
+            return $end ? date_i18n('F j, Y', strtotime($end)) : '';
+        } else {
+            // Range format
+            if (empty($start) || empty($end)) {
+                return __('Dates TBA', 'prepmedico-course-management');
+            }
+            return date_i18n('F j, Y', strtotime($start)) . ' - ' . date_i18n('F j, Y', strtotime($end));
+        }
+    }
+
+    /**
+     * Get edition registration status
+     * Usage: [pmcm_edition_status course="frcs" slot="current" output="text"]
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Status text or CSS class
+     */
+    public static function edition_status($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current',
+            'output' => 'text' // text or class
+        ], $atts, 'pmcm_edition_status');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+        $output = sanitize_text_field($atts['output']);
+
+        if (empty($course_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+        $today = current_time('Y-m-d');
+        $today_timestamp = strtotime($today);
+
+        if ($slot === 'next') {
+            $enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($enabled !== 'yes') {
+                return $output === 'class' ? 'pmcm-disabled' : 'disabled';
+            }
+            $start = get_option($prefix . 'next_start', '');
+            $end = get_option($prefix . 'next_end', '');
+        } else {
+            $start = get_option($prefix . 'edition_start', '');
+            $end = get_option($prefix . 'edition_end', '');
+        }
+
+        // Check status: closed (end date passed)
+        if (!empty($end) && $today_timestamp > strtotime($end)) {
+            return $output === 'class' ? 'pmcm-closed' : 'closed';
+        }
+
+        // Check status: upcoming (before start date)
+        if (!empty($start) && $today_timestamp < strtotime($start)) {
+            return $output === 'class' ? 'pmcm-upcoming' : 'upcoming';
+        }
+
+        // Registration is open
+        return $output === 'class' ? 'pmcm-open' : 'open';
+    }
+
+    /**
+     * Get complete edition button with URL and disable state
+     * Usage: [pmcm_edition_button course="frcs" slot="current" product="frcs-course" text="Enrol for the course"]
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Button HTML
+     */
+    public static function edition_button($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current',
+            'product' => '',
+            'text' => __('Enrol for the course', 'prepmedico-course-management'),
+            'class' => ''
+        ], $atts, 'pmcm_edition_button');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+        $product_slug = sanitize_text_field($atts['product']);
+        $text = sanitize_text_field($atts['text']);
+        $custom_class = sanitize_html_class($atts['class']);
+
+        if (empty($course_slug) || empty($product_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+        $today = current_time('Y-m-d');
+        $today_timestamp = strtotime($today);
+
+        // Get edition info based on slot
+        if ($slot === 'next') {
+            $enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($enabled !== 'yes') {
+                return ''; // Next slot not enabled, don't show button
+            }
+            $edition = intval(get_option($prefix . 'next_edition', 0));
+            $start = get_option($prefix . 'next_start', '');
+            $end = get_option($prefix . 'next_end', '');
+        } else {
+            $edition = intval(get_option($prefix . 'current_edition', 1));
+            $start = get_option($prefix . 'edition_start', '');
+            $end = get_option($prefix . 'edition_end', '');
+        }
+
+        // Build URL
+        $url = home_url('/product/' . $product_slug . '/?edition=' . $edition);
+
+        // Determine button state
+        $is_closed = !empty($end) && $today_timestamp > strtotime($end);
+        $is_upcoming = !empty($start) && $today_timestamp < strtotime($start);
+
+        // Build button classes
+        $classes = ['pmcm-edition-btn'];
+        if ($custom_class) {
+            $classes[] = $custom_class;
+        }
+
+        if ($is_closed) {
+            $classes[] = 'pmcm-closed';
+        } elseif ($is_upcoming) {
+            $classes[] = 'pmcm-upcoming';
+        } else {
+            $classes[] = 'pmcm-open';
+        }
+
+        // Build inline styles for disabled state
+        $style = '';
+        if ($is_closed) {
+            $style = 'pointer-events: none; opacity: 0.5; cursor: not-allowed;';
+        }
+
+        // Generate button HTML
+        $output = '<a href="' . esc_url($url) . '" class="' . esc_attr(implode(' ', $classes)) . '"';
+        if ($style) {
+            $output .= ' style="' . esc_attr($style) . '"';
+        }
+        $output .= '>' . esc_html($text) . '</a>';
+
+        return $output;
     }
 }
