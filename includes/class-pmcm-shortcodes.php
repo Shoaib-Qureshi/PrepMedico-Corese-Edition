@@ -31,6 +31,10 @@ class PMCM_Shortcodes {
         add_shortcode('pmcm_edition_button', [__CLASS__, 'edition_button']);
         add_shortcode('pmcm_edition_number_raw', [__CLASS__, 'edition_number_raw']);
         add_shortcode('pmcm_edition_product_script', [__CLASS__, 'edition_product_script']);
+
+        // New simplified approach - no data attributes needed
+        add_shortcode('pmcm_edition_marker', [__CLASS__, 'edition_marker']);
+        add_shortcode('pmcm_edition_products_script', [__CLASS__, 'edition_products_script']);
     }
 
     /**
@@ -796,6 +800,318 @@ class PMCM_Shortcodes {
 
             // Expose function globally for manual use
             window.pmcmUpdateProductEdition = updateProductLinks;
+
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * =====================================================
+     * SIMPLIFIED APPROACH - NO DATA ATTRIBUTES NEEDED
+     * =====================================================
+     */
+
+    /**
+     * Edition marker - outputs a hidden span with edition number
+     * Place this shortcode inside your toggle button's container in Elementor
+     *
+     * Usage: [pmcm_edition_marker course="frcs" slot="current"]
+     *
+     * This outputs: <span class="pmcm-edition-marker" data-edition="11" style="display:none;"></span>
+     *
+     * The JavaScript will find this marker and use the edition when the parent button is clicked.
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Hidden marker span
+     */
+    public static function edition_marker($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current'
+        ], $atts, 'pmcm_edition_marker');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+
+        if (empty($course_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+
+        if ($slot === 'next') {
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($next_enabled !== 'yes') {
+                return '';
+            }
+            $edition = intval(get_option($prefix . 'next_edition', 0));
+            if ($edition === 0) {
+                return '';
+            }
+        } else {
+            $edition = intval(get_option($prefix . 'current_edition', 1));
+        }
+
+        // Output hidden marker with edition number
+        return '<span class="pmcm-edition-marker" data-edition="' . esc_attr($edition) . '" data-slot="' . esc_attr($slot) . '" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;"></span>';
+    }
+
+    /**
+     * Simplified JavaScript for edition product links
+     * Works with pmcm_edition_marker shortcode - NO DATA ATTRIBUTES ON BUTTONS NEEDED
+     *
+     * Usage: [pmcm_edition_products_script]
+     *
+     * Place this ONCE on your page (e.g., in a HTML widget at the bottom)
+     *
+     * How it works:
+     * 1. Add [pmcm_edition_marker course="frcs" slot="current"] inside your ROW 1 toggle button container
+     * 2. Add [pmcm_edition_marker course="frcs" slot="next"] inside your ROW 2 toggle button container
+     * 3. Add this script once on the page
+     * 4. When a toggle button is clicked, the script finds the nearest marker and updates all product links
+     *
+     * @param array $atts Shortcode attributes
+     * @return string JavaScript code
+     */
+    public static function edition_products_script($atts) {
+        $atts = shortcode_atts([
+            'products_class' => 'premium-woo-products-inner'
+        ], $atts, 'pmcm_edition_products_script');
+
+        $products_class = esc_js($atts['products_class']);
+
+        ob_start();
+        ?>
+        <script>
+        (function() {
+            'use strict';
+
+            // Track which edition each products container should use
+            const containerEditions = new Map();
+
+            /**
+             * Update all product links in a container with the edition parameter
+             */
+            function updateProductLinks(container, edition) {
+                if (!container || !edition) return;
+
+                const links = container.querySelectorAll('a[href*="/product/"]');
+                let updated = 0;
+
+                links.forEach(function(link) {
+                    let href = link.getAttribute('href');
+                    if (!href) return;
+
+                    try {
+                        const url = new URL(href, window.location.origin);
+                        url.searchParams.delete('edition');
+                        url.searchParams.set('edition', edition);
+                        link.setAttribute('href', url.toString());
+                        updated++;
+                    } catch(e) {
+                        // Invalid URL, skip
+                    }
+                });
+
+                console.log('PMCM: Updated ' + updated + ' product links with edition ' + edition);
+                containerEditions.set(container, edition);
+            }
+
+            /**
+             * Find the edition marker nearest to the clicked element
+             */
+            function findEditionMarker(clickedElement) {
+                // Strategy 1: Check if marker is inside the clicked element
+                let marker = clickedElement.querySelector('.pmcm-edition-marker');
+                if (marker) return marker;
+
+                // Strategy 2: Check parent containers up to 5 levels
+                let parent = clickedElement.parentElement;
+                for (let i = 0; i < 5 && parent; i++) {
+                    marker = parent.querySelector('.pmcm-edition-marker');
+                    if (marker) return marker;
+                    parent = parent.parentElement;
+                }
+
+                // Strategy 3: Check siblings
+                if (clickedElement.parentElement) {
+                    const siblings = clickedElement.parentElement.children;
+                    for (let sibling of siblings) {
+                        if (sibling !== clickedElement) {
+                            marker = sibling.querySelector('.pmcm-edition-marker');
+                            if (marker) return marker;
+                            if (sibling.classList.contains('pmcm-edition-marker')) return sibling;
+                        }
+                    }
+                }
+
+                // Strategy 4: Look in closest Elementor container
+                const eContainer = clickedElement.closest('.e-con, .elementor-element, [data-element_type]');
+                if (eContainer) {
+                    marker = eContainer.querySelector('.pmcm-edition-marker');
+                    if (marker) return marker;
+                }
+
+                return null;
+            }
+
+            /**
+             * Find the products container that should be updated
+             */
+            function findProductsContainer(clickedElement) {
+                // Strategy 1: Look for products class in same parent structure
+                let parent = clickedElement.closest('.e-con, .elementor-widget-container, [data-element_type="container"]');
+
+                if (parent) {
+                    // Check next siblings at this level
+                    let sibling = parent.nextElementSibling;
+                    while (sibling) {
+                        let container = sibling.querySelector('.<?php echo $products_class; ?>, .products, .woocommerce');
+                        if (container) return container;
+                        if (sibling.classList.contains('<?php echo $products_class; ?>')) return sibling;
+                        sibling = sibling.nextElementSibling;
+                    }
+
+                    // Check inside parent's parent
+                    if (parent.parentElement) {
+                        let container = parent.parentElement.querySelector('.<?php echo $products_class; ?>, .products');
+                        if (container) return container;
+                    }
+                }
+
+                // Strategy 2: Look for Container_to_Show (Elementor toggle pattern)
+                const grandParent = clickedElement.closest('.e-con-inner, .e-con');
+                if (grandParent) {
+                    let container = grandParent.querySelector('.Container_to_Show .<?php echo $products_class; ?>');
+                    if (container) return container;
+
+                    container = grandParent.querySelector('.Container_to_Show');
+                    if (container) return container;
+                }
+
+                // Strategy 3: Find any products container on the page after this element
+                const allContainers = document.querySelectorAll('.<?php echo $products_class; ?>, .products.columns-3, .products.columns-4');
+                for (let container of allContainers) {
+                    // Check if this container comes after the clicked element in DOM order
+                    if (clickedElement.compareDocumentPosition(container) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                        return container;
+                    }
+                }
+
+                return null;
+            }
+
+            /**
+             * Handle click events on toggle buttons
+             */
+            function handleToggleClick(e) {
+                // Find the edition marker
+                const marker = findEditionMarker(e.target);
+                if (!marker) {
+                    return; // No marker found, not our button
+                }
+
+                const edition = marker.getAttribute('data-edition');
+                if (!edition) return;
+
+                // Find the products container
+                const container = findProductsContainer(e.target);
+
+                if (container) {
+                    // Delay to allow the toggle animation to show the container
+                    setTimeout(function() {
+                        updateProductLinks(container, edition);
+                    }, 100);
+                } else {
+                    // If no container found yet, try again after a longer delay
+                    // (for when the container is dynamically shown)
+                    setTimeout(function() {
+                        const retryContainer = findProductsContainer(e.target);
+                        if (retryContainer) {
+                            updateProductLinks(retryContainer, edition);
+                        }
+                    }, 300);
+                }
+            }
+
+            /**
+             * Initialize - attach click handlers
+             */
+            function init() {
+                // Listen for clicks on common toggle button selectors
+                document.addEventListener('click', function(e) {
+                    // Check if clicked element or its ancestors might be a toggle button
+                    const target = e.target.closest('a, button, .elementor-button, .e-button, [role="button"], .toggle-btn, .accordion-toggle');
+                    if (target) {
+                        handleToggleClick({ target: target });
+                    }
+                }, true);
+
+                // Also watch for markers that become visible (for pre-loaded content)
+                const markers = document.querySelectorAll('.pmcm-edition-marker');
+                markers.forEach(function(marker) {
+                    const edition = marker.getAttribute('data-edition');
+                    const slot = marker.getAttribute('data-slot');
+
+                    // If this is a "current" slot marker and it's the first one visible,
+                    // pre-apply the edition to any visible products
+                    if (slot === 'current' && edition) {
+                        const container = findProductsContainer(marker);
+                        if (container && !containerEditions.has(container)) {
+                            // Check if container is visible
+                            if (container.offsetParent !== null) {
+                                updateProductLinks(container, edition);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            // Re-initialize for Elementor
+            if (typeof jQuery !== 'undefined') {
+                jQuery(window).on('elementor/frontend/init', function() {
+                    setTimeout(init, 300);
+                });
+            }
+
+            // Watch for dynamically added markers
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            const markers = node.querySelectorAll ? node.querySelectorAll('.pmcm-edition-marker') : [];
+                            if (markers.length > 0 || node.classList?.contains('pmcm-edition-marker')) {
+                                // New marker added, might need to update
+                                setTimeout(init, 100);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // Expose for manual use
+            window.pmcmApplyEdition = function(edition, containerSelector) {
+                const container = document.querySelector(containerSelector);
+                if (container) {
+                    updateProductLinks(container, edition);
+                }
+            };
 
         })();
         </script>
