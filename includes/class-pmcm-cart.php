@@ -26,11 +26,21 @@ class PMCM_Cart {
 
     /**
      * Save edition to cart when product is added
+     *
+     * Edition selection priority:
+     * 1. POST pmcm_edition_number (explicit edition number from hidden field)
+     * 2. POST pmcm_selected_edition (slot selection: current/next)
+     * 3. Default to current edition
+     *
+     * URL parameter (?edition=11) is captured by frontend and passed via hidden field
      */
     public static function save_edition_to_cart($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
         $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
 
-        // Check if user selected a specific edition slot
+        // Check for explicit edition number (from URL parameter via hidden field)
+        $explicit_edition = isset($_POST['pmcm_edition_number']) ? intval($_POST['pmcm_edition_number']) : 0;
+
+        // Check for slot selection (current/next)
         $selected_slot = isset($_POST['pmcm_selected_edition']) ? sanitize_text_field($_POST['pmcm_selected_edition']) : 'current';
         $selected_course = isset($_POST['pmcm_selected_course']) ? sanitize_text_field($_POST['pmcm_selected_course']) : '';
 
@@ -46,23 +56,41 @@ class PMCM_Cart {
                 // Check if course has edition management
                 $has_edition_management = isset($course['edition_management']) && $course['edition_management'] === true;
 
-                // Determine which edition slot to use
+                // Get current and next edition numbers for comparison
+                $current_edition = intval(get_option($prefix . 'current_edition', 1));
+                $next_enabled = get_option($prefix . 'next_enabled', 'no');
+                $next_edition = intval(get_option($prefix . 'next_edition', 0));
+
+                // Determine edition number and slot to use
                 $use_slot = 'current';
-                if ($has_edition_management && $selected_course === $parent_slug && $selected_slot === 'next') {
-                    // Verify next edition is actually enabled
-                    $next_enabled = get_option($prefix . 'next_enabled', 'no');
+                $edition_number = $current_edition;
+
+                if ($has_edition_management && $explicit_edition > 0) {
+                    // Explicit edition number provided (from URL parameter)
+                    $edition_number = $explicit_edition;
+
+                    // Determine which slot this edition belongs to
+                    if ($next_enabled === 'yes' && $next_edition === $explicit_edition) {
+                        $use_slot = 'next';
+                    } elseif ($current_edition === $explicit_edition) {
+                        $use_slot = 'current';
+                    } else {
+                        // Edition doesn't match current or next - use current slot dates but keep explicit edition number
+                        $use_slot = 'current';
+                    }
+                } elseif ($has_edition_management && $selected_course === $parent_slug && $selected_slot === 'next') {
+                    // Slot selection (legacy support)
                     if ($next_enabled === 'yes') {
                         $use_slot = 'next';
+                        $edition_number = $next_edition;
                     }
                 }
 
-                // Get edition data from the appropriate slot
+                // Get edition dates from the appropriate slot
                 if ($use_slot === 'next') {
-                    $edition_number = intval(get_option($prefix . 'next_edition', 0));
                     $edition_start = get_option($prefix . 'next_start', '');
                     $edition_end = get_option($prefix . 'next_end', '');
                 } else {
-                    $edition_number = intval(get_option($prefix . 'current_edition', 1));
                     $edition_start = get_option($prefix . 'edition_start', '');
                     $edition_end = get_option($prefix . 'edition_end', '');
                 }

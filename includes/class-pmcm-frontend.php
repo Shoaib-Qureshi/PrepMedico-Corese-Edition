@@ -65,7 +65,9 @@ class PMCM_Frontend {
     }
 
     /**
-     * Display edition selector when multiple editions are active
+     * Display edition info and capture edition from URL parameter
+     * Edition selection happens on the course page table, NOT on product page
+     * URL format: /product/frcs-course/?edition=11
      */
     public static function display_edition_selector() {
         global $product;
@@ -88,71 +90,55 @@ class PMCM_Frontend {
                     continue;
                 }
 
-                // Check if customer needs to choose between editions
-                if (!PMCM_Core::requires_edition_choice($parent_slug)) {
-                    // Only one edition active - add hidden field with current edition info
+                $prefix = $course['settings_prefix'];
+
+                // Check if edition is passed via URL parameter
+                $url_edition = isset($_GET['edition']) ? intval($_GET['edition']) : 0;
+
+                if ($url_edition > 0) {
+                    // Edition specified in URL - determine which slot it belongs to
+                    $current_edition = intval(get_option($prefix . 'current_edition', 1));
+                    $next_enabled = get_option($prefix . 'next_enabled', 'no');
+                    $next_edition = intval(get_option($prefix . 'next_edition', 0));
+
+                    $selected_slot = 'current';
+                    $selected_edition_number = $url_edition;
+
+                    // Check if URL edition matches next slot
+                    if ($next_enabled === 'yes' && $next_edition === $url_edition) {
+                        $selected_slot = 'next';
+                    } elseif ($current_edition !== $url_edition) {
+                        // URL edition doesn't match current or next - might be a future/past edition
+                        // Still capture it for the order, use current slot settings for dates
+                        $selected_slot = 'current';
+                    }
+
+                    // Add hidden fields for cart capture
+                    echo '<input type="hidden" name="pmcm_selected_edition" value="' . esc_attr($selected_slot) . '">';
+                    echo '<input type="hidden" name="pmcm_selected_course" value="' . esc_attr($parent_slug) . '">';
+                    echo '<input type="hidden" name="pmcm_edition_number" value="' . esc_attr($url_edition) . '">';
+
+                    // Show selected edition info badge
+                    $ordinal = PMCM_Core::get_ordinal($url_edition);
+                    echo '<div class="pmcm-edition-selected" style="margin: 15px 0; padding: 12px 16px; background: linear-gradient(135deg, #8d2063, #442e8c); border-radius: 6px; color: #fff;">';
+                    echo '<div style="display: flex; align-items: center; gap: 10px;">';
+                    echo '<span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(255,255,255,0.2); border-radius: 50%;">';
+                    echo '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                    echo '</span>';
+                    echo '<div>';
+                    echo '<div style="font-size: 12px; opacity: 0.9;">' . __('Selected Edition', 'prepmedico-course-management') . '</div>';
+                    echo '<div style="font-size: 16px; font-weight: 600;">' . esc_html($ordinal . ' ' . $course['name']) . '</div>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</div>';
+                } else {
+                    // No edition in URL - use current edition by default
                     $active_editions = PMCM_Core::get_active_editions($parent_slug);
                     if (!empty($active_editions)) {
                         $edition = $active_editions[0];
                         echo '<input type="hidden" name="pmcm_selected_edition" value="' . esc_attr($edition['slot']) . '">';
                         echo '<input type="hidden" name="pmcm_selected_course" value="' . esc_attr($parent_slug) . '">';
                     }
-                    return;
-                }
-
-                // Multiple editions active - show selector
-                $active_editions = PMCM_Core::get_active_editions($parent_slug);
-
-                if (count($active_editions) > 1) {
-                    echo '<div class="pmcm-edition-selector" style="margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 2px solid #8d2063;">';
-                    echo '<h4 style="margin: 0 0 15px 0; color: #8d2063; font-size: 16px;">';
-                    echo '<span class="dashicons dashicons-calendar-alt" style="margin-right: 8px;"></span>';
-                    echo __('Select Your Edition', 'prepmedico-course-management');
-                    echo '</h4>';
-
-                    echo '<input type="hidden" name="pmcm_selected_course" value="' . esc_attr($parent_slug) . '">';
-
-                    foreach ($active_editions as $index => $edition) {
-                        $slot = $edition['slot'];
-                        $edition_name = $edition['edition_name'];
-                        $start = $edition['edition_start'];
-                        $end = $edition['edition_end'];
-                        $is_next = ($slot === 'next');
-
-                        $date_range = '';
-                        if (!empty($start) && !empty($end)) {
-                            $date_range = date('M j, Y', strtotime($start)) . ' - ' . date('M j, Y', strtotime($end));
-                        }
-
-                        $input_id = 'pmcm_edition_' . $parent_slug . '_' . $slot;
-                        $checked = ($index === 0) ? 'checked' : '';
-
-                        echo '<label for="' . esc_attr($input_id) . '" style="display: flex; align-items: flex-start; padding: 12px 15px; margin-bottom: 10px; background: #fff; border-radius: 6px; cursor: pointer; border: 2px solid ' . ($index === 0 ? '#8d2063' : '#ddd') . '; transition: all 0.2s;" class="pmcm-edition-option">';
-                        echo '<input type="radio" id="' . esc_attr($input_id) . '" name="pmcm_selected_edition" value="' . esc_attr($slot) . '" ' . $checked . ' style="margin: 3px 12px 0 0; accent-color: #8d2063;">';
-                        echo '<div style="flex: 1;">';
-                        echo '<div style="font-weight: 600; font-size: 15px; color: #333;">' . esc_html($edition_name);
-                        if ($is_next) {
-                            echo ' <span style="background: #28a745; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; margin-left: 8px;">NEW</span>';
-                        }
-                        echo '</div>';
-                        if ($date_range) {
-                            echo '<div style="font-size: 13px; color: #666; margin-top: 4px;">' . esc_html($date_range) . '</div>';
-                        }
-                        echo '</div>';
-                        echo '</label>';
-                    }
-
-                    echo '</div>';
-
-                    // Add JavaScript to update border on selection
-                    echo '<script>
-                    jQuery(document).ready(function($) {
-                        $(".pmcm-edition-selector input[type=radio]").on("change", function() {
-                            $(".pmcm-edition-option").css("border-color", "#ddd");
-                            $(this).closest(".pmcm-edition-option").css("border-color", "#8d2063");
-                        });
-                    });
-                    </script>';
                 }
 
                 break;
