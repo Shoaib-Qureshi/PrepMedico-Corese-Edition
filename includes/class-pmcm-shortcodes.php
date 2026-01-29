@@ -29,6 +29,8 @@ class PMCM_Shortcodes {
         add_shortcode('pmcm_edition_dates', [__CLASS__, 'edition_dates']);
         add_shortcode('pmcm_edition_status', [__CLASS__, 'edition_status']);
         add_shortcode('pmcm_edition_button', [__CLASS__, 'edition_button']);
+        add_shortcode('pmcm_edition_number_raw', [__CLASS__, 'edition_number_raw']);
+        add_shortcode('pmcm_edition_product_script', [__CLASS__, 'edition_product_script']);
     }
 
     /**
@@ -587,5 +589,217 @@ class PMCM_Shortcodes {
         $output .= '>' . esc_html($text) . '</a>';
 
         return $output;
+    }
+
+    /**
+     * Get raw edition number (without ordinal suffix)
+     * Usage: [pmcm_edition_number_raw course="frcs" slot="current"]
+     * Output: 11 (just the number, useful for data attributes)
+     *
+     * @param array $atts Shortcode attributes
+     * @return string Raw edition number
+     */
+    public static function edition_number_raw($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot' => 'current'
+        ], $atts, 'pmcm_edition_number_raw');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot = sanitize_text_field($atts['slot']);
+
+        if (empty($course_slug)) {
+            return '';
+        }
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+
+        if ($slot === 'next') {
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+            if ($next_enabled !== 'yes') {
+                return '';
+            }
+            $edition = intval(get_option($prefix . 'next_edition', 0));
+            if ($edition === 0) {
+                return '';
+            }
+        } else {
+            $edition = intval(get_option($prefix . 'current_edition', 1));
+        }
+
+        return strval($edition);
+    }
+
+    /**
+     * Output JavaScript to handle dynamic edition parameter on product links
+     * Place this shortcode ONCE on the page where you have edition toggle buttons
+     *
+     * Usage: [pmcm_edition_product_script]
+     *
+     * How it works:
+     * 1. Add data-pmcm-edition="11" to your toggle button (use [pmcm_edition_number_raw] for value)
+     * 2. Add data-pmcm-products="true" to the container that holds the products
+     * 3. When button is clicked, all product links in the container get ?edition=X appended
+     *
+     * Example Elementor setup:
+     * - Toggle button: Add Custom Attribute: data-pmcm-edition|[pmcm_edition_number_raw course="frcs" slot="current"]
+     * - Products container: Add class "pmcm-products-container" or data-pmcm-products="true"
+     *
+     * @param array $atts Shortcode attributes
+     * @return string JavaScript code
+     */
+    public static function edition_product_script($atts) {
+        $atts = shortcode_atts([
+            'button_selector' => '[data-pmcm-edition]',
+            'container_class' => 'pmcm-products-container'
+        ], $atts, 'pmcm_edition_product_script');
+
+        $button_selector = esc_js($atts['button_selector']);
+        $container_class = esc_js($atts['container_class']);
+
+        ob_start();
+        ?>
+        <script>
+        (function() {
+            'use strict';
+
+            // Track which containers have been updated with which edition
+            const updatedContainers = new Map();
+
+            function updateProductLinks(container, edition) {
+                if (!container || !edition) return;
+
+                // Find all product links in the container
+                const links = container.querySelectorAll('a[href*="/product/"]');
+
+                links.forEach(function(link) {
+                    let href = link.getAttribute('href');
+                    if (!href) return;
+
+                    // Remove existing edition parameter if present
+                    const url = new URL(href, window.location.origin);
+                    url.searchParams.delete('edition');
+
+                    // Add new edition parameter
+                    url.searchParams.set('edition', edition);
+
+                    link.setAttribute('href', url.toString());
+                });
+
+                // Mark container as updated with this edition
+                updatedContainers.set(container, edition);
+            }
+
+            function findProductContainer(button) {
+                // Strategy 1: Look for sibling with pmcm-products-container class
+                let container = button.parentElement.querySelector('.<?php echo $container_class; ?>');
+                if (container) return container;
+
+                // Strategy 2: Look for data-pmcm-products attribute in siblings
+                container = button.parentElement.querySelector('[data-pmcm-products]');
+                if (container) return container;
+
+                // Strategy 3: Look in parent's siblings
+                const parent = button.closest('.e-con, .elementor-element');
+                if (parent && parent.nextElementSibling) {
+                    container = parent.nextElementSibling.querySelector('.<?php echo $container_class; ?>, [data-pmcm-products]');
+                    if (container) return container;
+
+                    // Check if next sibling itself is the container
+                    if (parent.nextElementSibling.classList.contains('<?php echo $container_class; ?>') ||
+                        parent.nextElementSibling.hasAttribute('data-pmcm-products')) {
+                        return parent.nextElementSibling;
+                    }
+                }
+
+                // Strategy 4: Look for Container_to_Show class (common Elementor pattern)
+                container = button.closest('.e-con-inner, .e-con')?.querySelector('.Container_to_Show');
+                if (container) return container;
+
+                // Strategy 5: Look for premium-woo-products within the same parent structure
+                const grandParent = button.closest('[data-element_type="container"]');
+                if (grandParent) {
+                    container = grandParent.parentElement.querySelector('.premium-woo-products-inner, .products');
+                    if (container) return container.closest('.e-con, [data-element_type="container"]') || container;
+                }
+
+                return null;
+            }
+
+            function initEditionLinks() {
+                // Find all buttons with edition data
+                const buttons = document.querySelectorAll('<?php echo $button_selector; ?>');
+
+                buttons.forEach(function(button) {
+                    // Skip if already initialized
+                    if (button.dataset.pmcmInitialized === 'true') return;
+                    button.dataset.pmcmInitialized = 'true';
+
+                    button.addEventListener('click', function(e) {
+                        const edition = this.dataset.pmcmEdition;
+                        if (!edition) return;
+
+                        // Find the products container
+                        const container = findProductContainer(this);
+                        if (!container) {
+                            console.warn('PMCM: Could not find products container for button', this);
+                            return;
+                        }
+
+                        // Update links if not already updated with this edition
+                        if (updatedContainers.get(container) !== edition) {
+                            // Small delay to allow container to become visible
+                            setTimeout(function() {
+                                updateProductLinks(container, edition);
+                            }, 50);
+                        }
+                    });
+                });
+            }
+
+            // Initialize on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initEditionLinks);
+            } else {
+                initEditionLinks();
+            }
+
+            // Re-initialize for Elementor frontend
+            if (typeof jQuery !== 'undefined') {
+                jQuery(window).on('elementor/frontend/init', function() {
+                    setTimeout(initEditionLinks, 200);
+                });
+            }
+
+            // Watch for dynamic content
+            const observer = new MutationObserver(function(mutations) {
+                let shouldInit = false;
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length > 0) {
+                        shouldInit = true;
+                    }
+                });
+                if (shouldInit) {
+                    setTimeout(initEditionLinks, 100);
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
+            // Expose function globally for manual use
+            window.pmcmUpdateProductEdition = updateProductLinks;
+
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
     }
 }
