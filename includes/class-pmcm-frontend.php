@@ -179,8 +179,23 @@ class PMCM_Frontend {
 
     /**
      * Add edition to cart item name
+     * Uses the edition stored in cart session (selected by customer), not the current edition
      */
     public static function add_edition_to_cart_item_name($name, $cart_item, $cart_item_key) {
+        // Check for edition data in cart session
+        if (WC()->session) {
+            $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
+            if ($edition_data && !empty($edition_data['edition_name'])) {
+                // Use the edition name from cart session (already formatted with ordinal)
+                $edition_number = $edition_data['edition_number'];
+                if ($edition_number && !preg_match('/^\d+(st|nd|rd|th)\s+-\s+/', $name)) {
+                    return PMCM_Core::get_ordinal($edition_number) . ' - ' . $name;
+                }
+                return $name;
+            }
+        }
+
+        // Fallback to default behavior
         $product_id = $cart_item['product_id'];
         return self::prepend_edition_to_title($name, $product_id);
     }
@@ -197,6 +212,10 @@ class PMCM_Frontend {
      * Helper: Prepend edition number to title
      * Only for parent courses with edition_management enabled
      * Child categories and courses without edition_management show just the title
+     *
+     * Priority for edition number:
+     * 1. URL parameter (?edition=12) - when on product page
+     * 2. Current edition from database
      */
     private static function prepend_edition_to_title($title, $product_id) {
         if (strpos($title, ' - ') === false || !preg_match('/^\d+(st|nd|rd|th)\s+-\s+/', $title)) {
@@ -218,7 +237,16 @@ class PMCM_Frontend {
                     }
 
                     $prefix = $course['settings_prefix'];
-                    $edition = get_option($prefix . 'current_edition', 1);
+
+                    // Check for URL parameter first (when customer selected edition from table)
+                    $url_edition = isset($_GET['edition']) ? intval($_GET['edition']) : 0;
+
+                    if ($url_edition > 0) {
+                        $edition = $url_edition;
+                    } else {
+                        // Default to current edition
+                        $edition = get_option($prefix . 'current_edition', 1);
+                    }
 
                     if (!preg_match('/^\d+(st|nd|rd|th)\s+-\s+/', $title)) {
                         return PMCM_Core::get_ordinal($edition) . ' - ' . $title;

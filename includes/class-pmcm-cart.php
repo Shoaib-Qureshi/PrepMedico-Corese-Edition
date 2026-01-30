@@ -145,6 +145,7 @@ class PMCM_Cart {
 
     /**
      * Save edition to order line item
+     * This captures the customer's selected edition from the cart session
      */
     public static function save_edition_to_order_item($item, $cart_item_key, $values, $order) {
         if (WC()->session) {
@@ -152,16 +153,22 @@ class PMCM_Cart {
 
             if ($edition_data) {
                 $item->add_meta_data('_course_slug', $edition_data['course_slug']);
+                $item->add_meta_data('_original_category', $edition_data['original_category']);
                 $item->add_meta_data('_course_edition', $edition_data['edition_number']);
                 $item->add_meta_data('_edition_name', $edition_data['edition_name']);
                 $item->add_meta_data('_edition_start', $edition_data['edition_start']);
                 $item->add_meta_data('_edition_end', $edition_data['edition_end']);
+                $item->add_meta_data('_edition_slot', $edition_data['edition_slot']);
             }
         }
     }
 
     /**
      * Save edition information to order meta on checkout
+     *
+     * Priority for edition data:
+     * 1. Edition data already saved to order item (from save_edition_to_order_item via cart session)
+     * 2. Fall back to current edition from database
      */
     public static function save_edition_to_order($order_id, $posted_data = null, $order = null) {
         if (!$order) {
@@ -193,37 +200,56 @@ class PMCM_Cart {
                     $prefix = $course['settings_prefix'];
                     $is_child = $course_data['is_child'];
 
-                    $edition_number = get_option($prefix . 'current_edition', 1);
-
                     // Check if course has edition management
                     $has_edition_management = isset($course['edition_management']) && $course['edition_management'] === true;
 
-                    // For backend storage: all courses with edition_management get full edition name
-                    // For Library Subscription (no edition_management): just the course name
-                    $edition_name = $has_edition_management
-                        ? PMCM_Core::get_ordinal($edition_number) . ' ' . $course['name']
-                        : $course['name'];
+                    // PRIORITY: Check if edition was already saved to order item (from cart session)
+                    // This contains the customer's selected edition from URL parameter
+                    $item_edition_number = $item->get_meta('_course_edition');
+                    $item_edition_name = $item->get_meta('_edition_name');
+                    $item_edition_start = $item->get_meta('_edition_start');
+                    $item_edition_end = $item->get_meta('_edition_end');
 
-                    // Store edition number for all courses with edition_management (including sub-categories)
-                    // Only Library Subscription (edition_management: false) gets null
-                    $edition_number_to_save = $has_edition_management ? $edition_number : null;
+                    if (!empty($item_edition_number) || !empty($item_edition_name)) {
+                        // Use edition data from cart session (customer selected)
+                        $edition_number = $item_edition_number ? intval($item_edition_number) : null;
+                        $edition_name = $item_edition_name;
+                        $edition_start = $item_edition_start;
+                        $edition_end = $item_edition_end;
+                        $edition_number_to_save = $edition_number;
+                    } else {
+                        // Fallback: use current edition from database
+                        $edition_number = intval(get_option($prefix . 'current_edition', 1));
 
-                    $edition_start = get_option($prefix . 'edition_start', '');
-                    $edition_end = get_option($prefix . 'edition_end', '');
+                        // For backend storage: all courses with edition_management get full edition name
+                        // For Library Subscription (no edition_management): just the course name
+                        $edition_name = $has_edition_management
+                            ? PMCM_Core::get_ordinal($edition_number) . ' ' . $course['name']
+                            : $course['name'];
 
+                        // Store edition number for all courses with edition_management (including sub-categories)
+                        // Only Library Subscription (edition_management: false) gets null
+                        $edition_number_to_save = $has_edition_management ? $edition_number : null;
+
+                        $edition_start = get_option($prefix . 'edition_start', '');
+                        $edition_end = get_option($prefix . 'edition_end', '');
+
+                        // Update the order item with fallback values
+                        wc_update_order_item_meta($item_id, '_course_slug', $parent_slug);
+                        wc_update_order_item_meta($item_id, '_original_category', $category_slug);
+                        wc_update_order_item_meta($item_id, '_course_edition', $edition_number_to_save);
+                        wc_update_order_item_meta($item_id, '_edition_name', $edition_name);
+                        wc_update_order_item_meta($item_id, '_edition_start', $edition_start);
+                        wc_update_order_item_meta($item_id, '_edition_end', $edition_end);
+                    }
+
+                    // Always update order-level meta
                     $order->update_meta_data('_course_slug_' . $parent_slug, $parent_slug);
                     $order->update_meta_data('_course_edition_' . $parent_slug, $edition_number_to_save);
                     $order->update_meta_data('_edition_name_' . $parent_slug, $edition_name);
                     $order->update_meta_data('_edition_start_' . $parent_slug, $edition_start);
                     $order->update_meta_data('_edition_end_' . $parent_slug, $edition_end);
                     $order->update_meta_data('_original_category_' . $parent_slug, $category_slug);
-
-                    wc_update_order_item_meta($item_id, '_course_slug', $parent_slug);
-                    wc_update_order_item_meta($item_id, '_original_category', $category_slug);
-                    wc_update_order_item_meta($item_id, '_course_edition', $edition_number_to_save);
-                    wc_update_order_item_meta($item_id, '_edition_name', $edition_name);
-                    wc_update_order_item_meta($item_id, '_edition_start', $edition_start);
-                    wc_update_order_item_meta($item_id, '_edition_end', $edition_end);
 
                     $courses_in_order[] = [
                         'slug' => $parent_slug,

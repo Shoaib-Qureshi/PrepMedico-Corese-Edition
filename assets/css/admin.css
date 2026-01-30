@@ -1,75 +1,87 @@
-/**
- * WooCommerce Edition Management - Admin Styles
- */
+/* WooCommerce Edition Management - Admin Styles (modern refresh) */
+
+:root {
+    --pmcm-primary: #8d2063;
+    --pmcm-primary-dark: #442e8c;
+    --pmcm-surface: #ffffff;
+    --pmcm-muted: #50575e;
+    --pmcm-border: #d9dce3;
+    --pmcm-shadow: 0 10px 30px rgba(20, 10, 40, 0.08);
+    --pmcm-radius: 10px;
+}
 
 /* General Wrapper */
 .wcem-admin-wrap {
     max-width: 1400px;
-    margin-top: 20px;
+    margin-top: 24px;
 }
 
 .wcem-admin-wrap h1 {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 /* Header Info Box */
 .wcem-header-info {
-    background: #fff;
-    padding: 15px 20px;
-    border-left: 4px solid #2271b1;
-    margin-bottom: 25px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    background: linear-gradient(120deg, var(--pmcm-primary), var(--pmcm-primary-dark));
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: var(--pmcm-radius);
+    margin-bottom: 24px;
+    box-shadow: var(--pmcm-shadow);
 }
 
 .wcem-header-info p {
     margin: 0;
     font-size: 14px;
-    color: #50575e;
+    color: rgba(255,255,255,0.9);
 }
 
 /* Status Overview Table */
 .wcem-status-overview {
-    background: #fff;
+    background: var(--pmcm-surface);
     padding: 20px;
-    margin-bottom: 25px;
-    border: 1px solid #c3c4c7;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    margin-bottom: 24px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    box-shadow: var(--pmcm-shadow);
 }
 
 .wcem-status-overview h2 {
     margin-top: 0;
     padding-bottom: 10px;
-    border-bottom: 1px solid #f0f0f1;
+    border-bottom: 1px solid #eef0f4;
 }
 
 /* Status Badges */
 .wcem-status {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 3px;
-    font-size: 12px;
-    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
 }
 
 .wcem-status-active {
-    background: #d4edda;
-    color: #155724;
+    background: #e6fff4;
+    color: #0f8b4c;
 }
 
 .wcem-status-expired {
-    background: #f8d7da;
-    color: #721c24;
+    background: #ffe8e8;
+    color: #c62828;
 }
 
 .wcem-status-ending-soon {
-    background: #fff3cd;
-    color: #856404;
+    background: #fff4e0;
+    color: #b86b00;
 }
 
 .wcem-warning {
-    color: #856404;
+    color: #b86b00;
     font-weight: 500;
 }
 
@@ -77,34 +89,39 @@
 .wcem-courses-settings {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 25px;
-    margin: 25px 0;
+    gap: 22px;
+    margin: 22px 0;
 }
 
 /* Individual Course Card */
 .wcem-course-card {
-    background: #fff;
-    padding: 25px;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
-    transition: border-color 0.2s ease;
+    position: relative;
+    background: var(--pmcm-surface);
+    padding: 22px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    box-shadow: var(--pmcm-shadow);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .wcem-course-card:hover {
-    border-color: #2271b1;
+    transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(20, 10, 40, 0.12);
 }
 
 .wcem-course-card h3 {
     margin: 0 0 5px 0;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #2271b1;
-    color: #1d2327;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(141,32,99,0.15);
+    color: #111827;
     font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .wcem-course-card .description {
-    color: #646970;
+    color: var(--pmcm-muted);
     font-size: 12px;
     margin-bottom: 15px;
 }
@@ -112,24 +129,24 @@
 .wcem-course-card code {
     background: #f0f0f1;
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 4px;
     font-size: 11px;
 }
 
 /* Edition Groups */
 .wcem-edition-group {
-    margin: 20px 0;
-    padding: 20px;
-    background: #f9f9f9;
-    border-radius: 4px;
-    border: 1px solid #e5e5e5;
+    margin: 16px 0;
+    padding: 18px;
+    background: #fafbff;
+    border-radius: var(--pmcm-radius);
+    border: 1px dashed #d5d9e2;
 }
 
 .wcem-edition-group h4 {
-    margin: 0 0 15px 0;
-    color: #1d2327;
+    margin: 0 0 12px 0;
+    color: #111827;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .wcem-edition-group .form-table {
@@ -137,87 +154,92 @@
 }
 
 .wcem-edition-group .form-table th {
-    padding: 10px 10px 10px 0;
-    width: 130px;
-    font-weight: 500;
+    padding: 8px 10px 8px 0;
+    width: 140px;
+    font-weight: 600;
     vertical-align: middle;
 }
 
 .wcem-edition-group .form-table td {
-    padding: 10px 0;
+    padding: 8px 0;
 }
 
 .wcem-edition-group input[type="number"] {
-    width: 80px;
+    width: 90px;
 }
 
 .wcem-edition-group input[type="date"] {
-    width: 150px;
+    width: 160px;
 }
 
 /* Course Actions */
 .wcem-course-actions {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 1px solid #e5e5e5;
+    border-top: 1px solid #eef0f4;
     text-align: right;
 }
 
 .wcem-course-actions .button {
-    background: #f6f7f7;
+    background: linear-gradient(135deg, var(--pmcm-primary), var(--pmcm-primary-dark));
+    color: #fff;
+    border: none;
+    box-shadow: 0 6px 18px rgba(141,32,99,0.25);
 }
 
 .wcem-course-actions .button:hover {
-    background: #f0f0f1;
-    border-color: #8c8f94;
+    filter: brightness(1.05);
+    color: #fff;
 }
 
 /* Submit Button */
 .wcem-admin-wrap .submit {
-    margin-top: 30px;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
+    margin-top: 26px;
+    padding: 18px 20px;
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    box-shadow: var(--pmcm-shadow);
 }
 
 /* FluentCRM Status Section */
 .wcem-fluentcrm-status {
-    background: #fff;
-    padding: 25px;
-    margin-top: 30px;
-    border: 1px solid #c3c4c7;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    background: var(--pmcm-surface);
+    padding: 22px;
+    margin-top: 26px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    box-shadow: var(--pmcm-shadow);
 }
 
 .wcem-fluentcrm-status h2 {
     margin-top: 0;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #f0f0f1;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef0f4;
 }
 
 .wcem-fluentcrm-status h3 {
-    margin-top: 25px;
+    margin-top: 20px;
     margin-bottom: 10px;
 }
 
 .wcem-success {
-    color: #155724;
+    color: #0f8b4c;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .wcem-success .dashicons {
-    color: #28a745;
+    color: #0f8b4c;
     font-size: 20px;
 }
 
 /* Setup Columns */
 .wcem-setup-columns {
     display: flex;
-    gap: 50px;
-    margin-top: 20px;
+    gap: 36px;
+    margin-top: 18px;
 }
 
 .wcem-setup-column {
@@ -231,34 +253,35 @@
 
 .wcem-setup-column ul {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 18px;
 }
 
 .wcem-setup-column li {
-    margin-bottom: 8px;
-    color: #50575e;
+    margin-bottom: 7px;
+    color: var(--pmcm-muted);
 }
 
 .wcem-setup-column code {
     background: #f0f0f1;
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 4px;
     font-size: 12px;
 }
 
 /* Edition Log Section */
 .wcem-edition-log {
-    background: #fff;
-    padding: 25px;
-    margin-top: 30px;
-    border: 1px solid #c3c4c7;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    background: var(--pmcm-surface);
+    padding: 22px;
+    margin-top: 26px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    box-shadow: var(--pmcm-shadow);
 }
 
 .wcem-edition-log h2 {
     margin-top: 0;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #f0f0f1;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef0f4;
 }
 
 .wcem-edition-log table {
@@ -267,30 +290,31 @@
 
 /* Cron Status Section */
 .wcem-cron-status {
-    background: #fff;
-    padding: 25px;
-    margin-top: 30px;
-    border: 1px solid #c3c4c7;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    background: var(--pmcm-surface);
+    padding: 22px;
+    margin-top: 26px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    box-shadow: var(--pmcm-shadow);
 }
 
 .wcem-cron-status h2 {
     margin-top: 0;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #f0f0f1;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef0f4;
 }
 
 .wcem-cron-status p {
-    margin: 15px 0;
+    margin: 12px 0;
 }
 
 /* Order Edition Display */
 .wcem-order-editions {
     margin-top: 20px;
-    padding: 15px;
-    background: #f6f7f7;
-    border: 1px solid #dcdcde;
-    border-radius: 4px;
+    padding: 16px;
+    background: #f8f8fb;
+    border: 1px solid #e6e8ef;
+    border-radius: var(--pmcm-radius);
 }
 
 .wcem-order-editions h3 {
@@ -331,7 +355,7 @@
 
 .wcem-current-edition {
     font-weight: 600;
-    color: #2271b1;
+    color: var(--pmcm-primary);
 }
 
 /* Responsive Adjustments */
@@ -361,9 +385,9 @@
 
 /* Animations */
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.6; }
-    100% { opacity: 1; }
+    0% { opacity: 1; transform: translateY(0px); }
+    50% { opacity: 0.75; transform: translateY(-1px); }
+    100% { opacity: 1; transform: translateY(0px); }
 }
 
 .wcem-status-ending-soon {
@@ -378,4 +402,49 @@
 /* Button Loading State */
 .button:disabled {
     cursor: wait !important;
+}
+
+/* New: Course Configuration cards & modal overrides (rendered inline) */
+.wcem-course-config-card {
+    border: 1px solid var(--pmcm-border) !important;
+    border-radius: var(--pmcm-radius) !important;
+    box-shadow: var(--pmcm-shadow) !important;
+}
+
+.wcem-course-header {
+    background: linear-gradient(135deg, var(--pmcm-primary), var(--pmcm-primary-dark)) !important;
+    padding: 14px 18px !important;
+}
+
+.wcem-course-header h3 {
+    font-size: 16px !important;
+}
+
+.wcem-course-details {
+    padding: 14px 18px !important;
+}
+
+.wcem-course-details code {
+    border-radius: 4px;
+    background: #f5f5f8;
+    padding: 3px 6px;
+}
+
+#wcem-course-modal .wcem-modal-content {
+    border-radius: var(--pmcm-radius) !important;
+    box-shadow: 0 20px 45px rgba(20, 10, 40, 0.2) !important;
+}
+
+#wcem-course-modal .wcem-modal-header {
+    background: linear-gradient(135deg, var(--pmcm-primary), var(--pmcm-primary-dark));
+    color: #fff;
+    border-radius: var(--pmcm-radius) var(--pmcm-radius) 0 0;
+}
+
+#wcem-course-modal .wcem-modal-body {
+    background: #fafbff;
+}
+
+#wcem-course-modal .wcem-modal-footer {
+    background: #f5f7fb;
 }
