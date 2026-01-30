@@ -679,43 +679,6 @@ class PMCM_Admin {
             </div>
         </div>
 
-        <style>
-            .wcem-admin-wrap { max-width: 1200px; }
-            .wcem-header-info { background: #fff; padding: 15px; border-left: 4px solid #8d2063; margin-bottom: 20px; }
-            .wcem-status-overview, .wcem-shortcode-reference { background: #fff; padding: 20px; margin-bottom: 20px; }
-            .wcem-status { padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: 500; }
-            .wcem-status-active { background: #d4edda; color: #155724; }
-            .wcem-status-expired { background: #f8d7da; color: #721c24; }
-            .wcem-status-ending-soon { background: #fff3cd; color: #856404; }
-            .wcem-status-early-bird { background: #d1ecf1; color: #0c5460; }
-            .wcem-status-needs-dates { background: #f8d7da; color: #721c24; }
-            .wcem-warning { color: #856404; }
-            .wcem-courses-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin: 20px 0; }
-            .wcem-course-card { background: #fff; padding: 20px; border: 1px solid #ccd0d4; border-radius: 4px; }
-            .wcem-course-card h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
-            .wcem-course-card .description { color: #666; font-size: 12px; }
-            .wcem-asit-badge { background: #8d2063; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; }
-            .wcem-edition-group { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; }
-            .wcem-early-bird-group { background: #fff8e1; border: 1px solid #ffc107; }
-            .wcem-edition-group h4 { margin: 0 0 10px 0; }
-            .wcem-edition-group .form-table { margin: 0; }
-            .wcem-edition-group .form-table th { padding: 8px 10px 8px 0; width: 130px; }
-            .wcem-edition-group .form-table td { padding: 8px 0; }
-            .wcem-course-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-            .wcem-fluentcrm-status, .wcem-edition-log, .wcem-cron-status { background: #fff; padding: 20px; margin-top: 20px; border: 1px solid #ccd0d4; }
-            .wcem-success { color: #155724; }
-            .wcem-success .dashicons { color: #28a745; }
-            .wcem-setup-columns { display: flex; gap: 40px; }
-            .wcem-setup-column ul { margin: 0; padding-left: 20px; }
-            .wcem-setup-column li { margin-bottom: 5px; }
-            .wcem-log-entry { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
-            .wcem-log-entry.success { background: #d4edda; }
-            .wcem-log-entry.error { background: #f8d7da; }
-            .wcem-log-entry.info { background: #d1ecf1; }
-            .wcem-log-entry .time { color: #666; font-size: 11px; }
-            .wcem-shortcode-reference { border: 1px solid #ccd0d4; }
-            .wcem-shortcode-reference code { background: #f0f0f1; padding: 2px 6px; border-radius: 3px; }
-        </style>
         <script>
         jQuery(document).ready(function($) {
             // Current edition early bird toggle
@@ -993,18 +956,6 @@ class PMCM_Admin {
                 </script>
             </div>
         </div>
-
-        <style>
-            .wcem-admin-wrap { max-width: 1000px; }
-            .wcem-header-info { background: #fff; padding: 15px; border-left: 4px solid #8d2063; margin-bottom: 20px; }
-            .wcem-status-overview { background: #fff; padding: 20px; margin-bottom: 20px; border: 1px solid #ccd0d4; }
-            .wcem-status { padding: 4px 10px; border-radius: 3px; font-size: 12px; font-weight: 500; }
-            .wcem-status-active { background: #d4edda; color: #155724; }
-            .wcem-status-early-bird { background: #d1ecf1; color: #0c5460; }
-            .wcem-fluentcrm-status { background: #fff; padding: 20px; border: 1px solid #ccd0d4; }
-            .wcem-fluentcrm-status ol, .wcem-fluentcrm-status ul { margin-left: 20px; }
-            .wcem-fluentcrm-status li { margin-bottom: 8px; }
-        </style>
         <?php
     }
 
@@ -1618,39 +1569,6 @@ class PMCM_Admin {
                 </div>
             </div>
         </div>
-
-        <style>
-            .wcem-admin-wrap { max-width: 1200px; }
-            .wcem-header-info { background: #fff; padding: 15px; border-left: 4px solid #8d2063; margin-bottom: 20px; }
-            .wcem-courses-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }
-            .wcem-course-config-card { background: #fff; border: 1px solid #ccd0d4; border-radius: 8px; overflow: hidden; }
-            .wcem-course-header { display: flex; align-items: center; padding: 15px 20px; background: linear-gradient(135deg, #8d2063, #442e8c); color: #fff; }
-            .wcem-course-header h3 { margin: 0; flex: 1; font-size: 16px; }
-            .wcem-course-badges { margin-right: 15px; }
-            .wcem-course-badges .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; margin-left: 5px; }
-            .badge-edition { background: rgba(255,255,255,0.2); color: #fff; }
-            .badge-asit { background: #ffc107; color: #000; }
-            .wcem-course-actions button { background: rgba(255,255,255,0.2); border: none; color: #fff; cursor: pointer; }
-            .wcem-course-actions button:hover { background: rgba(255,255,255,0.3); color: #fff; }
-            .wcem-course-details { padding: 15px 20px; }
-            .wcem-course-details .detail-row { display: flex; margin-bottom: 8px; font-size: 13px; }
-            .wcem-course-details .label { width: 130px; color: #666; }
-            .wcem-course-details code { background: #f0f0f1; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
-            .wcem-course-details .children-list code { margin-right: 5px; margin-bottom: 5px; display: inline-block; }
-
-            /* Modal styles */
-            .wcem-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100000; display: flex; align-items: center; justify-content: center; }
-            .wcem-modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow: auto; }
-            .wcem-modal-header { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #ddd; background: #f6f7f7; }
-            .wcem-modal-header h2 { margin: 0; flex: 1; }
-            .wcem-modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
-            .wcem-modal-body { padding: 20px; }
-            .wcem-modal-body .form-table th { width: 150px; padding: 10px 10px 10px 0; }
-            .wcem-modal-body .form-table td { padding: 10px 0; }
-            .wcem-modal-body .required { color: #dc3232; }
-            .wcem-modal-footer { padding: 15px 20px; border-top: 1px solid #ddd; text-align: right; background: #f6f7f7; }
-            .wcem-modal-footer button { margin-left: 10px; }
-        </style>
 
         <script>
         jQuery(document).ready(function($) {

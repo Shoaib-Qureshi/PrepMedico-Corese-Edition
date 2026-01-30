@@ -1,355 +1,947 @@
-/* WooCommerce Edition Management - Admin Styles (modern refresh) */
+/* PrepMedico Course Management - Admin Styles
+ * Modern, clean design with consistent visual hierarchy
+ */
 
+/* =====================================================
+   CSS CUSTOM PROPERTIES (Design Tokens)
+   ===================================================== */
 :root {
+    /* Primary Colors */
     --pmcm-primary: #8d2063;
+    --pmcm-primary-hover: #a02872;
     --pmcm-primary-dark: #442e8c;
+    --pmcm-primary-light: rgba(141, 32, 99, 0.08);
+    --pmcm-gradient: linear-gradient(135deg, #8d2063 0%, #442e8c 100%);
+
+    /* Neutral Colors */
+    --pmcm-text-primary: #1e293b;
+    --pmcm-text-secondary: #64748b;
+    --pmcm-text-muted: #94a3b8;
+
+    /* Surface Colors */
     --pmcm-surface: #ffffff;
-    --pmcm-muted: #50575e;
-    --pmcm-border: #d9dce3;
-    --pmcm-shadow: 0 10px 30px rgba(20, 10, 40, 0.08);
-    --pmcm-radius: 10px;
+    --pmcm-surface-secondary: #f8fafc;
+    --pmcm-surface-tertiary: #f1f5f9;
+
+    /* Border Colors */
+    --pmcm-border: #e2e8f0;
+    --pmcm-border-light: #f1f5f9;
+    --pmcm-border-focus: rgba(141, 32, 99, 0.4);
+
+    /* Status Colors */
+    --pmcm-success: #059669;
+    --pmcm-success-bg: #ecfdf5;
+    --pmcm-success-border: #a7f3d0;
+
+    --pmcm-warning: #d97706;
+    --pmcm-warning-bg: #fffbeb;
+    --pmcm-warning-border: #fde68a;
+
+    --pmcm-error: #dc2626;
+    --pmcm-error-bg: #fef2f2;
+    --pmcm-error-border: #fecaca;
+
+    --pmcm-info: #0284c7;
+    --pmcm-info-bg: #f0f9ff;
+    --pmcm-info-border: #bae6fd;
+
+    /* Shadows */
+    --pmcm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --pmcm-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --pmcm-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --pmcm-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --pmcm-shadow-card: 0 0 0 1px var(--pmcm-border), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --pmcm-shadow-card-hover: 0 0 0 1px var(--pmcm-border), 0 8px 16px rgba(0, 0, 0, 0.08);
+
+    /* Border Radius */
+    --pmcm-radius-sm: 6px;
+    --pmcm-radius: 8px;
+    --pmcm-radius-lg: 12px;
+    --pmcm-radius-xl: 16px;
+
+    /* Spacing */
+    --pmcm-space-xs: 4px;
+    --pmcm-space-sm: 8px;
+    --pmcm-space-md: 16px;
+    --pmcm-space-lg: 24px;
+    --pmcm-space-xl: 32px;
+
+    /* Transitions */
+    --pmcm-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --pmcm-transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* General Wrapper */
+/* =====================================================
+   BASE STYLES & RESETS
+   ===================================================== */
 .wcem-admin-wrap {
     max-width: 1400px;
-    margin-top: 24px;
+    margin: 20px 20px 20px 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.wcem-admin-wrap * {
+    box-sizing: border-box;
 }
 
 .wcem-admin-wrap h1 {
-    margin-bottom: 18px;
+    font-size: 28px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    color: var(--pmcm-text-primary);
+    margin: 0 0 var(--pmcm-space-sm) 0;
+    letter-spacing: -0.025em;
 }
 
-/* Header Info Box */
+.wcem-admin-wrap h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--pmcm-text-primary);
+    margin: 0 0 var(--pmcm-space-md) 0;
+    padding-bottom: var(--pmcm-space-md);
+    border-bottom: 1px solid var(--pmcm-border);
+}
+
+.wcem-admin-wrap h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--pmcm-text-primary);
+    margin: 0 0 var(--pmcm-space-sm) 0;
+}
+
+.wcem-admin-wrap h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pmcm-text-primary);
+    margin: 0 0 var(--pmcm-space-sm) 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wcem-admin-wrap p {
+    color: var(--pmcm-text-secondary);
+    line-height: 1.6;
+}
+
+.wcem-admin-wrap .description {
+    font-size: 13px;
+    color: var(--pmcm-text-muted);
+    margin-top: var(--pmcm-space-xs);
+}
+
+.wcem-admin-wrap code {
+    background: var(--pmcm-surface-tertiary);
+    padding: 2px 8px;
+    border-radius: var(--pmcm-radius-sm);
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+    color: var(--pmcm-primary);
+    border: 1px solid var(--pmcm-border);
+}
+
+/* =====================================================
+   HEADER INFO BOX
+   ===================================================== */
 .wcem-header-info {
-    background: linear-gradient(120deg, var(--pmcm-primary), var(--pmcm-primary-dark));
+    background: var(--pmcm-gradient);
     color: #fff;
-    padding: 16px 20px;
-    border-radius: var(--pmcm-radius);
-    margin-bottom: 24px;
-    box-shadow: var(--pmcm-shadow);
+    padding: var(--pmcm-space-lg);
+    border-radius: var(--pmcm-radius-lg);
+    margin-bottom: var(--pmcm-space-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.wcem-header-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background: url("data:image/svg+xml,%3Csvg width='300' height='100' viewBox='0 0 300 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='250' cy='50' r='80' fill='rgba(255,255,255,0.05)'/%3E%3Ccircle cx='280' cy='20' r='40' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E") no-repeat center right;
+    pointer-events: none;
 }
 
 .wcem-header-info p {
     margin: 0;
-    font-size: 14px;
-    color: rgba(255,255,255,0.9);
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95);
+    position: relative;
+    z-index: 1;
+    line-height: 1.6;
 }
 
-/* Status Overview Table */
-.wcem-status-overview {
+.wcem-header-info a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* =====================================================
+   SECTION CARDS (Status Overview, FluentCRM, etc.)
+   ===================================================== */
+.wcem-status-overview,
+.wcem-fluentcrm-status,
+.wcem-edition-log,
+.wcem-cron-status,
+.wcem-shortcode-reference {
     background: var(--pmcm-surface);
-    padding: 20px;
-    margin-bottom: 24px;
-    border: 1px solid var(--pmcm-border);
-    border-radius: var(--pmcm-radius);
-    box-shadow: var(--pmcm-shadow);
+    padding: var(--pmcm-space-lg);
+    margin-bottom: var(--pmcm-space-lg);
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-card);
 }
 
-.wcem-status-overview h2 {
-    margin-top: 0;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef0f4;
-}
-
-/* Status Badges */
+/* =====================================================
+   STATUS BADGES
+   ===================================================== */
 .wcem-status {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 11px;
+    border-radius: 100px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.wcem-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .wcem-status-active {
-    background: #e6fff4;
-    color: #0f8b4c;
+    background: var(--pmcm-success-bg);
+    color: var(--pmcm-success);
+    border: 1px solid var(--pmcm-success-border);
 }
 
-.wcem-status-expired {
-    background: #ffe8e8;
-    color: #c62828;
+.wcem-status-active::before {
+    background: var(--pmcm-success);
+    box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2);
+}
+
+.wcem-status-expired,
+.wcem-status-needs-dates {
+    background: var(--pmcm-error-bg);
+    color: var(--pmcm-error);
+    border: 1px solid var(--pmcm-error-border);
+}
+
+.wcem-status-expired::before,
+.wcem-status-needs-dates::before {
+    background: var(--pmcm-error);
 }
 
 .wcem-status-ending-soon {
-    background: #fff4e0;
-    color: #b86b00;
+    background: var(--pmcm-warning-bg);
+    color: var(--pmcm-warning);
+    border: 1px solid var(--pmcm-warning-border);
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.wcem-status-ending-soon::before {
+    background: var(--pmcm-warning);
+}
+
+.wcem-status-early-bird {
+    background: var(--pmcm-info-bg);
+    color: var(--pmcm-info);
+    border: 1px solid var(--pmcm-info-border);
+}
+
+.wcem-status-early-bird::before {
+    background: var(--pmcm-info);
+}
+
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 .wcem-warning {
-    color: #b86b00;
+    color: var(--pmcm-warning);
     font-weight: 500;
 }
 
-/* Course Cards Grid */
-.wcem-courses-settings {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 22px;
-    margin: 22px 0;
+.wcem-success {
+    color: var(--pmcm-success);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
 }
 
-/* Individual Course Card */
-.wcem-course-card {
-    position: relative;
-    background: var(--pmcm-surface);
-    padding: 22px;
+.wcem-success .dashicons {
+    color: var(--pmcm-success);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+/* =====================================================
+   TABLES
+   ===================================================== */
+.wcem-admin-wrap .wp-list-table {
     border: 1px solid var(--pmcm-border);
     border-radius: var(--pmcm-radius);
-    box-shadow: var(--pmcm-shadow);
-    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    margin-top: var(--pmcm-space-md);
+}
+
+.wcem-admin-wrap .wp-list-table th {
+    background: var(--pmcm-surface-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pmcm-text-secondary);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--pmcm-border);
+}
+
+.wcem-admin-wrap .wp-list-table td {
+    padding: 14px 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--pmcm-border-light);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-admin-wrap .wp-list-table tr:last-child td {
+    border-bottom: none;
+}
+
+.wcem-admin-wrap .wp-list-table tbody tr {
+    transition: background-color var(--pmcm-transition);
+}
+
+.wcem-admin-wrap .wp-list-table tbody tr:hover td {
+    background: var(--pmcm-primary-light);
+}
+
+.wcem-admin-wrap .wp-list-table tbody tr:nth-child(even) td {
+    background: var(--pmcm-surface-secondary);
+}
+
+.wcem-admin-wrap .wp-list-table tbody tr:nth-child(even):hover td {
+    background: var(--pmcm-primary-light);
+}
+
+/* =====================================================
+   COURSE CARDS GRID
+   ===================================================== */
+.wcem-courses-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    gap: var(--pmcm-space-lg);
+    margin: var(--pmcm-space-lg) 0;
+}
+
+/* =====================================================
+   INDIVIDUAL COURSE CARD
+   ===================================================== */
+.wcem-course-card {
+    background: var(--pmcm-surface);
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-card);
+    overflow: hidden;
+    transition: box-shadow var(--pmcm-transition-slow), transform var(--pmcm-transition-slow);
 }
 
 .wcem-course-card:hover {
+    box-shadow: var(--pmcm-shadow-card-hover);
     transform: translateY(-2px);
-    box-shadow: 0 16px 36px rgba(20, 10, 40, 0.12);
 }
 
-.wcem-course-card h3 {
-    margin: 0 0 5px 0;
-    padding-bottom: 12px;
-    border-bottom: 2px solid rgba(141,32,99,0.15);
-    color: #111827;
-    font-size: 18px;
+/* Course Card Header */
+.wcem-course-card > h3 {
+    margin: 0;
+    padding: var(--pmcm-space-md) var(--pmcm-space-lg);
+    background: var(--pmcm-gradient);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--pmcm-space-sm);
+    border-bottom: none;
 }
 
-.wcem-course-card .description {
-    color: var(--pmcm-muted);
+.wcem-course-card > p.description {
+    margin: 0;
+    padding: var(--pmcm-space-sm) var(--pmcm-space-lg);
+    background: var(--pmcm-surface-secondary);
+    border-bottom: 1px solid var(--pmcm-border);
     font-size: 12px;
-    margin-bottom: 15px;
 }
 
-.wcem-course-card code {
-    background: #f0f0f1;
-    padding: 2px 6px;
-    border-radius: 4px;
+.wcem-course-card > p.description code {
+    background: var(--pmcm-surface);
     font-size: 11px;
 }
 
-/* Edition Groups */
+/* ASiT Badge in Card Header */
+.wcem-asit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(4px);
+}
+
+/* =====================================================
+   EDITION GROUPS (within Course Cards)
+   ===================================================== */
 .wcem-edition-group {
-    margin: 16px 0;
-    padding: 18px;
-    background: #fafbff;
+    margin: var(--pmcm-space-md);
+    padding: var(--pmcm-space-md);
+    background: var(--pmcm-surface-secondary);
     border-radius: var(--pmcm-radius);
-    border: 1px dashed #d5d9e2;
+    border: 1px solid var(--pmcm-border);
 }
 
 .wcem-edition-group h4 {
-    margin: 0 0 12px 0;
-    color: #111827;
-    font-size: 14px;
+    margin: 0 0 var(--pmcm-space-md) 0;
+    padding-bottom: var(--pmcm-space-sm);
+    border-bottom: 1px solid var(--pmcm-border);
+    font-size: 13px;
     font-weight: 700;
+    color: var(--pmcm-text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
 }
 
+/* Early Bird Group */
+.wcem-early-bird-group {
+    background: var(--pmcm-warning-bg);
+    border-color: var(--pmcm-warning-border);
+}
+
+.wcem-early-bird-group h4 {
+    color: var(--pmcm-warning);
+    border-bottom-color: var(--pmcm-warning-border);
+}
+
+/* Next Edition Group */
+.wcem-next-edition-group {
+    background: var(--pmcm-info-bg) !important;
+    border: 1px solid var(--pmcm-info-border) !important;
+}
+
+.wcem-next-edition-group h4 {
+    color: var(--pmcm-info);
+    border-bottom-color: var(--pmcm-info-border);
+    flex-wrap: wrap;
+}
+
+.wcem-overlap-warning {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--pmcm-radius-sm);
+    background: var(--pmcm-warning-bg);
+    color: var(--pmcm-warning);
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--pmcm-warning-border);
+}
+
+.wcem-overlap-warning .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Next Edition Early Bird Box */
+.wcem-next-edition-fields > div {
+    margin-top: var(--pmcm-space-md);
+    padding: var(--pmcm-space-md);
+    background: var(--pmcm-warning-bg);
+    border-radius: var(--pmcm-radius);
+    border: 1px solid var(--pmcm-warning-border);
+}
+
+/* =====================================================
+   FORM TABLES (within Edition Groups)
+   ===================================================== */
 .wcem-edition-group .form-table {
     margin: 0;
+    width: 100%;
 }
 
 .wcem-edition-group .form-table th {
-    padding: 8px 10px 8px 0;
+    padding: var(--pmcm-space-sm) var(--pmcm-space-md) var(--pmcm-space-sm) 0;
     width: 140px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--pmcm-text-secondary);
     vertical-align: middle;
 }
 
 .wcem-edition-group .form-table td {
-    padding: 8px 0;
+    padding: var(--pmcm-space-sm) 0;
+}
+
+/* Form Inputs */
+.wcem-edition-group input[type="number"],
+.wcem-edition-group input[type="date"],
+.wcem-edition-group input[type="text"] {
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-sm);
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--pmcm-text-primary);
+    background: var(--pmcm-surface);
+    transition: border-color var(--pmcm-transition), box-shadow var(--pmcm-transition);
+}
+
+.wcem-edition-group input[type="number"]:focus,
+.wcem-edition-group input[type="date"]:focus,
+.wcem-edition-group input[type="text"]:focus {
+    outline: none;
+    border-color: var(--pmcm-primary);
+    box-shadow: 0 0 0 3px var(--pmcm-primary-light);
 }
 
 .wcem-edition-group input[type="number"] {
-    width: 90px;
+    width: 100px;
 }
 
 .wcem-edition-group input[type="date"] {
-    width: 160px;
+    width: 180px;
 }
 
-/* Course Actions */
+/* Checkboxes */
+.wcem-edition-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    accent-color: var(--pmcm-primary);
+    cursor: pointer;
+}
+
+.wcem-edition-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--pmcm-text-primary);
+}
+
+/* =====================================================
+   COURSE ACTIONS
+   ===================================================== */
 .wcem-course-actions {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #eef0f4;
-    text-align: right;
+    margin: 0 var(--pmcm-space-md) var(--pmcm-space-md);
+    padding: var(--pmcm-space-md);
+    background: var(--pmcm-surface-tertiary);
+    border-radius: var(--pmcm-radius);
+    border: 1px dashed var(--pmcm-border);
 }
 
 .wcem-course-actions .button {
-    background: linear-gradient(135deg, var(--pmcm-primary), var(--pmcm-primary-dark));
-    color: #fff;
-    border: none;
-    box-shadow: 0 6px 18px rgba(141,32,99,0.25);
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    color: var(--pmcm-text-primary);
+    padding: 8px 16px;
+    border-radius: var(--pmcm-radius-sm);
+    font-weight: 500;
+    transition: all var(--pmcm-transition);
 }
 
 .wcem-course-actions .button:hover {
-    filter: brightness(1.05);
-    color: #fff;
+    background: var(--pmcm-primary-light);
+    border-color: var(--pmcm-primary);
+    color: var(--pmcm-primary);
 }
 
-/* Submit Button */
+.wcem-course-actions .description {
+    margin-top: var(--pmcm-space-sm);
+    font-size: 12px;
+}
+
+/* =====================================================
+   SUBMIT BUTTON AREA
+   ===================================================== */
 .wcem-admin-wrap .submit {
-    margin-top: 26px;
-    padding: 18px 20px;
+    margin-top: var(--pmcm-space-lg);
+    padding: var(--pmcm-space-lg);
+    background: var(--pmcm-surface);
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-card);
+    text-align: center;
+}
+
+.wcem-admin-wrap .submit .button-primary,
+.wcem-admin-wrap .button-primary {
+    background: var(--pmcm-gradient);
+    border: none;
+    color: #fff;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--pmcm-radius);
+    box-shadow: 0 4px 12px rgba(141, 32, 99, 0.3);
+    transition: all var(--pmcm-transition);
+    cursor: pointer;
+}
+
+.wcem-admin-wrap .submit .button-primary:hover,
+.wcem-admin-wrap .button-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 6px 16px rgba(141, 32, 99, 0.4);
+    transform: translateY(-1px);
+}
+
+.wcem-admin-wrap .submit .button-primary:active,
+.wcem-admin-wrap .button-primary:active {
+    transform: translateY(0);
+}
+
+/* Secondary Buttons */
+.wcem-admin-wrap .button {
     background: var(--pmcm-surface);
     border: 1px solid var(--pmcm-border);
-    border-radius: var(--pmcm-radius);
-    box-shadow: var(--pmcm-shadow);
+    color: var(--pmcm-text-primary);
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--pmcm-radius-sm);
+    transition: all var(--pmcm-transition);
+    cursor: pointer;
 }
 
-/* FluentCRM Status Section */
-.wcem-fluentcrm-status {
-    background: var(--pmcm-surface);
-    padding: 22px;
-    margin-top: 26px;
-    border: 1px solid var(--pmcm-border);
-    border-radius: var(--pmcm-radius);
-    box-shadow: var(--pmcm-shadow);
+.wcem-admin-wrap .button:hover {
+    background: var(--pmcm-surface-secondary);
+    border-color: var(--pmcm-text-muted);
 }
 
-.wcem-fluentcrm-status h2 {
-    margin-top: 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eef0f4;
+.wcem-admin-wrap .button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-.wcem-fluentcrm-status h3 {
-    margin-top: 20px;
-    margin-bottom: 10px;
-}
-
-.wcem-success {
-    color: #0f8b4c;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.wcem-success .dashicons {
-    color: #0f8b4c;
-    font-size: 20px;
-}
-
-/* Setup Columns */
+/* =====================================================
+   SETUP COLUMNS (FluentCRM Section)
+   ===================================================== */
 .wcem-setup-columns {
-    display: flex;
-    gap: 36px;
-    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--pmcm-space-lg);
+    margin-top: var(--pmcm-space-lg);
 }
 
 .wcem-setup-column {
-    flex: 1;
+    padding: var(--pmcm-space-md);
+    background: var(--pmcm-surface-secondary);
+    border-radius: var(--pmcm-radius);
+    border: 1px solid var(--pmcm-border);
 }
 
 .wcem-setup-column h4 {
-    margin: 0 0 10px 0;
-    color: #1d2327;
+    margin: 0 0 var(--pmcm-space-md) 0;
+    padding-bottom: var(--pmcm-space-sm);
+    border-bottom: 1px solid var(--pmcm-border);
+    color: var(--pmcm-primary);
 }
 
 .wcem-setup-column ul {
     margin: 0;
-    padding-left: 18px;
+    padding-left: var(--pmcm-space-md);
+    list-style-type: none;
 }
 
 .wcem-setup-column li {
-    margin-bottom: 7px;
-    color: var(--pmcm-muted);
+    margin-bottom: var(--pmcm-space-sm);
+    padding: var(--pmcm-space-xs) 0;
+    color: var(--pmcm-text-secondary);
+    position: relative;
+    padding-left: var(--pmcm-space-md);
 }
 
-.wcem-setup-column code {
-    background: #f0f0f1;
-    padding: 2px 6px;
-    border-radius: 4px;
+.wcem-setup-column li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: var(--pmcm-primary);
+    border-radius: 50%;
+    opacity: 0.5;
+}
+
+.wcem-setup-column li code {
+    display: inline-block;
+    margin-right: var(--pmcm-space-xs);
+}
+
+/* =====================================================
+   ACTIVITY LOG
+   ===================================================== */
+.wcem-edition-log .wcem-log-entry {
+    padding: var(--pmcm-space-md);
+    border-radius: var(--pmcm-radius);
+    margin-bottom: var(--pmcm-space-sm);
+    font-size: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--pmcm-space-md);
+    border-left: 3px solid;
+}
+
+.wcem-log-entry .time {
+    color: var(--pmcm-text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.wcem-log-entry.success {
+    background: var(--pmcm-success-bg);
+    border-left-color: var(--pmcm-success);
+}
+
+.wcem-log-entry.error {
+    background: var(--pmcm-error-bg);
+    border-left-color: var(--pmcm-error);
+}
+
+.wcem-log-entry.info {
+    background: var(--pmcm-info-bg);
+    border-left-color: var(--pmcm-info);
+}
+
+/* =====================================================
+   CRON STATUS
+   ===================================================== */
+.wcem-cron-status p {
+    margin: var(--pmcm-space-md) 0;
+}
+
+.wcem-cron-status strong {
+    color: var(--pmcm-primary);
+}
+
+/* =====================================================
+   SHORTCODE REFERENCE
+   ===================================================== */
+.wcem-shortcode-reference table code {
+    background: var(--pmcm-surface-tertiary);
+    padding: 4px 8px;
+    display: inline-block;
+    word-break: break-all;
+}
+
+.wcem-shortcode-reference em {
+    color: var(--pmcm-text-muted);
     font-size: 12px;
 }
 
-/* Edition Log Section */
-.wcem-edition-log {
-    background: var(--pmcm-surface);
-    padding: 22px;
-    margin-top: 26px;
+/* =====================================================
+   COURSE CONFIGURATION PAGE CARDS
+   ===================================================== */
+.wcem-course-config-card {
     border: 1px solid var(--pmcm-border);
-    border-radius: var(--pmcm-radius);
-    box-shadow: var(--pmcm-shadow);
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-card);
+    overflow: hidden;
+    margin-bottom: var(--pmcm-space-md);
+    transition: box-shadow var(--pmcm-transition);
 }
 
-.wcem-edition-log h2 {
-    margin-top: 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eef0f4;
+.wcem-course-config-card:hover {
+    box-shadow: var(--pmcm-shadow-card-hover);
 }
 
-.wcem-edition-log table {
-    margin-top: 15px;
+.wcem-course-header {
+    background: var(--pmcm-gradient);
+    padding: var(--pmcm-space-md) var(--pmcm-space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-/* Cron Status Section */
-.wcem-cron-status {
+.wcem-course-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
+}
+
+.wcem-course-header .button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.wcem-course-header .button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.wcem-course-details {
+    padding: var(--pmcm-space-lg);
     background: var(--pmcm-surface);
-    padding: 22px;
-    margin-top: 26px;
-    border: 1px solid var(--pmcm-border);
+}
+
+.wcem-course-details p {
+    margin: var(--pmcm-space-sm) 0;
+    font-size: 13px;
+}
+
+.wcem-course-details strong {
+    color: var(--pmcm-text-primary);
+    font-weight: 500;
+}
+
+/* =====================================================
+   MODAL STYLES
+   ===================================================== */
+#wcem-course-modal .wcem-modal-content {
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-lg);
+    overflow: hidden;
+}
+
+#wcem-course-modal .wcem-modal-header {
+    background: var(--pmcm-gradient);
+    color: #fff;
+    padding: var(--pmcm-space-lg);
+}
+
+#wcem-course-modal .wcem-modal-header h3 {
+    margin: 0;
+    color: #fff;
+}
+
+#wcem-course-modal .wcem-modal-body {
+    background: var(--pmcm-surface);
+    padding: var(--pmcm-space-lg);
+}
+
+#wcem-course-modal .wcem-modal-footer {
+    background: var(--pmcm-surface-secondary);
+    padding: var(--pmcm-space-md) var(--pmcm-space-lg);
+    border-top: 1px solid var(--pmcm-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pmcm-space-sm);
+}
+
+/* =====================================================
+   BADGES
+   ===================================================== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.badge-edition {
+    background: rgba(141, 32, 99, 0.1);
+    color: var(--pmcm-primary);
+    border: 1px solid rgba(141, 32, 99, 0.2);
+}
+
+.badge-asit {
+    background: var(--pmcm-warning-bg);
+    color: var(--pmcm-warning);
+    border: 1px solid var(--pmcm-warning-border);
+}
+
+/* =====================================================
+   NOTICES
+   ===================================================== */
+.wcem-admin-wrap .notice {
+    margin: var(--pmcm-space-md) 0;
     border-radius: var(--pmcm-radius);
-    box-shadow: var(--pmcm-shadow);
+    border-left-width: 4px;
 }
 
-.wcem-cron-status h2 {
-    margin-top: 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eef0f4;
-}
-
-.wcem-cron-status p {
-    margin: 12px 0;
-}
-
-/* Order Edition Display */
+/* =====================================================
+   ORDER EDITION DISPLAY (WooCommerce Orders)
+   ===================================================== */
 .wcem-order-editions {
-    margin-top: 20px;
-    padding: 16px;
-    background: #f8f8fb;
-    border: 1px solid #e6e8ef;
+    margin-top: var(--pmcm-space-lg);
+    padding: var(--pmcm-space-md);
+    background: var(--pmcm-surface-secondary);
+    border: 1px solid var(--pmcm-border);
     border-radius: var(--pmcm-radius);
 }
 
 .wcem-order-editions h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 var(--pmcm-space-md) 0;
     font-size: 14px;
-    color: #1d2327;
+    color: var(--pmcm-text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
+}
+
+.wcem-order-editions h3::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: var(--pmcm-gradient);
+    border-radius: 2px;
 }
 
 .wcem-order-editions p {
-    margin: 5px 0;
+    margin: var(--pmcm-space-xs) 0;
     font-size: 13px;
 }
 
 .wcem-order-editions em {
-    color: #646970;
+    color: var(--pmcm-text-muted);
     font-size: 12px;
 }
 
-/* Frontend Styles */
+/* =====================================================
+   FRONTEND EDITION INFO (Product Page)
+   ===================================================== */
 .wcem-edition-info {
-    margin: 15px 0;
-    padding: 15px;
-    background: #f8f9fa;
-    border-left: 4px solid #2271b1;
-    border-radius: 0 4px 4px 0;
+    margin: var(--pmcm-space-md) 0;
+    padding: var(--pmcm-space-md);
+    background: var(--pmcm-primary-light);
+    border-left: 4px solid var(--pmcm-primary);
+    border-radius: 0 var(--pmcm-radius) var(--pmcm-radius) 0;
 }
 
 .wcem-edition-info .wcem-edition-title {
-    margin: 0 0 5px 0;
+    margin: 0 0 var(--pmcm-space-xs) 0;
     font-size: 14px;
+    font-weight: 600;
+    color: var(--pmcm-primary);
 }
 
 .wcem-edition-info .wcem-edition-dates {
     margin: 0;
-    color: #666;
+    color: var(--pmcm-text-secondary);
     font-size: 13px;
 }
 
@@ -358,7 +950,51 @@
     color: var(--pmcm-primary);
 }
 
-/* Responsive Adjustments */
+/* =====================================================
+   FORM INPUTS (General)
+   ===================================================== */
+.wcem-admin-wrap input[type="text"],
+.wcem-admin-wrap input[type="number"],
+.wcem-admin-wrap input[type="email"],
+.wcem-admin-wrap input[type="url"],
+.wcem-admin-wrap input[type="date"],
+.wcem-admin-wrap select,
+.wcem-admin-wrap textarea {
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-sm);
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--pmcm-text-primary);
+    background: var(--pmcm-surface);
+    transition: border-color var(--pmcm-transition), box-shadow var(--pmcm-transition);
+}
+
+.wcem-admin-wrap input[type="text"]:focus,
+.wcem-admin-wrap input[type="number"]:focus,
+.wcem-admin-wrap input[type="email"]:focus,
+.wcem-admin-wrap input[type="url"]:focus,
+.wcem-admin-wrap input[type="date"]:focus,
+.wcem-admin-wrap select:focus,
+.wcem-admin-wrap textarea:focus {
+    outline: none;
+    border-color: var(--pmcm-primary);
+    box-shadow: 0 0 0 3px var(--pmcm-primary-light);
+}
+
+.wcem-admin-wrap input[type="checkbox"],
+.wcem-admin-wrap input[type="radio"] {
+    accent-color: var(--pmcm-primary);
+}
+
+.wcem-admin-wrap input[type="checkbox"]:focus,
+.wcem-admin-wrap input[type="radio"]:focus {
+    outline: 2px solid var(--pmcm-border-focus);
+    outline-offset: 2px;
+}
+
+/* =====================================================
+   RESPONSIVE STYLES
+   ===================================================== */
 @media screen and (max-width: 1200px) {
     .wcem-courses-settings {
         grid-template-columns: 1fr;
@@ -366,85 +1002,375 @@
 }
 
 @media screen and (max-width: 782px) {
-    .wcem-setup-columns {
-        flex-direction: column;
-        gap: 20px;
+    .wcem-admin-wrap {
+        margin-right: 10px;
     }
-    
+
+    .wcem-header-info {
+        padding: var(--pmcm-space-md);
+    }
+
+    .wcem-setup-columns {
+        grid-template-columns: 1fr;
+    }
+
     .wcem-edition-group .form-table th {
         display: block;
         width: 100%;
-        padding-bottom: 5px;
+        padding-bottom: var(--pmcm-space-xs);
     }
-    
+
     .wcem-edition-group .form-table td {
         display: block;
         padding-top: 0;
     }
+
+    .wcem-edition-group input[type="date"] {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .wcem-course-header {
+        flex-direction: column;
+        gap: var(--pmcm-space-sm);
+        align-items: flex-start;
+    }
 }
 
-/* Animations */
-@keyframes pulse {
-    0% { opacity: 1; transform: translateY(0px); }
-    50% { opacity: 0.75; transform: translateY(-1px); }
-    100% { opacity: 1; transform: translateY(0px); }
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+.pmcm-flex {
+    display: flex;
 }
 
-.wcem-status-ending-soon {
-    animation: pulse 2s ease-in-out infinite;
+.pmcm-flex-center {
+    display: flex;
+    align-items: center;
 }
 
-/* Notice Styles */
-.wcem-admin-wrap .notice {
-    margin: 15px 0;
+.pmcm-gap-sm {
+    gap: var(--pmcm-space-sm);
 }
 
-/* Button Loading State */
-.button:disabled {
-    cursor: wait !important;
+.pmcm-gap-md {
+    gap: var(--pmcm-space-md);
 }
 
-/* New: Course Configuration cards & modal overrides (rendered inline) */
-.wcem-course-config-card {
-    border: 1px solid var(--pmcm-border) !important;
-    border-radius: var(--pmcm-radius) !important;
-    box-shadow: var(--pmcm-shadow) !important;
+.pmcm-mt-md {
+    margin-top: var(--pmcm-space-md);
 }
 
-.wcem-course-header {
-    background: linear-gradient(135deg, var(--pmcm-primary), var(--pmcm-primary-dark)) !important;
-    padding: 14px 18px !important;
+.pmcm-mb-md {
+    margin-bottom: var(--pmcm-space-md);
 }
 
-.wcem-course-header h3 {
-    font-size: 16px !important;
+/* =====================================================
+   LOADING STATES
+   ===================================================== */
+.wcem-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
 }
 
-.wcem-course-details {
-    padding: 14px 18px !important;
+.wcem-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--pmcm-border);
+    border-top-color: var(--pmcm-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
-.wcem-course-details code {
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* =====================================================
+   SCROLLBAR STYLING
+   ===================================================== */
+.wcem-admin-wrap ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.wcem-admin-wrap ::-webkit-scrollbar-track {
+    background: var(--pmcm-surface-secondary);
     border-radius: 4px;
-    background: #f5f5f8;
-    padding: 3px 6px;
 }
 
-#wcem-course-modal .wcem-modal-content {
-    border-radius: var(--pmcm-radius) !important;
-    box-shadow: 0 20px 45px rgba(20, 10, 40, 0.2) !important;
+.wcem-admin-wrap ::-webkit-scrollbar-thumb {
+    background: var(--pmcm-border);
+    border-radius: 4px;
 }
 
-#wcem-course-modal .wcem-modal-header {
-    background: linear-gradient(135deg, var(--pmcm-primary), var(--pmcm-primary-dark));
+.wcem-admin-wrap ::-webkit-scrollbar-thumb:hover {
+    background: var(--pmcm-text-muted);
+}
+
+/* =====================================================
+   COURSE CONFIGURATION PAGE - ADDITIONAL STYLES
+   ===================================================== */
+.wcem-courses-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: var(--pmcm-space-lg);
+    margin-top: var(--pmcm-space-lg);
+}
+
+.wcem-course-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
+    margin-right: var(--pmcm-space-md);
+}
+
+.wcem-course-badges .badge {
+    background: rgba(255, 255, 255, 0.2);
     color: #fff;
-    border-radius: var(--pmcm-radius) var(--pmcm-radius) 0 0;
+    backdrop-filter: blur(4px);
 }
 
-#wcem-course-modal .wcem-modal-body {
-    background: #fafbff;
+.wcem-course-badges .badge-asit {
+    background: var(--pmcm-warning-bg);
+    color: var(--pmcm-warning);
+    border: 1px solid var(--pmcm-warning-border);
 }
 
-#wcem-course-modal .wcem-modal-footer {
-    background: #f5f7fb;
+.wcem-course-header .wcem-course-actions {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: none;
+}
+
+.wcem-course-header .wcem-course-actions button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: var(--pmcm-radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-course-header .wcem-course-actions button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.wcem-course-details .detail-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: var(--pmcm-space-sm);
+    font-size: 13px;
+    padding: var(--pmcm-space-xs) 0;
+}
+
+.wcem-course-details .label {
+    width: 140px;
+    flex-shrink: 0;
+    color: var(--pmcm-text-secondary);
+    font-weight: 500;
+}
+
+.wcem-course-details .value {
+    flex: 1;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-course-details .children-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pmcm-space-xs);
+}
+
+.wcem-course-details .children-list code {
+    margin: 0;
+}
+
+/* =====================================================
+   MODAL STYLES (Course Configuration)
+   ===================================================== */
+.wcem-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.wcem-modal-content {
+    background: var(--pmcm-surface);
+    border-radius: var(--pmcm-radius-lg);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wcem-modal-header {
+    display: flex;
+    align-items: center;
+    padding: var(--pmcm-space-lg);
+    background: var(--pmcm-gradient);
+    color: #fff;
+}
+
+.wcem-modal-header h2 {
+    margin: 0;
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    padding: 0;
+}
+
+.wcem-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--pmcm-transition);
+}
+
+.wcem-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.wcem-modal-body {
+    padding: var(--pmcm-space-lg);
+    max-height: calc(90vh - 140px);
+    overflow-y: auto;
+}
+
+.wcem-modal-body .form-table {
+    margin: 0;
+}
+
+.wcem-modal-body .form-table th {
+    width: 150px;
+    padding: var(--pmcm-space-sm) var(--pmcm-space-md) var(--pmcm-space-sm) 0;
+    font-weight: 500;
+    color: var(--pmcm-text-secondary);
+    vertical-align: top;
+}
+
+.wcem-modal-body .form-table td {
+    padding: var(--pmcm-space-sm) 0;
+}
+
+.wcem-modal-body .required {
+    color: var(--pmcm-error);
+}
+
+.wcem-modal-body select {
+    width: 100%;
+    max-width: 300px;
+}
+
+.wcem-modal-body input[type="text"] {
+    width: 100%;
+    max-width: 300px;
+}
+
+.wcem-modal-footer {
+    padding: var(--pmcm-space-md) var(--pmcm-space-lg);
+    border-top: 1px solid var(--pmcm-border);
+    background: var(--pmcm-surface-secondary);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pmcm-space-sm);
+}
+
+.wcem-modal-footer .button {
+    min-width: 100px;
+}
+
+/* =====================================================
+   FLUENTCRM SETUP INFO BOX
+   ===================================================== */
+.wcem-fluentcrm-status ol,
+.wcem-fluentcrm-status ul {
+    margin-left: var(--pmcm-space-lg);
+    color: var(--pmcm-text-secondary);
+}
+
+.wcem-fluentcrm-status li {
+    margin-bottom: var(--pmcm-space-sm);
+    line-height: 1.6;
+}
+
+.wcem-fluentcrm-status a {
+    color: var(--pmcm-primary);
+    text-decoration: none;
+}
+
+.wcem-fluentcrm-status a:hover {
+    text-decoration: underline;
+}
+
+/* =====================================================
+   ADD NEW COURSE BUTTON
+   ===================================================== */
+#wcem-add-course {
+    background: var(--pmcm-gradient);
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--pmcm-radius);
+    box-shadow: 0 4px 12px rgba(141, 32, 99, 0.3);
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pmcm-space-sm);
+}
+
+#wcem-add-course:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 6px 16px rgba(141, 32, 99, 0.4);
+    transform: translateY(-1px);
+}
+
+#wcem-add-course .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
 }
