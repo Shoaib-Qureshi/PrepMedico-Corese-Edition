@@ -265,7 +265,7 @@ class PMCM_Admin {
                 $normal_discount = isset($config['normal_discount']) ? absint($config['normal_discount']) : 0;
                 $show_field = isset($config['show_field']) && $config['show_field'] == '1';
                 $product_filter = isset($config['product_filter']) && $config['product_filter'] == '1';
-                $include_children = isset($config['include_children']) && $config['include_children'] == '1';
+                $include_children = true; // Always include children as per UI change
                 $selected_products = isset($config['selected_products']) ? array_map('absint', (array) $config['selected_products']) : [];
 
                 // Validate mode
@@ -372,10 +372,6 @@ class PMCM_Admin {
         ?>
         <div class="wrap wcem-admin-wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-
-            <div class="wcem-header-info">
-                <p><?php _e('Manage course editions for your WooCommerce products. Edition information is captured at checkout and stored with each order.', 'prepmedico-course-management'); ?></p>
-            </div>
 
             <!-- Status Overview -->
             <div class="wcem-status-overview">
@@ -498,16 +494,10 @@ class PMCM_Admin {
                         }
                         ?>
                         <div class="wcem-edition-group wcem-early-bird-group" data-course="<?php echo esc_attr($category_slug); ?>">
-                            <h4 style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                                <span style="display: flex; align-items: center; gap: 10px;">
-                                    <?php _e('Early Bird Settings', 'prepmedico-course-management'); ?>
-                                    <?php if ($eb_enabled): ?>
-                                        <span class="wcem-status <?php echo esc_attr($eb_status_class); ?>" style="font-size: 11px; padding: 2px 8px;"><?php echo esc_html($eb_status); ?></span>
-                                    <?php endif; ?>
-                                </span>
-                                <button type="button" class="button button-small wcem-toggle-early-bird" data-course="<?php echo esc_attr($category_slug); ?>">
-                                    <?php _e('Hide Settings', 'prepmedico-course-management'); ?>
-                                </button>
+                            <h4><?php _e('Early Bird Settings', 'prepmedico-course-management'); ?>
+                                <?php if ($eb_enabled): ?>
+                                    <span class="wcem-status <?php echo esc_attr($eb_status_class); ?>" style="font-size: 11px; padding: 2px 8px;"><?php echo esc_html($eb_status); ?></span>
+                                <?php endif; ?>
                             </h4>
                             <div class="wcem-early-bird-content" data-course="<?php echo esc_attr($category_slug); ?>" style="display: block;">
                                 <table class="form-table">
@@ -858,10 +848,6 @@ class PMCM_Admin {
         <div class="wrap wcem-admin-wrap">
             <h1><?php _e('ASiT Coupon Management', 'prepmedico-course-management'); ?></h1>
 
-            <div class="wcem-header-info">
-                <p><?php _e('Configure ASiT membership discount settings per course. Each course can have different discount modes: always active, early bird only, or no discount.', 'prepmedico-course-management'); ?></p>
-            </div>
-
             <!-- Current Status Overview -->
             <div class="wcem-status-overview">
                 <h2><?php _e('Current Status', 'prepmedico-course-management'); ?></h2>
@@ -1062,10 +1048,6 @@ class PMCM_Admin {
                                         <th></th>
                                         <td>
                                             <div style="padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 8px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #22c55e;">
-                                                    <input type="checkbox" name="asit_config[<?php echo esc_attr($slug); ?>][include_children]" value="1" <?php checked($include_children, true); ?>>
-                                                    <span style="font-size: 13px;"><?php _e('Include ALL products in child categories', 'prepmedico-course-management'); ?></span>
-                                                </label>
                                                 <p style="margin: 0 0 10px 0;">
                                                     <button type="button" class="button button-small asit-toggle-products" data-course="<?php echo esc_attr($slug); ?>"><?php _e('Show Products', 'prepmedico-course-management'); ?></button>
                                                     <button type="button" class="button button-small asit-select-all-products" data-course="<?php echo esc_attr($slug); ?>" style="margin-left: 5px;"><?php _e('Select All', 'prepmedico-course-management'); ?></button>

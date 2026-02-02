@@ -91,27 +91,15 @@
 
 /* Page Title with Icon */
 .wcem-admin-wrap h1 {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
     color: var(--pmcm-text-primary);
     margin: 0 0 var(--pmcm-space-md) 0;
     letter-spacing: -0.03em;
-    display: flex;
-    align-items: center;
-    gap: var(--pmcm-space-md);
 }
 
-.wcem-admin-wrap h1::before {
-    content: '';
-    width: 48px;
-    height: 48px;
-    background: var(--pmcm-gradient);
-    border-radius: var(--pmcm-radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(141, 32, 99, 0.3);
-}
+/* remove decorative icon box */
+.wcem-admin-wrap h1::before { display: none; }
 
 .wcem-admin-wrap h2 {
     font-size: 18px;
@@ -460,12 +448,9 @@
     font-weight: 600;
 }
 
-/* =====================================================
-   COURSE CARDS GRID
-   ===================================================== */
 .wcem-courses-settings {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: var(--pmcm-space-lg);
     margin: var(--pmcm-space-lg) 0;
 }
@@ -475,30 +460,25 @@
    ===================================================== */
 .wcem-course-card {
     background: var(--pmcm-surface);
-    border-radius: var(--pmcm-radius-xl);
-    box-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.04),
-        0 4px 8px rgba(0, 0, 0, 0.04),
-        0 12px 24px rgba(0, 0, 0, 0.04);
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-sm);
+    border: 1px solid var(--pmcm-border);
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none;
     position: relative;
 }
 
 .wcem-course-card:hover {
-    box-shadow:
-        0 0 0 1px rgba(141, 32, 99, 0.1),
-        0 8px 16px rgba(0, 0, 0, 0.06),
-        0 20px 40px rgba(141, 32, 99, 0.12);
-    transform: translateY(-4px);
+    box-shadow: var(--pmcm-shadow-sm);
+    transform: none;
 }
 
 /* Course Card Header */
 .wcem-course-card > h3 {
     margin: 0;
-    padding: var(--pmcm-space-lg) var(--pmcm-space-lg);
-    background: var(--pmcm-gradient);
-    color: #fff;
+    padding: 14px 18px;
+    background: var(--pmcm-surface);
+    color: var(--pmcm-text-primary);
     font-size: 18px;
     font-weight: 700;
     display: flex;
@@ -563,17 +543,16 @@
    ===================================================== */
 .wcem-edition-group {
     margin: 10px 0 18px 0;
-    padding: 16px 18px;
+    padding: 20px 20px;
     background: var(--pmcm-surface-secondary);
     border-radius: var(--pmcm-radius-lg);
     border: 1px solid var(--pmcm-border);
     position: relative;
-    transition: all var(--pmcm-transition);
+    transition: none;
 }
 
 .wcem-edition-group:hover {
-    border-color: var(--pmcm-primary);
-    box-shadow: 0 0 0 3px var(--pmcm-primary-light);
+    border-color: var(--pmcm-border);
 }
 
 .wcem-edition-group h4 {
@@ -627,8 +606,7 @@
 }
 
 .wcem-early-bird-group:hover {
-    border-color: var(--pmcm-warning);
-    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+    border-color: var(--pmcm-warning-border);
 }
 
 .wcem-early-bird-group h4 {
@@ -672,8 +650,7 @@
 }
 
 .wcem-next-edition-group:hover {
-    border-color: var(--pmcm-info) !important;
-    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1) !important;
+    border-color: var(--pmcm-info-border);
 }
 
 .wcem-next-edition-group h4 {
@@ -824,6 +801,7 @@
     color: var(--pmcm-text-primary);
     font-weight: 500;
     user-select: none;
+    margin-bottom: var(--pmcm-space-sm);
 }
 
 /* =====================================================
@@ -880,9 +858,9 @@
     background: var(--pmcm-gradient);
     border: none;
     color: #fff;
-    padding: 14px 36px;
-    font-size: 15px;
-    font-weight: 700;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
     border-radius: var(--pmcm-radius-lg);
     box-shadow:
         0 4px 12px rgba(141, 32, 99, 0.3),
