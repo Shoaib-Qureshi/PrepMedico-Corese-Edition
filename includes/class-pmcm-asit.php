@@ -27,62 +27,145 @@ class PMCM_ASiT {
 
     /**
      * Check if any ASiT eligible course has Early Bird active
+     * @deprecated Use PMCM_Core::is_course_early_bird_active() for per-course check
      */
     public static function is_early_bird_active() {
         foreach (PMCM_Core::get_asit_eligible_courses() as $slug => $course) {
-            $prefix = $course['settings_prefix'];
-            $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
-            $eb_start = get_option($prefix . 'early_bird_start', '');
-            $eb_end = get_option($prefix . 'early_bird_end', '');
-            $today = current_time('Y-m-d');
-
-            if ($eb_enabled === 'yes' && !empty($eb_end)) {
-                $start_ok = empty($eb_start) || strtotime($today) >= strtotime($eb_start);
-                $end_ok = strtotime($today) <= strtotime($eb_end);
-                if ($start_ok && $end_ok) {
-                    return true;
-                }
+            if (PMCM_Core::is_course_early_bird_active($slug)) {
+                return true;
             }
         }
         return false;
     }
 
     /**
-     * Get current ASiT discount percentage
+     * Get current ASiT discount percentage for display (max discount in cart)
+     * This is used for displaying the discount percentage to users
      */
     public static function get_current_discount() {
-        if (self::is_early_bird_active()) {
-            return get_option('pmcm_asit_discount_early_bird', 5);
+        if (!WC()->cart) {
+            // Fallback to checking all eligible courses
+            $max_discount = 0;
+            foreach (PMCM_Core::get_asit_eligible_courses() as $slug => $course) {
+                $config = PMCM_Core::get_asit_discount_for_course($slug);
+                if ($config['discount'] > $max_discount) {
+                    $max_discount = $config['discount'];
+                }
+            }
+            return $max_discount > 0 ? $max_discount : 5; // Default 5%
         }
-        return get_option('pmcm_asit_discount_normal', 10);
+
+        // Get the max discount from cart products
+        $max_discount = 0;
+        foreach (WC()->cart->get_cart() as $cart_item) {
+            $product_id = $cart_item['product_id'];
+            $config = PMCM_Core::get_asit_config_for_product($product_id);
+            if ($config['discount'] > $max_discount) {
+                $max_discount = $config['discount'];
+            }
+        }
+
+        return $max_discount > 0 ? $max_discount : 5; // Default 5%
     }
 
     /**
-     * Check if cart has ASiT eligible products
+     * Check if cart has products that should show the ASiT field
+     * This is different from eligibility - some products show field but may not have discount
      */
     public static function cart_has_eligible_products() {
         if (!WC()->cart) {
             return false;
         }
 
-        $asit_categories = array_keys(PMCM_Core::get_asit_eligible_courses());
-        $child_map = PMCM_Core::get_child_to_parent_map();
-
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product_id = $cart_item['product_id'];
-            $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+            $config = PMCM_Core::get_asit_config_for_product($product_id);
 
-            foreach ($categories as $cat_slug) {
-                if (in_array($cat_slug, $asit_categories)) {
-                    return true;
-                }
-                if (isset($child_map[$cat_slug]) && in_array($child_map[$cat_slug], $asit_categories)) {
-                    return true;
-                }
+            // Show field if configured to show
+            if ($config['show_field']) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Check if cart has any products with actual ASiT discount available
+     */
+    public static function cart_has_discount_eligible_products() {
+        if (!WC()->cart) {
+            return false;
+        }
+
+        foreach (WC()->cart->get_cart() as $cart_item) {
+            $product_id = $cart_item['product_id'];
+            $config = PMCM_Core::get_asit_config_for_product($product_id);
+
+            // Has discount if eligible and discount > 0
+            if ($config['is_eligible'] && $config['discount'] > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get ASiT discount info message for checkout
+     */
+    public static function get_discount_info_message() {
+        if (!WC()->cart) {
+            return '';
+        }
+
+        $messages = [];
+        $checked_courses = [];
+
+        foreach (WC()->cart->get_cart() as $cart_item) {
+            $product_id = $cart_item['product_id'];
+            $config = PMCM_Core::get_asit_config_for_product($product_id);
+
+            if (!$config['show_field']) {
+                continue;
+            }
+
+            // Get course name for this product
+            $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+            $child_map = PMCM_Core::get_child_to_parent_map();
+            $courses = PMCM_Core::get_courses();
+            $course_name = '';
+
+            foreach ($categories as $cat_slug) {
+                if (isset($courses[$cat_slug])) {
+                    $course_name = $courses[$cat_slug]['name'];
+                    $course_slug = $cat_slug;
+                    break;
+                }
+                if (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
+                    $course_name = $courses[$child_map[$cat_slug]]['name'];
+                    $course_slug = $child_map[$cat_slug];
+                    break;
+                }
+            }
+
+            if (empty($course_name) || in_array($course_slug, $checked_courses)) {
+                continue;
+            }
+            $checked_courses[] = $course_slug;
+
+            if ($config['mode'] === 'always' && $config['discount'] > 0) {
+                $messages[] = sprintf('%s: %d%% discount', $course_name, $config['discount']);
+            } elseif ($config['mode'] === 'early_bird_only') {
+                if ($config['is_eligible'] && $config['discount'] > 0) {
+                    $messages[] = sprintf('%s: %d%% Early Bird discount', $course_name, $config['discount']);
+                } else {
+                    $messages[] = sprintf('%s: No discount (Early Bird period ended)', $course_name);
+                }
+            }
+        }
+
+        return implode(' | ', $messages);
     }
 
     /**
@@ -92,6 +175,10 @@ class PMCM_ASiT {
         if (!self::cart_has_eligible_products()) {
             return;
         }
+
+        // Get detailed discount info for cart products
+        $discount_info = self::get_discount_info_message();
+        $has_any_discount = self::cart_has_discount_eligible_products();
 
         echo '<div class="asit-membership-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">';
         echo '<div class="asit-field-wrapper">';
@@ -114,10 +201,22 @@ class PMCM_ASiT {
               </p>';
         echo '</div>';
 
-        $current_discount = self::get_current_discount();
-        echo '<p class="form-row form-row-wide asit-help-text" style="margin-top: 5px; margin-bottom: 15px; clear: both;">
-                <small style="color: #666;">' . sprintf(__('Note: Enter your ASiT membership number to receive %d%% discount for ASiT members. If the number does not match our records, the order will be cancelled without any refund.', 'prepmedico-course-management'), $current_discount) . '</small>
-              </p>';
+        // Show discount info based on cart products
+        if (!empty($discount_info)) {
+            echo '<p class="form-row form-row-wide asit-discount-info" style="margin-top: 5px; margin-bottom: 10px; clear: both; padding: 10px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #8d2063;">';
+            echo '<small style="color: #333; font-weight: 500;">' . esc_html($discount_info) . '</small>';
+            echo '</p>';
+        }
+
+        if ($has_any_discount) {
+            echo '<p class="form-row form-row-wide asit-help-text" style="margin-top: 5px; margin-bottom: 15px; clear: both;">
+                    <small style="color: #666;">' . __('Note: Enter your ASiT membership number to receive the discount. If the number does not match our records, the order will be cancelled without any refund.', 'prepmedico-course-management') . '</small>
+                  </p>';
+        } else {
+            echo '<p class="form-row form-row-wide asit-help-text" style="margin-top: 5px; margin-bottom: 15px; clear: both;">
+                    <small style="color: #999;">' . __('Note: ASiT discount is not available for the products in your cart at this time. You can still enter your membership number for our records.', 'prepmedico-course-management') . '</small>
+                  </p>';
+        }
         echo '</div>';
     }
 
@@ -168,7 +267,8 @@ class PMCM_ASiT {
     }
 
     /**
-     * Dynamically adjust ASiT coupon discount based on Early Bird status
+     * Dynamically adjust ASiT coupon discount based on per-product settings
+     * Each product gets its own discount percentage based on course configuration
      */
     public static function dynamic_coupon_discount($discount, $discounting_amount, $cart_item, $single, $coupon) {
         $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
@@ -177,7 +277,27 @@ class PMCM_ASiT {
             return $discount;
         }
 
-        $discount_percent = self::get_current_discount();
+        // Get the product ID from cart item
+        $product_id = 0;
+        if (is_array($cart_item) && isset($cart_item['product_id'])) {
+            $product_id = $cart_item['product_id'];
+        } elseif (is_object($cart_item) && method_exists($cart_item, 'get_product_id')) {
+            $product_id = $cart_item->get_product_id();
+        }
+
+        if (!$product_id) {
+            return $discount;
+        }
+
+        // Get per-product ASiT discount configuration
+        $config = PMCM_Core::get_asit_config_for_product($product_id);
+
+        // If product is not eligible for ASiT discount, return 0
+        if (!$config['is_eligible'] || $config['discount'] <= 0) {
+            return 0;
+        }
+
+        $discount_percent = $config['discount'];
 
         if ($coupon->get_discount_type() === 'percent') {
             return ($discounting_amount * $discount_percent) / 100;

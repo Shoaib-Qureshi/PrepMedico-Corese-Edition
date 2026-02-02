@@ -66,6 +66,9 @@ function pmcm_init()
     // Run migration if not done yet (for existing sites)
     if (!PMCM_Core::is_migrated()) {
         PMCM_Core::migrate_to_database();
+    } else {
+        // Ensure ASiT fields are migrated for existing installations
+        PMCM_Core::migrate_asit_fields();
     }
 
     // Initialize all components

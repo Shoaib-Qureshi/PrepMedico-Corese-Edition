@@ -20,6 +20,16 @@ class PMCM_Core {
     private static $child_map_cache = null;
 
     /**
+     * ASiT discount modes
+     * - 'none': No ASiT discount, don't show field
+     * - 'early_bird_only': ASiT discount only during early bird period
+     * - 'always': ASiT discount always applies
+     */
+    const ASIT_MODE_NONE = 'none';
+    const ASIT_MODE_EARLY_BIRD_ONLY = 'early_bird_only';
+    const ASIT_MODE_ALWAYS = 'always';
+
+    /**
      * Default courses - used as fallback and for initial migration
      */
     private static $default_courses = [
@@ -31,6 +41,10 @@ class PMCM_Core {
             'fluentcrm_field' => 'frcophth_p1_edition',
             'edition_management' => true,
             'asit_eligible' => false,
+            'asit_discount_mode' => 'none',
+            'asit_early_bird_discount' => 0,
+            'asit_normal_discount' => 0,
+            'asit_show_field' => false,
             'children' => ['frcophth-individual-weekend-viva-part-1']
         ],
         'frcophth-part-2' => [
@@ -41,6 +55,10 @@ class PMCM_Core {
             'fluentcrm_field' => 'frcophth_p2_edition',
             'edition_management' => true,
             'asit_eligible' => false,
+            'asit_discount_mode' => 'none',
+            'asit_early_bird_discount' => 0,
+            'asit_normal_discount' => 0,
+            'asit_show_field' => false,
             'children' => ['frcophth-individual-weekend-viva-part-2']
         ],
         'frcs' => [
@@ -51,6 +69,10 @@ class PMCM_Core {
             'fluentcrm_field' => 'frcs_edition',
             'edition_management' => true,
             'asit_eligible' => true,
+            'asit_discount_mode' => 'early_bird_only',
+            'asit_early_bird_discount' => 5,
+            'asit_normal_discount' => 0,
+            'asit_show_field' => true,
             'children' => ['frcs-rapid-review-lecture-series', 'mock-viva', 'sba-q-bank', 'speciality-based-weekend-viva-sessions']
         ],
         'frcs-vasc' => [
@@ -61,6 +83,10 @@ class PMCM_Core {
             'fluentcrm_field' => 'frcs_vasc_edition',
             'edition_management' => true,
             'asit_eligible' => true,
+            'asit_discount_mode' => 'early_bird_only',
+            'asit_early_bird_discount' => 5,
+            'asit_normal_discount' => 0,
+            'asit_show_field' => true,
             'children' => ['frcs-vasc-individual-weekend-viva-sessions', 'frcs-vasc-library-subscription']
         ],
         'library-subscription' => [
@@ -70,7 +96,11 @@ class PMCM_Core {
             'fluentcrm_tag' => 'Library-Subscription',
             'fluentcrm_field' => 'library_sub_edition',
             'edition_management' => false,
-            'asit_eligible' => false,
+            'asit_eligible' => true,
+            'asit_discount_mode' => 'always',
+            'asit_early_bird_discount' => 10,
+            'asit_normal_discount' => 10,
+            'asit_show_field' => true,
             'children' => []
         ],
         'scfhs' => [
@@ -81,6 +111,10 @@ class PMCM_Core {
             'fluentcrm_field' => 'scfhs_edition',
             'edition_management' => true,
             'asit_eligible' => false,
+            'asit_discount_mode' => 'none',
+            'asit_early_bird_discount' => 0,
+            'asit_normal_discount' => 0,
+            'asit_show_field' => false,
             'children' => ['scfhs-participation-for-1-topic']
         ]
     ];
@@ -135,6 +169,105 @@ class PMCM_Core {
         return array_filter(self::get_courses(), function($course) {
             return isset($course['asit_eligible']) && $course['asit_eligible'] === true;
         });
+    }
+
+    /**
+     * Get courses that should show ASiT field on checkout
+     */
+    public static function get_asit_visible_courses() {
+        return array_filter(self::get_courses(), function($course) {
+            return isset($course['asit_show_field']) && $course['asit_show_field'] === true;
+        });
+    }
+
+    /**
+     * Get ASiT discount settings for a specific course
+     * Returns discount percentage based on early bird status
+     */
+    public static function get_asit_discount_for_course($course_slug) {
+        $courses = self::get_courses();
+        $course = isset($courses[$course_slug]) ? $courses[$course_slug] : null;
+
+        if (!$course) {
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false];
+        }
+
+        $mode = isset($course['asit_discount_mode']) ? $course['asit_discount_mode'] : 'none';
+        $eb_discount = isset($course['asit_early_bird_discount']) ? intval($course['asit_early_bird_discount']) : 0;
+        $normal_discount = isset($course['asit_normal_discount']) ? intval($course['asit_normal_discount']) : 0;
+        $show_field = isset($course['asit_show_field']) ? $course['asit_show_field'] : false;
+
+        if ($mode === 'none') {
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => $mode];
+        }
+
+        if ($mode === 'always') {
+            // Always give discount - use normal_discount
+            return ['discount' => $normal_discount, 'is_eligible' => true, 'show_field' => $show_field, 'mode' => $mode];
+        }
+
+        if ($mode === 'early_bird_only') {
+            // Only give discount during early bird
+            $is_early_bird = self::is_course_early_bird_active($course_slug);
+            if ($is_early_bird) {
+                return ['discount' => $eb_discount, 'is_eligible' => true, 'show_field' => $show_field, 'mode' => $mode];
+            }
+            // Not early bird - no discount, but still show field (user can enter number but won't get discount)
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => $show_field, 'mode' => $mode];
+        }
+
+        return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => $mode];
+    }
+
+    /**
+     * Check if a specific course has early bird active
+     */
+    public static function is_course_early_bird_active($course_slug) {
+        $courses = self::get_courses();
+        if (!isset($courses[$course_slug])) {
+            return false;
+        }
+
+        $course = $courses[$course_slug];
+        $prefix = $course['settings_prefix'];
+        $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
+        $eb_start = get_option($prefix . 'early_bird_start', '');
+        $eb_end = get_option($prefix . 'early_bird_end', '');
+        $today = current_time('Y-m-d');
+
+        if ($eb_enabled === 'yes' && !empty($eb_end)) {
+            $start_ok = empty($eb_start) || strtotime($today) >= strtotime($eb_start);
+            $end_ok = strtotime($today) <= strtotime($eb_end);
+            if ($start_ok && $end_ok) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the ASiT course config for a product
+     * Returns the parent course's ASiT settings
+     */
+    public static function get_asit_config_for_product($product_id) {
+        $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        $child_map = self::get_child_to_parent_map();
+        $courses = self::get_courses();
+
+        foreach ($categories as $cat_slug) {
+            // Check if it's a parent course
+            if (isset($courses[$cat_slug])) {
+                return self::get_asit_discount_for_course($cat_slug);
+            }
+            // Check if it's a child category
+            if (isset($child_map[$cat_slug])) {
+                $parent_slug = $child_map[$cat_slug];
+                return self::get_asit_discount_for_course($parent_slug);
+            }
+        }
+
+        return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
     }
 
     /**
@@ -364,9 +497,23 @@ class PMCM_Core {
         if (!isset($course_data['edition_management'])) {
             $course_data['edition_management'] = true;
         }
-        if (!isset($course_data['asit_eligible'])) {
-            $course_data['asit_eligible'] = false;
+
+        // ASiT configuration defaults
+        if (!isset($course_data['asit_discount_mode'])) {
+            $course_data['asit_discount_mode'] = 'none';
         }
+        if (!isset($course_data['asit_early_bird_discount'])) {
+            $course_data['asit_early_bird_discount'] = 0;
+        }
+        if (!isset($course_data['asit_normal_discount'])) {
+            $course_data['asit_normal_discount'] = 0;
+        }
+        if (!isset($course_data['asit_show_field'])) {
+            $course_data['asit_show_field'] = false;
+        }
+
+        // Set asit_eligible based on mode for backward compatibility
+        $course_data['asit_eligible'] = ($course_data['asit_discount_mode'] !== 'none');
 
         $courses[$course_slug] = $course_data;
         update_option('pmcm_course_mappings', $courses);
@@ -404,7 +551,8 @@ class PMCM_Core {
         $existing = get_option('pmcm_course_mappings', null);
 
         if ($existing !== null && !empty($existing)) {
-            // Already migrated
+            // Already migrated - but check if ASiT fields need to be added
+            self::migrate_asit_fields();
             return false;
         }
 
@@ -414,6 +562,54 @@ class PMCM_Core {
         self::log_activity('Migrated course configuration to database', 'success');
 
         return true;
+    }
+
+    /**
+     * Migrate ASiT fields to existing courses (for existing installations)
+     */
+    public static function migrate_asit_fields() {
+        $courses = get_option('pmcm_course_mappings', []);
+        $updated = false;
+
+        foreach ($courses as $slug => &$course) {
+            // Check if new ASiT fields are missing
+            if (!isset($course['asit_discount_mode'])) {
+                // Determine mode based on old asit_eligible flag
+                if (isset($course['asit_eligible']) && $course['asit_eligible']) {
+                    // Use default configuration based on course type
+                    if (in_array($slug, ['frcs', 'frcs-vasc'])) {
+                        $course['asit_discount_mode'] = 'early_bird_only';
+                        $course['asit_early_bird_discount'] = 5;
+                        $course['asit_normal_discount'] = 0;
+                        $course['asit_show_field'] = true;
+                    } elseif ($slug === 'library-subscription') {
+                        $course['asit_discount_mode'] = 'always';
+                        $course['asit_early_bird_discount'] = 10;
+                        $course['asit_normal_discount'] = 10;
+                        $course['asit_show_field'] = true;
+                    } else {
+                        $course['asit_discount_mode'] = 'always';
+                        $course['asit_early_bird_discount'] = 5;
+                        $course['asit_normal_discount'] = 10;
+                        $course['asit_show_field'] = true;
+                    }
+                } else {
+                    $course['asit_discount_mode'] = 'none';
+                    $course['asit_early_bird_discount'] = 0;
+                    $course['asit_normal_discount'] = 0;
+                    $course['asit_show_field'] = false;
+                }
+                $updated = true;
+            }
+        }
+
+        if ($updated) {
+            update_option('pmcm_course_mappings', $courses);
+            self::clear_cache();
+            self::log_activity('Migrated ASiT fields to course configuration', 'success');
+        }
+
+        return $updated;
     }
 
     /**
