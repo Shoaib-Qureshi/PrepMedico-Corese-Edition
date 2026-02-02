@@ -6,6 +6,90 @@
 
     $(document).ready(function() {
 
+        // =====================================================
+        // COURSE SELECTION HANDLER (Two-Column Layout)
+        // =====================================================
+
+        // Course selection - click on course item in sidebar
+        $('.wcem-course-item').on('click', function(e) {
+            e.preventDefault();
+            var courseSlug = $(this).data('course');
+            selectCourse(courseSlug);
+        });
+
+        // Function to select and display a course's settings
+        function selectCourse(courseSlug) {
+            // Update active class on course items
+            $('.wcem-course-item').removeClass('active');
+            $('.wcem-course-item[data-course="' + courseSlug + '"]').addClass('active');
+
+            // Show/hide course settings panels
+            $('.wcem-course-settings-panel').hide();
+            $('.wcem-course-settings-panel[data-course="' + courseSlug + '"]').show();
+
+            // Update URL hash for bookmarking
+            if (history.pushState) {
+                history.pushState(null, null, '#' + courseSlug);
+            }
+        }
+
+        // Initialize from URL hash or select first course
+        function initializeCourseSelection() {
+            var hash = window.location.hash.substring(1);
+            if (hash && $('.wcem-course-item[data-course="' + hash + '"]').length) {
+                selectCourse(hash);
+            }
+        }
+
+        // Initialize on page load
+        initializeCourseSelection();
+
+        // Handle back/forward browser navigation
+        $(window).on('hashchange', function() {
+            initializeCourseSelection();
+        });
+
+        // =====================================================
+        // TOGGLE HANDLERS FOR NEW LAYOUT
+        // =====================================================
+
+        // Early Bird toggle
+        $('.wcem-early-bird-toggle').on('change', function() {
+            var course = $(this).data('course');
+            var $fields = $('.wcem-early-bird-fields[data-course="' + course + '"]');
+            if ($(this).is(':checked')) {
+                $fields.slideDown(200);
+            } else {
+                $fields.slideUp(200);
+            }
+        });
+
+        // Next Edition toggle
+        $('.wcem-next-edition-toggle').on('change', function() {
+            var course = $(this).data('course');
+            var $fields = $('.wcem-next-edition-fields[data-course="' + course + '"]');
+            if ($(this).is(':checked')) {
+                $fields.slideDown(200);
+            } else {
+                $fields.slideUp(200);
+            }
+        });
+
+        // Next Edition Early Bird toggle
+        $('.wcem-next-early-bird-toggle').on('change', function() {
+            var course = $(this).data('course');
+            var $fields = $('.wcem-next-early-bird-fields[data-course="' + course + '"]');
+            if ($(this).is(':checked')) {
+                $fields.slideDown(200);
+            } else {
+                $fields.slideUp(200);
+            }
+        });
+
+        // =====================================================
+        // EXISTING HANDLERS
+        // =====================================================
+
         // Manual Edition Increment
         $('.wcem-manual-increment').on('click', function(e) {
             e.preventDefault();
@@ -154,26 +238,8 @@
             }
         });
 
-        // Highlight course cards with warnings (no dates set)
-        $('.wcem-course-card').each(function() {
-            var $card = $(this);
-            var $startDate = $card.find('input[name*="edition_start"]');
-            var $endDate = $card.find('input[name*="edition_end"]');
-
-            if (!$startDate.val() || !$endDate.val()) {
-                $card.css('border-color', '#dc3545');
-                $card.find('h3').append(' <span style="color: #dc3545; font-size: 12px;">⚠️ Set dates!</span>');
-            } else {
-                var endDate = new Date($endDate.val());
-                var today = new Date();
-                var daysUntilEnd = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-
-                if (daysUntilEnd <= 7 && daysUntilEnd > 0) {
-                    $card.css('border-color', '#ffc107');
-                    $card.find('h3').append(' <span style="color: #856404; font-size: 12px;">⚠️ Ending soon!</span>');
-                }
-            }
-        });
+        // Visual feedback for course items in sidebar based on status
+        // Status is already shown via badges in the new layout
 
     });
 
