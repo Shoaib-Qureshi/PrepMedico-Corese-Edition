@@ -255,12 +255,13 @@ class PMCM_Core {
         $child_map = self::get_child_to_parent_map();
         $courses = self::get_courses();
         $library_products = self::get_library_asit_products();
+        $library_include_children = (bool) get_option('pmcm_asit_library_include_children', false);
 
         foreach ($categories as $cat_slug) {
             // Check if it's a parent course
             if (isset($courses[$cat_slug])) {
                 if ($cat_slug === 'library-subscription') {
-                    if (in_array($product_id, $library_products, true)) {
+                    if (in_array($product_id, $library_products, true) || ($library_include_children && !empty($categories))) {
                         return self::get_asit_discount_for_course($cat_slug);
                     }
                     return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
@@ -271,7 +272,7 @@ class PMCM_Core {
             if (isset($child_map[$cat_slug])) {
                 $parent_slug = $child_map[$cat_slug];
                 if ($parent_slug === 'library-subscription') {
-                    if (in_array($product_id, $library_products, true)) {
+                    if ($library_include_children || in_array($product_id, $library_products, true)) {
                         return self::get_asit_discount_for_course($parent_slug);
                     }
                     return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
@@ -331,6 +332,13 @@ class PMCM_Core {
             return [];
         }
         return array_values(array_unique(array_map('absint', $ids)));
+    }
+
+    /**
+     * Whether library child categories should inherit ASiT eligibility
+     */
+    public static function library_includes_children() {
+        return (bool) get_option('pmcm_asit_library_include_children', false);
     }
 
     /**
