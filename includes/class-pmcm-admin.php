@@ -440,8 +440,9 @@ class PMCM_Admin
 
         $courses = PMCM_Core::get_edition_managed_courses();
         $course_keys = array_keys($courses);
-        $first_course = !empty($course_keys) ? $course_keys[0] : '';
-        $first_status = !empty($first_course) ? self::get_course_status_info($courses[$first_course]) : null;
+        $first_course_slug = !empty($course_keys) ? $course_keys[0] : '';
+        $first_course = !empty($first_course_slug) && isset($courses[$first_course_slug]) ? $courses[$first_course_slug] : null;
+        $first_status = $first_course ? self::get_course_status_info($first_course) : null;
 ?>
         <div class="wrap wcem-admin-wrap wcem-modern-layout">
             <!-- Header -->
