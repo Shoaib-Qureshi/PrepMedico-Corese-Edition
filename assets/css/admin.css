@@ -562,8 +562,8 @@
    EDITION GROUPS (within Course Cards)
    ===================================================== */
 .wcem-edition-group {
-    margin: var(--pmcm-space-md);
-    padding: var(--pmcm-space-lg);
+    margin: 10px 0 18px 0;
+    padding: 16px 18px;
     background: var(--pmcm-surface-secondary);
     border-radius: var(--pmcm-radius-lg);
     border: 1px solid var(--pmcm-border);
@@ -577,8 +577,8 @@
 }
 
 .wcem-edition-group h4 {
-    margin: 0 0 var(--pmcm-space-md) 0;
-    padding-bottom: var(--pmcm-space-md);
+    margin: 0 0 10px 0;
+    padding-bottom: 8px;
     border-bottom: 2px solid var(--pmcm-border);
     font-size: 12px;
     font-weight: 700;
@@ -586,8 +586,29 @@
     display: flex;
     align-items: center;
     gap: var(--pmcm-space-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    text-transform: none;
+    letter-spacing: 0.02em;
+}
+
+.wcem-toggle-early-bird,
+.wcem-toggle-next-early-bird {
+    margin-left: auto;
+    background: #f2edff;
+    color: #4a1ba4;
+    border: 1px solid #e2d7ff;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.wcem-toggle-early-bird:hover,
+.wcem-toggle-next-early-bird:hover {
+    background: #e7deff;
+    color: #351187;
+    border-color: #d1c4ff;
 }
 
 .wcem-edition-group h4::before {
@@ -702,26 +723,26 @@
 }
 
 .wcem-edition-group .form-table th {
-    padding: var(--pmcm-space-sm) var(--pmcm-space-md) var(--pmcm-space-sm) 0;
-    width: 140px;
+    padding: 6px 10px 6px 0;
+    width: 170px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--pmcm-text-secondary);
     vertical-align: middle;
 }
 
 .wcem-edition-group .form-table td {
-    padding: var(--pmcm-space-sm) 0;
+    padding: 6px 0;
 }
 
 /* Form Inputs */
 .wcem-edition-group input[type="number"],
 .wcem-edition-group input[type="date"],
 .wcem-edition-group input[type="text"] {
-    border: 2px solid var(--pmcm-border);
+    border: 1px solid var(--pmcm-border);
     border-radius: var(--pmcm-radius);
-    padding: 10px 14px;
-    font-size: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
     color: var(--pmcm-text-primary);
     background: var(--pmcm-surface);
     transition: all var(--pmcm-transition);

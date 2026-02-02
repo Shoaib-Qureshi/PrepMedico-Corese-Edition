@@ -506,10 +506,10 @@ class PMCM_Admin {
                                     <?php endif; ?>
                                 </span>
                                 <button type="button" class="button button-small wcem-toggle-early-bird" data-course="<?php echo esc_attr($category_slug); ?>">
-                                    <?php _e('Show Settings', 'prepmedico-course-management'); ?>
+                                    <?php _e('Hide Settings', 'prepmedico-course-management'); ?>
                                 </button>
                             </h4>
-                            <div class="wcem-early-bird-content" data-course="<?php echo esc_attr($category_slug); ?>" style="display: none;">
+                            <div class="wcem-early-bird-content" data-course="<?php echo esc_attr($category_slug); ?>" style="display: block;">
                                 <table class="form-table">
                                     <tr>
                                         <th><label for="<?php echo esc_attr($prefix); ?>early_bird_enabled"><?php _e('Early Bird', 'prepmedico-course-management'); ?></label></th>
@@ -786,9 +786,11 @@ class PMCM_Admin {
             $('.wcem-toggle-early-bird').on('click', function() {
                 var course = $(this).data('course');
                 var $content = $('.wcem-early-bird-content[data-course="' + course + '"]');
-                $content.slideToggle(180);
-                var isHidden = $content.is(':hidden');
-                $(this).text(isHidden ? '<?php echo esc_js(__('Show Settings', 'prepmedico-course-management')); ?>' : '<?php echo esc_js(__('Hide Settings', 'prepmedico-course-management')); ?>');
+                var $btn = $(this);
+                $content.slideToggle(180, function() {
+                    var isHidden = $content.is(':hidden');
+                    $btn.text(isHidden ? '<?php echo esc_js(__('Show Settings', 'prepmedico-course-management')); ?>' : '<?php echo esc_js(__('Hide Settings', 'prepmedico-course-management')); ?>');
+                });
             });
 
             // Next Edition Early Bird panel show/hide toggle
