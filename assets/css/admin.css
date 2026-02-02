@@ -2683,6 +2683,7 @@
     margin: 8px 0 0 0;
 }
 
+<<<<<<< HEAD
 /* Shortcode Table */
 .wcem-shortcode-table {
     width: 100%;
@@ -2719,6 +2720,8 @@
     background: var(--pmcm-surface-secondary);
 }
 
+=======
+>>>>>>> 42ce4fff9a0f6c4d2c486f71387ea4a155f2c74a
 /* FluentCRM Card */
 .wcem-connected-badge {
     display: inline-flex;
