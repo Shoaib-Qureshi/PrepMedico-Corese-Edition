@@ -249,39 +249,61 @@ class PMCM_Core {
     /**
      * Get the ASiT course config for a product
      * Returns the parent course's ASiT settings
+     * Supports per-course product-level filtering
      */
     public static function get_asit_config_for_product($product_id) {
         $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
         $child_map = self::get_child_to_parent_map();
         $courses = self::get_courses();
-        $library_products = self::get_library_asit_products();
-        $library_include_children = (bool) get_option('pmcm_asit_library_include_children', false);
 
         foreach ($categories as $cat_slug) {
             // Check if it's a parent course
             if (isset($courses[$cat_slug])) {
-                if ($cat_slug === 'library-subscription') {
-                    if (in_array($product_id, $library_products, true) || ($library_include_children && !empty($categories))) {
-                        return self::get_asit_discount_for_course($cat_slug);
-                    }
-                    return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
-                }
-                return self::get_asit_discount_for_course($cat_slug);
+                return self::check_course_product_eligibility($cat_slug, $product_id, $courses[$cat_slug], false);
             }
             // Check if it's a child category
             if (isset($child_map[$cat_slug])) {
                 $parent_slug = $child_map[$cat_slug];
-                if ($parent_slug === 'library-subscription') {
-                    if ($library_include_children || in_array($product_id, $library_products, true)) {
-                        return self::get_asit_discount_for_course($parent_slug);
-                    }
-                    return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+                if (isset($courses[$parent_slug])) {
+                    return self::check_course_product_eligibility($parent_slug, $product_id, $courses[$parent_slug], true);
                 }
-                return self::get_asit_discount_for_course($parent_slug);
             }
         }
 
         return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+    }
+
+    /**
+     * Check if a product is eligible for ASiT discount based on course settings
+     * Handles per-course product-level filtering
+     */
+    private static function check_course_product_eligibility($course_slug, $product_id, $course, $is_child_category) {
+        $mode = isset($course['asit_discount_mode']) ? $course['asit_discount_mode'] : 'none';
+
+        // If mode is none, no discount
+        if ($mode === 'none') {
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+        }
+
+        // Check if course has product-level filtering enabled
+        $has_product_filter = isset($course['asit_product_filter']) && $course['asit_product_filter'] === true;
+
+        if ($has_product_filter) {
+            $selected_products = isset($course['asit_selected_products']) ? (array) $course['asit_selected_products'] : [];
+            $include_children = isset($course['asit_include_children']) ? (bool) $course['asit_include_children'] : false;
+
+            // Check if product is eligible
+            $product_in_list = in_array($product_id, array_map('intval', $selected_products), true);
+            $child_included = $is_child_category && $include_children;
+
+            if (!$product_in_list && !$child_included) {
+                // Product not selected and not in included children
+                return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+            }
+        }
+
+        // Product is eligible, return the discount config
+        return self::get_asit_discount_for_course($course_slug);
     }
 
     /**

@@ -619,6 +619,31 @@
     background: var(--pmcm-warning);
 }
 
+/* Collapsible Early Bird Content */
+.wcem-early-bird-content,
+.wcem-next-early-bird-content {
+    padding-top: var(--pmcm-space-md);
+    border-top: 1px dashed var(--pmcm-warning-border);
+    margin-top: var(--pmcm-space-sm);
+}
+
+.wcem-toggle-early-bird,
+.wcem-toggle-next-early-bird {
+    font-size: 11px !important;
+    padding: 3px 10px !important;
+    height: auto !important;
+    min-height: 26px !important;
+    line-height: 1.4 !important;
+    transition: var(--pmcm-transition);
+}
+
+.wcem-toggle-early-bird:hover,
+.wcem-toggle-next-early-bird:hover {
+    background: var(--pmcm-warning-bg) !important;
+    border-color: var(--pmcm-warning) !important;
+    color: var(--pmcm-warning) !important;
+}
+
 /* Next Edition Group */
 .wcem-next-edition-group {
     background: linear-gradient(135deg, var(--pmcm-info-bg) 0%, rgba(240, 249, 255, 0.5) 100%) !important;
