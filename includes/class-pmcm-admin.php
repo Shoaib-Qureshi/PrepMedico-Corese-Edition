@@ -102,6 +102,7 @@ class PMCM_Admin {
         register_setting('pmcm_asit_settings', 'pmcm_asit_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
         register_setting('pmcm_asit_settings', 'pmcm_asit_discount_early_bird', ['type' => 'integer', 'sanitize_callback' => 'absint']);
         register_setting('pmcm_asit_settings', 'pmcm_asit_discount_normal', ['type' => 'integer', 'sanitize_callback' => 'absint']);
+        register_setting('pmcm_asit_settings', 'pmcm_asit_library_products', ['type' => 'array', 'sanitize_callback' => ['PMCM_Core', 'sanitize_int_array']]);
     }
 
     /**
@@ -235,6 +236,18 @@ class PMCM_Admin {
         // Save global coupon code
         if (isset($_POST['pmcm_asit_coupon_code'])) {
             update_option('pmcm_asit_coupon_code', sanitize_text_field($_POST['pmcm_asit_coupon_code']));
+        }
+        if (isset($_POST['pmcm_asit_discount_early_bird'])) {
+            update_option('pmcm_asit_discount_early_bird', absint($_POST['pmcm_asit_discount_early_bird']));
+        }
+        if (isset($_POST['pmcm_asit_discount_normal'])) {
+            update_option('pmcm_asit_discount_normal', absint($_POST['pmcm_asit_discount_normal']));
+        }
+        if (isset($_POST['pmcm_asit_library_products'])) {
+            $selected = array_map('absint', (array) $_POST['pmcm_asit_library_products']);
+            update_option('pmcm_asit_library_products', array_values(array_unique(array_filter($selected))));
+        } else {
+            update_option('pmcm_asit_library_products', []);
         }
 
         // Save per-course ASiT configuration
@@ -768,6 +781,20 @@ class PMCM_Admin {
 
         $coupon_code = get_option('pmcm_asit_coupon_code', 'ASIT');
         $all_courses = PMCM_Core::get_courses();
+        $library_selected = PMCM_Core::get_library_asit_products();
+        $library_products = get_posts([
+            'post_type' => 'product',
+            'numberposts' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'tax_query' => [
+                [
+                    'taxonomy' => 'product_cat',
+                    'field' => 'slug',
+                    'terms' => ['library-subscription']
+                ]
+            ]
+        ]);
         ?>
         <div class="wrap wcem-admin-wrap">
             <h1><?php _e('ASiT Coupon Management', 'prepmedico-course-management'); ?></h1>
@@ -867,7 +894,38 @@ class PMCM_Admin {
                                 <p class="description"><?php _e('The WooCommerce coupon code for ASiT members.', 'prepmedico-course-management'); ?></p>
                             </td>
                         </tr>
+                        <tr>
+                            <th><label for="pmcm_asit_discount_normal"><?php _e('Default ASiT Discount (%)', 'prepmedico-course-management'); ?></label></th>
+                            <td>
+                                <input type="number" id="pmcm_asit_discount_normal" name="pmcm_asit_discount_normal" value="<?php echo esc_attr(get_option('pmcm_asit_discount_normal', 10)); ?>" min="0" max="100" class="small-text"> %
+                                <p class="description"><?php _e('Used for products without per-course overrides (e.g., library subscription selections).', 'prepmedico-course-management'); ?></p>
+                            </td>
+                        </tr>
                     </table>
+                </div>
+
+                <!-- Library Subscription Product Allowlist -->
+                <div class="wcem-status-overview">
+                    <h2><?php _e('Library Subscription – Product-level ASiT', 'prepmedico-course-management'); ?></h2>
+                    <p class="description"><?php _e('Only the products you select below will receive ASiT discount and show the ASiT field. Unchecked products will not be ASiT eligible.', 'prepmedico-course-management'); ?></p>
+                    <p>
+                        <button type="button" class="button" id="wcem-toggle-library-products"><?php _e('Show products', 'prepmedico-course-management'); ?></button>
+                        <span style="margin-left:8px; color:#555;"><?php printf(__('Selected: %d', 'prepmedico-course-management'), count($library_selected)); ?></span>
+                    </p>
+                    <div id="wcem-library-products" style="display:none; max-height:280px; overflow:auto; padding:12px; border:1px solid #d9dce3; border-radius:8px; background:#fafbff;">
+                        <?php if (empty($library_products)): ?>
+                            <p><?php _e('No products found in the Library Subscription category.', 'prepmedico-course-management'); ?></p>
+                        <?php else: ?>
+                            <?php foreach ($library_products as $product): ?>
+                                <?php $checked = in_array($product->ID, $library_selected, true); ?>
+                                <label style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                    <input type="checkbox" name="pmcm_asit_library_products[]" value="<?php echo esc_attr($product->ID); ?>" <?php checked($checked); ?>>
+                                    <span><?php echo esc_html(get_the_title($product)); ?></span>
+                                    <a href="<?php echo esc_url(get_edit_post_link($product->ID)); ?>" target="_blank" style="font-size:11px;"><?php _e('Edit', 'prepmedico-course-management'); ?></a>
+                                </label>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Per-Course ASiT Configuration -->
@@ -964,6 +1022,11 @@ class PMCM_Admin {
             <!-- JavaScript for dynamic form behavior -->
             <script>
             jQuery(document).ready(function($) {
+                $('#wcem-toggle-library-products').on('click', function() {
+                    $('#wcem-library-products').slideToggle(180);
+                    $(this).text($(this).text().toLowerCase().indexOf('show') !== -1 ? '<?php echo esc_js(__('Hide products', 'prepmedico-course-management')); ?>' : '<?php echo esc_js(__('Show products', 'prepmedico-course-management')); ?>');
+                });
+
                 $('.asit-mode-select').on('change', function() {
                     var course = $(this).data('course');
                     var mode = $(this).val();

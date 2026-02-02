@@ -254,15 +254,28 @@ class PMCM_Core {
         $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
         $child_map = self::get_child_to_parent_map();
         $courses = self::get_courses();
+        $library_products = self::get_library_asit_products();
 
         foreach ($categories as $cat_slug) {
             // Check if it's a parent course
             if (isset($courses[$cat_slug])) {
+                if ($cat_slug === 'library-subscription') {
+                    if (in_array($product_id, $library_products, true)) {
+                        return self::get_asit_discount_for_course($cat_slug);
+                    }
+                    return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+                }
                 return self::get_asit_discount_for_course($cat_slug);
             }
             // Check if it's a child category
             if (isset($child_map[$cat_slug])) {
                 $parent_slug = $child_map[$cat_slug];
+                if ($parent_slug === 'library-subscription') {
+                    if (in_array($product_id, $library_products, true)) {
+                        return self::get_asit_discount_for_course($parent_slug);
+                    }
+                    return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+                }
                 return self::get_asit_discount_for_course($parent_slug);
             }
         }
@@ -307,6 +320,27 @@ class PMCM_Core {
         }
 
         return null;
+    }
+
+    /**
+     * Get list of product IDs explicitly allowed for ASiT under library-subscription
+     */
+    public static function get_library_asit_products() {
+        $ids = get_option('pmcm_asit_library_products', []);
+        if (!is_array($ids)) {
+            return [];
+        }
+        return array_values(array_unique(array_map('absint', $ids)));
+    }
+
+    /**
+     * Sanitize array of integers
+     */
+    public static function sanitize_int_array($value) {
+        if (!is_array($value)) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(array_map('absint', $value))));
     }
 
     /**
