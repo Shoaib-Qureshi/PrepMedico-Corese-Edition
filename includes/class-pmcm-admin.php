@@ -785,6 +785,7 @@ class PMCM_Admin {
         $all_courses = PMCM_Core::get_courses();
         $library_selected = PMCM_Core::get_library_asit_products();
         $library_include_children = PMCM_Core::library_includes_children();
+        // Get all products from library-subscription AND its child categories
         $library_products = get_posts([
             'post_type' => 'product',
             'numberposts' => -1,
@@ -794,7 +795,8 @@ class PMCM_Admin {
                 [
                     'taxonomy' => 'product_cat',
                     'field' => 'slug',
-                    'terms' => ['library-subscription']
+                    'terms' => ['library-subscription'],
+                    'include_children' => true
                 ]
             ]
         ]);
@@ -911,28 +913,59 @@ class PMCM_Admin {
                 <?php $library_mode = isset($all_courses['library-subscription']['asit_discount_mode']) ? $all_courses['library-subscription']['asit_discount_mode'] : 'none'; ?>
                 <div class="wcem-status-overview" id="wcem-library-panel" style="<?php echo ($library_mode === 'always') ? '' : 'display:none;'; ?>">
                     <h2><?php _e('Library Subscription – Product-level ASiT', 'prepmedico-course-management'); ?></h2>
-                    <p class="description"><?php _e('Only the products you select below will receive ASiT discount and show the ASiT field. Unchecked products will not be ASiT eligible. You can optionally include all child-category products.', 'prepmedico-course-management'); ?></p>
-                    <p style="margin-bottom:10px;">
-                        <label>
+                    <p class="description"><?php _e('Control which Library Subscription products are eligible for ASiT discount:', 'prepmedico-course-management'); ?></p>
+                    <div style="margin: 15px 0; padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                        <p style="margin:0 0 8px 0;"><strong><?php _e('Option 1: Select Specific Products', 'prepmedico-course-management'); ?></strong></p>
+                        <p style="margin:0; color:#4b5563; font-size:13px;"><?php _e('Check individual products below to enable ASiT discount only for those products.', 'prepmedico-course-management'); ?></p>
+                    </div>
+                    <div style="margin: 15px 0; padding: 12px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #22c55e;">
+                        <p style="margin:0 0 8px 0;"><strong><?php _e('Option 2: Include All Child Categories', 'prepmedico-course-management'); ?></strong></p>
+                        <label style="display:flex; align-items:center; gap:8px; margin:0;">
                             <input type="checkbox" name="pmcm_asit_library_include_children" value="1" <?php checked($library_include_children, true); ?>>
-                            <?php _e('Include products in child categories of Library Subscription', 'prepmedico-course-management'); ?>
+                            <span style="color:#4b5563; font-size:13px;"><?php _e('Enable ASiT discount for ALL products in Library Subscription and its child categories (overrides individual selection)', 'prepmedico-course-management'); ?></span>
                         </label>
-                    </p>
+                    </div>
                     <p>
                         <button type="button" class="button" id="wcem-toggle-library-products"><?php _e('Show products', 'prepmedico-course-management'); ?></button>
-                        <span id="wcem-library-selected-count" style="margin-left:8px; color:#555;"><?php printf(__('Selected: %d', 'prepmedico-course-management'), count($library_selected)); ?></span>
+                        <button type="button" class="button" id="wcem-select-all-library" style="margin-left:5px;"><?php _e('Select All', 'prepmedico-course-management'); ?></button>
+                        <button type="button" class="button" id="wcem-deselect-all-library" style="margin-left:5px;"><?php _e('Deselect All', 'prepmedico-course-management'); ?></button>
+                        <span id="wcem-library-selected-count" style="margin-left:8px; color:#555;"><?php printf(__('Selected: %d / %d', 'prepmedico-course-management'), count($library_selected), count($library_products)); ?></span>
                     </p>
                     <div id="wcem-library-products" style="display:none; max-height:280px; overflow:auto; padding:12px; border:1px solid #d9dce3; border-radius:8px; background:#fafbff;">
                         <?php if (empty($library_products)): ?>
-                            <p><?php _e('No products found in the Library Subscription category.', 'prepmedico-course-management'); ?></p>
+                            <p><?php _e('No products found in the Library Subscription category or its child categories.', 'prepmedico-course-management'); ?></p>
                         <?php else: ?>
-                            <?php foreach ($library_products as $product): ?>
-                                <?php $checked = in_array($product->ID, $library_selected, true); ?>
-                                <label style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                                    <input class="wcem-library-product-checkbox" type="checkbox" name="pmcm_asit_library_products[]" value="<?php echo esc_attr($product->ID); ?>" <?php checked($checked); ?>>
-                                    <span><?php echo esc_html(get_the_title($product)); ?></span>
-                                    <a href="<?php echo esc_url(get_edit_post_link($product->ID)); ?>" target="_blank" style="font-size:11px;"><?php _e('Edit', 'prepmedico-course-management'); ?></a>
-                                </label>
+                            <?php
+                            // Group products by category for better display
+                            $products_by_cat = [];
+                            foreach ($library_products as $product) {
+                                $cats = wp_get_post_terms($product->ID, 'product_cat', ['fields' => 'all']);
+                                $cat_name = 'Library Subscription';
+                                foreach ($cats as $cat) {
+                                    if ($cat->slug !== 'library-subscription') {
+                                        $cat_name = $cat->name;
+                                        break;
+                                    }
+                                }
+                                if (!isset($products_by_cat[$cat_name])) {
+                                    $products_by_cat[$cat_name] = [];
+                                }
+                                $products_by_cat[$cat_name][] = $product;
+                            }
+                            ksort($products_by_cat);
+                            ?>
+                            <?php foreach ($products_by_cat as $cat_name => $products): ?>
+                                <div style="margin-bottom:12px;">
+                                    <strong style="color:#1e3a5f; font-size:12px; display:block; margin-bottom:6px; border-bottom:1px solid #e5e7eb; padding-bottom:4px;"><?php echo esc_html($cat_name); ?></strong>
+                                    <?php foreach ($products as $product): ?>
+                                        <?php $checked = in_array($product->ID, $library_selected, true); ?>
+                                        <label style="display:flex; align-items:center; gap:10px; margin-bottom:6px; padding-left:8px;">
+                                            <input class="wcem-library-product-checkbox" type="checkbox" name="pmcm_asit_library_products[]" value="<?php echo esc_attr($product->ID); ?>" <?php checked($checked); ?>>
+                                            <span style="flex:1;"><?php echo esc_html(get_the_title($product)); ?></span>
+                                            <a href="<?php echo esc_url(get_edit_post_link($product->ID)); ?>" target="_blank" style="font-size:11px; color:#6b7280;"><?php _e('Edit', 'prepmedico-course-management'); ?></a>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
@@ -1051,9 +1084,24 @@ class PMCM_Admin {
                     updateLibraryPanelVisibility();
                 });
 
+                function updateLibraryCount() {
+                    var checked = $('.wcem-library-product-checkbox:checked').length;
+                    var total = $('.wcem-library-product-checkbox').length;
+                    $('#wcem-library-selected-count').text('<?php echo esc_js(__('Selected: ', 'prepmedico-course-management')); ?>' + checked + ' / ' + total);
+                }
+
                 $('.wcem-library-product-checkbox').on('change', function() {
-                    var count = $('.wcem-library-product-checkbox:checked').length;
-                    $('#wcem-library-selected-count').text('<?php echo esc_js(__('Selected: ', 'prepmedico-course-management')); ?>' + count);
+                    updateLibraryCount();
+                });
+
+                $('#wcem-select-all-library').on('click', function() {
+                    $('.wcem-library-product-checkbox').prop('checked', true);
+                    updateLibraryCount();
+                });
+
+                $('#wcem-deselect-all-library').on('click', function() {
+                    $('.wcem-library-product-checkbox').prop('checked', false);
+                    updateLibraryCount();
                 });
 
                 $('.asit-mode-select').on('change', function() {
