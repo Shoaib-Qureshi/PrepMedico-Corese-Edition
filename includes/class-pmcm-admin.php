@@ -594,109 +594,6 @@ class PMCM_Admin
                                                 <span class="wcem-dot"></span>
                                                 <h4><?php _e('Current Edition Configuration', 'prepmedico-course-management'); ?></h4>
                                             </div>
-                                            <div class="wcem-admin-wrap wcem-modern-layout">
-
-                                                <!-- Two-Column Layout -->
-                                                <div class="wcem-two-column-container">
-
-                                                    <!-- Course List Sidebar -->
-                                                    <aside class="wcem-course-list-sidebar">
-                                                        <div class="wcem-course-list-header">
-                                                            <h2><?php _e('Course List', 'prepmedico-course-management'); ?></h2>
-                                                            <button class="wcem-refresh-btn" type="button" onclick="location.reload();" title="<?php _e('Refresh', 'prepmedico-course-management'); ?>">
-                                                                <span class="material-icons-round">refresh</span>
-                                                            </button>
-                                                        </div>
-                                                        <div class="wcem-course-list-items">
-                                                            <?php
-                                                            $is_first = true;
-                                                            foreach ($courses as $category_slug => $course):
-                                                                $status_info = self::get_course_status_info($course);
-                                                                $active_class = $is_first ? 'active' : '';
-                                                            ?>
-                                                                <button class="wcem-course-item <?php echo esc_attr($active_class); ?>"
-                                                                    data-course="<?php echo esc_attr($category_slug); ?>"
-                                                                    type="button">
-                                                                    <div class="wcem-course-item-header">
-                                                                        <span class="wcem-course-name"><?php echo esc_html($course['name']); ?></span>
-                                                                        <span class="wcem-course-status wcem-status-<?php echo esc_attr($status_info['status']); ?>">
-                                                                            <?php echo esc_html($status_info['label']); ?>
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="wcem-course-item-footer">
-                                                                        <span class="wcem-edition-label"><?php echo esc_html($status_info['edition_ordinal'] . ' Edition'); ?></span>
-                                                                        <span class="material-icons-round">chevron_right</span>
-                                                                    </div>
-                                                                </button>
-                                                            <?php
-                                                                $is_first = false;
-                                                            endforeach;
-                                                            ?>
-                                                        </div>
-                                                    </aside>
-
-                                                    <!-- Settings Panel -->
-                                                    <main class="wcem-settings-panel">
-                                                        <form method="post" action="" id="wcem-edition-form">
-                                                            <?php wp_nonce_field('wcem_settings_nonce'); ?>
-
-                                                            <!-- Panel Header -->
-                                                            <div class="wcem-panel-header">
-                                                                <div class="wcem-panel-title-section">
-                                                                    <h3 class="wcem-panel-title"><?php echo $first_course ? esc_html($first_course['name']) . ' Settings' : 'Settings'; ?></h3>
-                                                                    <span class="wcem-panel-subtitle"><?php _e('Edition Status:', 'prepmedico-course-management'); ?></span>
-                                                                    <span class="wcem-panel-status-badge wcem-status-<?php echo $first_status ? esc_attr($first_status['status']) : 'active'; ?>">
-                                                                        <?php echo $first_status ? esc_html($first_status['label']) : ''; ?>
-                                                                    </span>
-                                                                </div>
-                                                                <button type="submit" name="wcem_save_settings" class="wcem-save-btn">
-                                                                    <span class="material-icons-round">save</span>
-                                                                    <?php _e('SAVE SETTINGS', 'prepmedico-course-management'); ?>
-                                                                </button>
-                                                            </div>
-
-                                                            <!-- Panel Body with all course settings -->
-                                                            <div class="wcem-panel-body">
-                                                                <?php
-                                                                $is_first = true;
-                                                                foreach ($courses as $category_slug => $course):
-                                                                    $prefix = $course['settings_prefix'];
-                                                                    $display = $is_first ? 'block' : 'none';
-                                                                    $status_info = self::get_course_status_info($course);
-
-                                                                    // Get all settings values
-                                                                    $current_edition = get_option($prefix . 'current_edition', 1);
-                                                                    $edition_start = get_option($prefix . 'edition_start', '');
-                                                                    $edition_end = get_option($prefix . 'edition_end', '');
-
-                                                                    $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no') === 'yes';
-                                                                    $eb_start = get_option($prefix . 'early_bird_start', '');
-                                                                    $eb_end = get_option($prefix . 'early_bird_end', '');
-
-                                                                    // Early bird status
-                                                                    $eb_status = '';
-                                                                    $eb_status_class = '';
-                                                                    if ($eb_enabled && !empty($eb_end)) {
-                                                                        $today = current_time('Y-m-d');
-                                                                        $start_ok = empty($eb_start) || strtotime($today) >= strtotime($eb_start);
-                                                                        $end_ok = strtotime($today) <= strtotime($eb_end);
-                                                                        if ($start_ok && $end_ok) {
-                                                                            $eb_status = __('Active', 'prepmedico-course-management');
-                                                                            $eb_status_class = 'active';
-                                                                        } else {
-                                                                            $eb_status = __('Inactive', 'prepmedico-course-management');
-                                                                            $eb_status_class = 'inactive';
-                                                                        }
-                                                                    }
-
-                                                                    $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
-                                                                    $next_edition = get_option($prefix . 'next_edition', $current_edition + 1);
-                                                                    $next_start = get_option($prefix . 'next_start', '');
-                                                                    $next_end = get_option($prefix . 'next_end', '');
-                                                                    $next_eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no') === 'yes';
-                                                                    $next_eb_start = get_option($prefix . 'next_early_bird_start', '');
-                                                                    $next_eb_end = get_option($prefix . 'next_early_bird_end', '');
-                                                                ?>
                                                                     <div class="wcem-course-settings" data-course="<?php echo esc_attr($category_slug); ?>" data-name="<?php echo esc_attr($course['name']); ?>" data-status="<?php echo esc_attr($status_info['status']); ?>" data-status-label="<?php echo esc_attr($status_info['label']); ?>" style="display: <?php echo $display; ?>;">
 
                                                                         <!-- Current Edition Configuration -->
@@ -882,64 +779,24 @@ class PMCM_Admin
                                                                             <p class="description" style="margin-top:8px;"><?php _e('Manually increment edition number. If "Next Edition" is enabled, it will be promoted to Current.', 'prepmedico-course-management'); ?></p>
                                                                         </section>
                                                                     </div>
+                                                                </div>
                                                             </div>
+                                                        </div> <!-- .wcem-course-settings-panel -->
                                                         <?php
-                                                                    $is_first = false;
-                                                                endforeach;
+                                                            $is_first = false;
+                                                        endforeach;
                                                         ?>
                                                     </main>
-                                                </div>
-            </form>
+                                                </div> <!-- .wcem-two-column-container -->
+                                            </form>
 
-            <!-- Bottom Sections Grid -->
-            <div class="wcem-bottom-sections">
-                <!-- Shortcodes Card -->
-                <div class="wcem-card">
-                    <div class="wcem-card-header">
-                        <span class="material-icons-round">code</span>
-                        <h3><?php _e('Available Shortcodes', 'prepmedico-course-management'); ?></h3>
-                    </div>
-                    <div class="wcem-card-body">
-                        <p class="description"><?php _e('Use these shortcodes to display edition and registration information on your pages:', 'prepmedico-course-management'); ?></p>
-                        <table class="wcem-shortcode-table">
-                            <thead>
-                                <tr>
-                                    <th><?php _e('Shortcode', 'prepmedico-course-management'); ?></th>
-                                    <th><?php _e('Description', 'prepmedico-course-management'); ?></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach (self::get_shortcode_reference() as $shortcode): ?>
-                                    <tr>
-                                        <td><code><?php echo esc_html($shortcode['shortcode']); ?></code></td>
-                                        <td><?php echo esc_html($shortcode['description']); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <p class="description" style="margin-top:12px;">
-                            <?php _e('Replace "frcs" with the course slug. Available:', 'prepmedico-course-management'); ?>
-                            <code><?php echo implode('</code>, <code>', array_keys($courses)); ?></code>
-                        </p>
-                    </div>
-                <?php
-                            $is_first = false;
-                        endforeach;
-                ?>
-                </div>
+                                            <!-- Bottom Sections Grid -->
+                                            <div class="wcem-bottom-sections">
 
-                </form>
-                </main>
-
-            </div>
-
-            <!-- Bottom Sections Grid -->
-            <div class="wcem-bottom-sections">
-
-                <!-- Shortcodes Section -->
-                <section class="wcem-card wcem-shortcodes-card">
-                    <div class="wcem-card-header">
-                        <div class="wcem-icon-box wcem-icon-emerald">
+                                                <!-- Shortcodes Section -->
+                                                <section class="wcem-card wcem-shortcodes-card">
+                                                    <div class="wcem-card-header">
+                                                        <div class="wcem-icon-box wcem-icon-emerald">
                             <span class="material-icons-round">code</span>
                         </div>
                         <h3><?php _e('Available Shortcodes', 'prepmedico-course-management'); ?></h3>
