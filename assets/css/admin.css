@@ -2003,11 +2003,6 @@
     max-width: none;
 }
 
-/* Hide outer duplicate container; keep inner instance */
-.wcem-modern-layout > .wcem-two-column-container:first-of-type {
-    display: none;
-}
-
 /* Two-Column Container */
 .wcem-two-column-container {
     display: flex;

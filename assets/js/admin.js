@@ -4,144 +4,75 @@
 (function($) {
     'use strict';
 
-    // State management for Edition Management page
-    var currentCourse = null;
-
-    $(document).ready(function() {
-
-        // =====================================================
-<<<<<<< HEAD
-        // COURSE SELECTION HANDLER (Two-Column Layout)
-        // =====================================================
-
-        // Course selection - click on course item in sidebar
-        $('.wcem-course-item').on('click', function(e) {
-            e.preventDefault();
-            var courseSlug = $(this).data('course');
-            selectCourse(courseSlug);
-        });
-
-        // Function to select and display a course's settings
-        function selectCourse(courseSlug) {
-            // Update active class on course items
+    $(function() {
+        function selectCourse(slug) {
             $('.wcem-course-item').removeClass('active');
-            $('.wcem-course-item[data-course="' + courseSlug + '"]').addClass('active');
+            $('.wcem-course-item[data-course="' + slug + '"]').addClass('active');
 
-            // Show/hide course settings panels
             $('.wcem-course-settings-panel').hide();
-            $('.wcem-course-settings-panel[data-course="' + courseSlug + '"]').show();
+            var $panel = $('.wcem-course-settings-panel[data-course="' + slug + '"]');
+            $panel.show();
 
-            // Update URL hash for bookmarking
-            if (history.pushState) {
-                history.pushState(null, null, '#' + courseSlug);
+            if (history.replaceState) {
+                history.replaceState(null, null, '#' + slug);
             }
         }
 
-        // Initialize from URL hash or select first course
-        function initializeCourseSelection() {
-            var hash = window.location.hash.substring(1);
+        function initCourse() {
+            if ($('.wcem-modern-layout').length === 0) {
+                return;
+            }
+            var hash = window.location.hash.replace('#', '');
             if (hash && $('.wcem-course-item[data-course="' + hash + '"]').length) {
                 selectCourse(hash);
+            } else {
+                var $first = $('.wcem-course-item').first();
+                if ($first.length) {
+                    selectCourse($first.data('course'));
+                }
             }
         }
 
-        // Initialize on page load
-        initializeCourseSelection();
-
-        // Handle back/forward browser navigation
-        $(window).on('hashchange', function() {
-            initializeCourseSelection();
-        });
-
-        // =====================================================
-        // TOGGLE HANDLERS FOR NEW LAYOUT
-        // =====================================================
-
-        // Early Bird toggle
-        $('.wcem-early-bird-toggle').on('change', function() {
-            var course = $(this).data('course');
-            var $fields = $('.wcem-early-bird-fields[data-course="' + course + '"]');
-            if ($(this).is(':checked')) {
-                $fields.slideDown(200);
-            } else {
-                $fields.slideUp(200);
-            }
-        });
-
-        // Next Edition toggle
-        $('.wcem-next-edition-toggle').on('change', function() {
-            var course = $(this).data('course');
-            var $fields = $('.wcem-next-edition-fields[data-course="' + course + '"]');
-=======
-        // COURSE SELECTION (Edition Management Page)
-        // =====================================================
-
-        // Initialize course selection on page load
-        initializeCourseSelection();
-
-        // Course item click handler
-        $('.wcem-course-item').on('click', function(e) {
+        $(document).on('click', '.wcem-course-item', function(e) {
             e.preventDefault();
             selectCourse($(this).data('course'));
         });
 
-        // Early Bird toggle (new modern layout)
         $(document).on('change', '.wcem-early-bird-toggle', function() {
-            var $section = $(this).closest('.wcem-course-settings');
-            var $fields = $section.find('.wcem-early-bird-fields');
-            var $infoBanner = $section.find('.wcem-info-banner');
-
-            if ($(this).is(':checked')) {
-                $fields.slideDown(200);
-                $infoBanner.slideDown(200);
+            var $panel = $(this).closest('.wcem-course-settings-panel');
+            var $fields = $panel.find('.wcem-early-bird-fields');
+            var $info = $panel.find('.wcem-info-banner');
+            if (this.checked) {
+                $fields.slideDown(150);
+                $info.slideDown(150);
             } else {
-                $fields.slideUp(200);
-                $infoBanner.slideUp(200);
+                $fields.slideUp(150);
+                $info.slideUp(150);
             }
         });
 
-        // Next Edition toggle (new modern layout)
         $(document).on('change', '.wcem-next-edition-toggle', function() {
-            var $section = $(this).closest('.wcem-course-settings');
-            var $fields = $section.find('.wcem-next-edition-fields');
-
->>>>>>> 42ce4fff9a0f6c4d2c486f71387ea4a155f2c74a
-            if ($(this).is(':checked')) {
-                $fields.slideDown(200);
+            var $panel = $(this).closest('.wcem-course-settings-panel');
+            var $fields = $panel.find('.wcem-next-edition-fields');
+            if (this.checked) {
+                $fields.slideDown(150);
             } else {
-                $fields.slideUp(200);
+                $fields.slideUp(150);
             }
         });
 
-        // Next Edition Early Bird toggle
-<<<<<<< HEAD
-        $('.wcem-next-early-bird-toggle').on('change', function() {
-            var course = $(this).data('course');
-            var $fields = $('.wcem-next-early-bird-fields[data-course="' + course + '"]');
-=======
         $(document).on('change', '.wcem-next-early-bird-toggle', function() {
-            var $section = $(this).closest('.wcem-next-eb-subsection');
-            var $fields = $section.find('.wcem-next-early-bird-fields');
-
->>>>>>> 42ce4fff9a0f6c4d2c486f71387ea4a155f2c74a
-            if ($(this).is(':checked')) {
-                $fields.slideDown(200);
+            var $wrap = $(this).closest('.wcem-next-eb-subsection');
+            var $fields = $wrap.find('.wcem-next-early-bird-fields');
+            if (this.checked) {
+                $fields.slideDown(150);
             } else {
-                $fields.slideUp(200);
+                $fields.slideUp(150);
             }
         });
 
-<<<<<<< HEAD
-        // =====================================================
-        // EXISTING HANDLERS
-        // =====================================================
-
-=======
->>>>>>> 42ce4fff9a0f6c4d2c486f71387ea4a155f2c74a
-        // Manual Edition Increment
-        $('.wcem-manual-increment').on('click', function(e) {
+        $(document).on('click', '.wcem-manual-increment', function(e) {
             e.preventDefault();
-
             var $button = $(this);
             var course = $button.data('course');
 
@@ -151,230 +82,99 @@
 
             $button.prop('disabled', true).text(wcemAdmin.strings.switching);
 
-            $.ajax({
-                url: wcemAdmin.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'wcem_manual_edition_switch',
-                    nonce: wcemAdmin.nonce,
-                    course: course
-                },
-                success: function(response) {
-                    if (response.success) {
-                        alert(response.data.message);
-                        location.reload();
-                    } else {
-                        alert(wcemAdmin.strings.error + '\n' + response.data.message);
-                        $button.prop('disabled', false).text('Increment Edition (+1)');
-                    }
-                },
-                error: function() {
-                    alert(wcemAdmin.strings.error);
+            $.post(wcemAdmin.ajaxUrl, {
+                action: 'wcem_manual_edition_switch',
+                nonce: wcemAdmin.nonce,
+                course: course
+            }).done(function(response) {
+                if (response.success) {
+                    alert(response.data.message || wcemAdmin.strings.success);
+                    location.reload();
+                } else {
+                    alert(response.data && response.data.message ? response.data.message : wcemAdmin.strings.error);
                     $button.prop('disabled', false).text('Increment Edition (+1)');
                 }
+            }).fail(function() {
+                alert(wcemAdmin.strings.error);
+                $button.prop('disabled', false).text('Increment Edition (+1)');
             });
         });
 
-        // Test FluentCRM Connection
-        $('#wcem-test-fluentcrm').on('click', function(e) {
+        $(document).on('click', '#wcem-test-fluentcrm', function(e) {
             e.preventDefault();
-
-            var $button = $(this);
-            $button.prop('disabled', true).text('Testing...');
-
-            $.ajax({
-                url: wcemAdmin.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'wcem_test_fluentcrm',
-                    nonce: wcemAdmin.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        var message = response.data.message;
-                        if (response.data.missing && response.data.missing.length > 0) {
-                            alert('⚠️ ' + message);
-                        } else {
-                            alert('✅ ' + message);
-                        }
-                    } else {
-                        alert('❌ Error: ' + response.data.message);
-                    }
-                    $button.prop('disabled', false).text('Test FluentCRM Connection');
-                },
-                error: function() {
-                    alert('❌ Connection test failed');
-                    $button.prop('disabled', false).text('Test FluentCRM Connection');
+            var $button = $(this).prop('disabled', true).text('Testing...');
+            $.post(wcemAdmin.ajaxUrl, {
+                action: 'wcem_test_fluentcrm',
+                nonce: wcemAdmin.nonce
+            }).done(function(response) {
+                if (response.success) {
+                    alert(response.data.message || 'Connection successful');
+                } else {
+                    alert(response.data && response.data.message ? response.data.message : 'Connection test failed');
                 }
+            }).fail(function() {
+                alert('Connection test failed');
+            }).always(function() {
+                $button.prop('disabled', false).text('Test Connection');
             });
         });
 
-        // Run Cron Manually
-        $('#wcem-run-cron').on('click', function(e) {
+        $(document).on('click', '#wcem-run-cron', function(e) {
             e.preventDefault();
-
-            var $button = $(this);
-            $button.prop('disabled', true).text('Running...');
-
-            $.ajax({
-                url: wcemAdmin.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'wcem_run_cron',
-                    nonce: wcemAdmin.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        alert('✅ ' + response.data.message);
-                        location.reload();
-                    } else {
-                        alert('❌ ' + response.data.message);
-                    }
-                    $button.prop('disabled', false).text('Run Edition Check Now');
-                },
-                error: function() {
-                    alert('❌ Cron run failed');
-                    $button.prop('disabled', false).text('Run Edition Check Now');
+            var $button = $(this).prop('disabled', true).text('Running...');
+            $.post(wcemAdmin.ajaxUrl, {
+                action: 'wcem_run_cron',
+                nonce: wcemAdmin.nonce
+            }).done(function(response) {
+                if (response.success) {
+                    alert(response.data.message || 'Edition check completed');
+                    location.reload();
+                } else {
+                    alert(response.data && response.data.message ? response.data.message : 'Edition check failed');
                 }
+            }).fail(function() {
+                alert('Edition check failed');
+            }).always(function() {
+                $button.prop('disabled', false).text('Run Edition Check Now');
             });
         });
 
-        // Date validation
         $('input[type="date"]').on('change', function() {
-            var $this = $(this);
-            var fieldName = $this.attr('name');
-
-            // Validate date ranges
+            var fieldName = $(this).attr('name');
             if (fieldName.includes('edition_end')) {
                 var prefix = fieldName.replace('edition_end', '');
-                var $startField = $('input[name="' + prefix + 'edition_start"]');
-
-                if ($startField.val() && $this.val()) {
-                    var startDate = new Date($startField.val());
-                    var endDate = new Date($this.val());
-
-                    if (endDate <= startDate) {
+                var $start = $('input[name="' + prefix + 'edition_start"]');
+                if ($start.val() && $(this).val()) {
+                    var s = new Date($start.val());
+                    var e = new Date($(this).val());
+                    if (e <= s) {
                         alert('End date must be after start date');
-                        $this.val('');
+                        $(this).val('');
                     }
                 }
             }
-
-            // Validate early bird end is before edition end
             if (fieldName.includes('early_bird_end')) {
-                var prefix = fieldName.replace('early_bird_end', '');
-                var $editionEndField = $('input[name="' + prefix + 'edition_end"]');
-
-                if ($editionEndField.val() && $this.val()) {
-                    var editionEndDate = new Date($editionEndField.val());
-                    var earlyBirdEndDate = new Date($this.val());
-
-                    if (earlyBirdEndDate > editionEndDate) {
+                var prefix2 = fieldName.replace('early_bird_end', '');
+                var $end = $('input[name="' + prefix2 + 'edition_end"]');
+                if ($end.val() && $(this).val()) {
+                    var eb = new Date($(this).val());
+                    var ed = new Date($end.val());
+                    if (eb > ed) {
                         alert('Early Bird end date should be before edition end date');
                     }
                 }
             }
         });
 
-        // Edition number validation
         $('input[type="number"]').on('change', function() {
-            var $this = $(this);
-            var value = parseInt($this.val());
-
-            if (value < 1) {
-                $this.val(1);
+            var v = parseInt($(this).val(), 10);
+            if (isNaN(v) || v < 1) {
+                $(this).val(1);
             }
         });
 
-<<<<<<< HEAD
-        // Visual feedback for course items in sidebar based on status
-        // Status is already shown via badges in the new layout
-=======
-        // Highlight course cards with warnings (no dates set) - Legacy support
-        $('.wcem-course-card').each(function() {
-            var $card = $(this);
-            var $startDate = $card.find('input[name*="edition_start"]');
-            var $endDate = $card.find('input[name*="edition_end"]');
-
-            if (!$startDate.val() || !$endDate.val()) {
-                $card.css('border-color', '#dc3545');
-                $card.find('h3').append(' <span style="color: #dc3545; font-size: 12px;">⚠️ Set dates!</span>');
-            } else {
-                var endDate = new Date($endDate.val());
-                var today = new Date();
-                var daysUntilEnd = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-
-                if (daysUntilEnd <= 7 && daysUntilEnd > 0) {
-                    $card.css('border-color', '#ffc107');
-                    $card.find('h3').append(' <span style="color: #856404; font-size: 12px;">⚠️ Ending soon!</span>');
-                }
-            }
-        });
->>>>>>> 42ce4fff9a0f6c4d2c486f71387ea4a155f2c74a
-
+        initCourse();
+        $(window).on('hashchange', initCourse);
     });
-
-    /**
-     * Initialize course selection on page load
-     */
-    function initializeCourseSelection() {
-        // Only run on Edition Management page with new layout
-        if ($('.wcem-modern-layout').length === 0) {
-            return;
-        }
-
-        // Get course from URL hash or select first
-        var hash = window.location.hash.replace('#', '');
-        var $firstCourse = $('.wcem-course-item').first();
-
-        if (hash && $('.wcem-course-item[data-course="' + hash + '"]').length) {
-            selectCourse(hash);
-        } else if ($firstCourse.length) {
-            selectCourse($firstCourse.data('course'));
-        }
-    }
-
-    /**
-     * Select and display a course's settings
-     */
-    function selectCourse(courseSlug) {
-        if (currentCourse === courseSlug) {
-            return;
-        }
-
-        currentCourse = courseSlug;
-
-        // Update course list selection
-        $('.wcem-course-item').removeClass('active');
-        $('.wcem-course-item[data-course="' + courseSlug + '"]').addClass('active');
-
-        // Update settings panel visibility
-        $('.wcem-course-settings').hide();
-        var $activeSettings = $('.wcem-course-settings[data-course="' + courseSlug + '"]');
-        $activeSettings.fadeIn(200);
-
-        // Update panel header
-        var courseName = $activeSettings.data('name');
-        var status = $activeSettings.data('status');
-        var statusLabel = $activeSettings.data('status-label');
-
-        $('.wcem-panel-title').text(courseName + ' Settings');
-        $('.wcem-panel-status-badge')
-            .removeClass('wcem-status-active wcem-status-needs-dates wcem-status-ending-soon wcem-status-early-bird wcem-status-expired')
-            .addClass('wcem-status-' + status)
-            .text(statusLabel);
-
-        // Update URL hash for bookmarking
-        if (history.replaceState) {
-            history.replaceState(null, null, '#' + courseSlug);
-        }
-
-        // Trigger custom event for extensibility
-        $(document).trigger('wcem:courseSelected', [courseSlug]);
-    }
-
-    // Expose functions globally if needed
-    window.wcemSelectCourse = selectCourse;
-    window.wcemInitCourseSelection = initializeCourseSelection;
 
 })(jQuery);

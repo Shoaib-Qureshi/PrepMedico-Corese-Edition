@@ -432,90 +432,55 @@ class PMCM_Admin
             echo '<div class="notice notice-success is-dismissible"><p>' . __('Settings saved! Edition check completed - see Activity Log for details.', 'prepmedico-course-management') . '</p></div>';
         }
 
-        // Handle log clearing
         if (isset($_GET['clear_log']) && wp_verify_nonce($_GET['_wpnonce'], 'clear_log')) {
             delete_option('wcem_activity_log');
-            echo '<script>location.href="' . admin_url('admin.php?page=prepmedico-management') . '";</script>';
+            wp_safe_redirect(admin_url('admin.php?page=prepmedico-management'));
+            exit;
         }
 
         $courses = PMCM_Core::get_edition_managed_courses();
         $course_keys = array_keys($courses);
         $first_course_slug = !empty($course_keys) ? $course_keys[0] : '';
-        $first_course = !empty($first_course_slug) && isset($courses[$first_course_slug]) ? $courses[$first_course_slug] : null;
-        $first_status = $first_course ? self::get_course_status_info($first_course) : null;
 ?>
         <div class="wrap wcem-admin-wrap wcem-modern-layout">
-            <!-- Header -->
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
-            <form method="post" action="" id="wcem-edition-form">
-                <?php wp_nonce_field('wcem_settings_nonce'); ?>
-
-                <!-- Two-Column Layout -->
-                <div class="wcem-two-column-container">
-                    <!-- Course List Sidebar -->
-                    <aside class="wcem-course-list-sidebar">
-                        <div class="wcem-course-list-header">
-                            <h2><?php _e('Course List', 'prepmedico-course-management'); ?></h2>
-                            <button type="button" class="wcem-refresh-btn" onclick="location.reload()">
-                                <span class="material-icons-round">refresh</span>
+            <div class="wcem-two-column-container">
+                <aside class="wcem-course-list-sidebar">
+                    <div class="wcem-course-list-header">
+                        <h2><?php _e('Course List', 'prepmedico-course-management'); ?></h2>
+                        <button type="button" class="wcem-refresh-btn" onclick="location.reload()">
+                            <span class="material-icons-round">refresh</span>
+                        </button>
+                    </div>
+                    <div class="wcem-course-list-items">
+                        <?php
+                        $is_first = true;
+                        foreach ($courses as $category_slug => $course):
+                            $status_info = self::get_course_status_info($course);
+                            $prefix = $course['settings_prefix'];
+                            $current = get_option($prefix . 'current_edition', 1);
+                        ?>
+                            <button type="button" class="wcem-course-item<?php echo $is_first ? ' active' : ''; ?>" data-course="<?php echo esc_attr($category_slug); ?>">
+                                <div class="wcem-course-item-header">
+                                    <span class="wcem-course-name"><?php echo esc_html($course['name']); ?></span>
+                                    <span class="wcem-course-status wcem-status-<?php echo esc_attr($status_info['status']); ?>"><?php echo esc_html($status_info['label']); ?></span>
+                                </div>
+                                <div class="wcem-course-item-footer">
+                                    <span class="wcem-edition-label"><?php echo esc_html(PMCM_Core::get_ordinal($current) . ' Edition'); ?></span>
+                                    <span class="material-icons-round">chevron_right</span>
+                                </div>
                             </button>
-                        </div>
-                        <div class="wcem-course-list-items">
-                            <?php
-                            $is_first = true;
-                            foreach ($courses as $category_slug => $course):
-                                $prefix = $course['settings_prefix'];
-                                $current = get_option($prefix . 'current_edition', 1);
-                                $start = get_option($prefix . 'edition_start', '');
-                                $end = get_option($prefix . 'edition_end', '');
-                                $early_bird = get_option($prefix . 'early_bird_enabled', 'no');
+                        <?php
+                            $is_first = false;
+                        endforeach;
+                        ?>
+                    </div>
+                </aside>
 
-                                // Determine status
-                                $status = 'active';
-                                $status_label = __('Active', 'prepmedico-course-management');
-
-                                if (empty($start) || empty($end)) {
-                                    $status = 'needs-dates';
-                                    $status_label = __('Needs Dates', 'prepmedico-course-management');
-                                } elseif ($early_bird === 'yes') {
-                                    $eb_end = get_option($prefix . 'early_bird_end', '');
-                                    if (!empty($eb_end) && time() <= strtotime($eb_end)) {
-                                        $status = 'early-bird';
-                                        $status_label = __('Early Bird', 'prepmedico-course-management');
-                                    }
-                                }
-
-                                if (!empty($end)) {
-                                    $end_timestamp = strtotime($end);
-                                    if (time() > $end_timestamp) {
-                                        $status = 'expired';
-                                        $status_label = __('Opening Soon', 'prepmedico-course-management');
-                                    } elseif ((($end_timestamp - time()) / DAY_IN_SECONDS) <= 7) {
-                                        $status = 'ending-soon';
-                                        $status_label = __('Ending Soon', 'prepmedico-course-management');
-                                    }
-                                }
-                            ?>
-                                <button type="button" class="wcem-course-item<?php echo $is_first ? ' active' : ''; ?>" data-course="<?php echo esc_attr($category_slug); ?>">
-                                    <div class="wcem-course-item-header">
-                                        <span class="wcem-course-name"><?php echo esc_html($course['name']); ?></span>
-                                        <span class="wcem-course-status wcem-status-<?php echo esc_attr($status); ?>"><?php echo esc_html($status_label); ?></span>
-                                    </div>
-                                    <div class="wcem-course-item-footer">
-                                        <span class="wcem-edition-label"><?php echo esc_html(PMCM_Core::get_ordinal($current) . ' Edition'); ?></span>
-                                        <span class="material-icons-round">chevron_right</span>
-                                    </div>
-                                </button>
-                            <?php
-                                $is_first = false;
-                            endforeach;
-                            ?>
-                        </div>
-                    </aside>
-
-                    <!-- Settings Panel -->
-                    <main class="wcem-settings-panel">
+                <main class="wcem-settings-panel">
+                    <form method="post" id="wcem-edition-form">
+                        <?php wp_nonce_field('wcem_settings_nonce'); ?>
                         <?php
                         $is_first = true;
                         foreach ($courses as $category_slug => $course):
@@ -523,280 +488,176 @@ class PMCM_Admin
                             $current = get_option($prefix . 'current_edition', 1);
                             $start = get_option($prefix . 'edition_start', '');
                             $end = get_option($prefix . 'edition_end', '');
-                            $early_bird = get_option($prefix . 'early_bird_enabled', 'no');
-
-                            // Determine status
-                            $status = 'active';
-                            $status_label = __('Active', 'prepmedico-course-management');
-
-                            if (empty($start) || empty($end)) {
-                                $status = 'needs-dates';
-                                $status_label = __('Needs Dates', 'prepmedico-course-management');
-                            } elseif ($early_bird === 'yes') {
-                                $eb_end = get_option($prefix . 'early_bird_end', '');
-                                if (!empty($eb_end) && time() <= strtotime($eb_end)) {
-                                    $status = 'early-bird';
-                                    $status_label = __('Early Bird', 'prepmedico-course-management');
-                                }
-                            }
-
-                            if (!empty($end)) {
-                                $end_timestamp = strtotime($end);
-                                if (time() > $end_timestamp) {
-                                    $status = 'expired';
-                                    $status_label = __('Opening Soon', 'prepmedico-course-management');
-                                } elseif ((($end_timestamp - time()) / DAY_IN_SECONDS) <= 7) {
-                                    $status = 'ending-soon';
-                                    $status_label = __('Ending Soon', 'prepmedico-course-management');
-                                }
-                            }
-
-                            // Early bird data
                             $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no') === 'yes';
                             $eb_start = get_option($prefix . 'early_bird_start', '');
-                            $eb_end_date = get_option($prefix . 'early_bird_end', '');
-                            $eb_is_active = false;
-                            if ($eb_enabled && !empty($eb_end_date)) {
-                                $today = current_time('Y-m-d');
-                                $start_ok = empty($eb_start) || strtotime($today) >= strtotime($eb_start);
-                                $end_ok = strtotime($today) <= strtotime($eb_end_date);
-                                $eb_is_active = $start_ok && $end_ok;
-                            }
-
-                            // Next edition data
+                            $eb_end = get_option($prefix . 'early_bird_end', '');
                             $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
-                            $next_edition = get_option($prefix . 'next_edition', intval($current) + 1);
+                            $next_edition = get_option($prefix . 'next_edition', $current + 1);
                             $next_start = get_option($prefix . 'next_start', '');
                             $next_end = get_option($prefix . 'next_end', '');
                             $next_eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no') === 'yes';
                             $next_eb_start = get_option($prefix . 'next_early_bird_start', '');
                             $next_eb_end = get_option($prefix . 'next_early_bird_end', '');
+                            $status_info = self::get_course_status_info($course);
                         ?>
-                            <div class="wcem-course-settings-panel" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo !$is_first ? 'display:none;' : ''; ?>">
-                                <!-- Panel Header -->
-                                <div class="wcem-panel-header">
-                                    <div class="wcem-panel-title-section">
-                                        <h2 class="wcem-panel-title"><?php echo esc_html($course['name']); ?></h2>
-                                        <span class="wcem-panel-status-badge wcem-status-<?php echo esc_attr($status); ?>"><?php echo esc_html($status_label); ?></span>
+                            <div class="wcem-course-settings-panel wcem-card" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo $is_first ? '' : 'display:none;'; ?>">
+                                <div class="wcem-course-settings-header wcem-card-header">
+                                    <div class="wcem-settings-title-group">
+                                        <div>
+                                            <p class="wcem-settings-course"><?php echo esc_html($course['name']); ?></p>
+                                            <h3 class="wcem-settings-heading"><?php printf(__('Edition %s Settings', 'prepmedico-course-management'), esc_html($status_info['edition_ordinal'])); ?></h3>
+                                        </div>
+                                        <span class="wcem-course-status wcem-status-<?php echo esc_attr($status_info['status']); ?>"><?php echo esc_html($status_info['label']); ?></span>
                                     </div>
-                                    <button type="submit" name="wcem_save_settings" class="wcem-save-btn">
+                                    <button type="submit" name="wcem_save_settings" class="wcem-btn-primary">
                                         <span class="material-icons-round">save</span>
                                         <?php _e('Save Settings', 'prepmedico-course-management'); ?>
                                     </button>
                                 </div>
 
-                                <!-- Panel Body -->
-                                <div class="wcem-panel-body">
-                                    <!-- Current Edition Configuration -->
-                                    <div class="wcem-section">
+                                <div class="wcem-course-settings-body wcem-card-body">
+                                    <!-- Current Edition -->
+                                    <section class="wcem-section">
                                         <div class="wcem-section-header">
-                                            <div class="wcem-section-title-group">
-                                                <span class="wcem-dot"></span>
-                                                <h4><?php _e('Current Edition Configuration', 'prepmedico-course-management'); ?></h4>
+                                            <div class="wcem-icon-box wcem-icon-indigo">
+                                                <span class="material-icons-round">event</span>
                                             </div>
-                                                                    <div class="wcem-course-settings" data-course="<?php echo esc_attr($category_slug); ?>" data-name="<?php echo esc_attr($course['name']); ?>" data-status="<?php echo esc_attr($status_info['status']); ?>" data-status-label="<?php echo esc_attr($status_info['label']); ?>" style="display: <?php echo $display; ?>;">
+                                            <div>
+                                                <h4><?php _e('Current Edition Configuration', 'prepmedico-course-management'); ?></h4>
+                                                <p class="description"><?php _e('Set the active edition number and enrollment window.', 'prepmedico-course-management'); ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="wcem-fields-grid wcem-fields-3col">
+                                            <div class="wcem-field">
+                                                <label for="<?php echo esc_attr($prefix); ?>current_edition"><?php _e('Edition Number', 'prepmedico-course-management'); ?></label>
+                                                <input type="number" id="<?php echo esc_attr($prefix); ?>current_edition" name="<?php echo esc_attr($prefix); ?>current_edition" value="<?php echo esc_attr($current); ?>" min="1">
+                                            </div>
+                                            <div class="wcem-field">
+                                                <label for="<?php echo esc_attr($prefix); ?>edition_start"><?php _e('Start Date', 'prepmedico-course-management'); ?></label>
+                                                <input type="date" id="<?php echo esc_attr($prefix); ?>edition_start" name="<?php echo esc_attr($prefix); ?>edition_start" value="<?php echo esc_attr($start); ?>">
+                                            </div>
+                                            <div class="wcem-field">
+                                                <label for="<?php echo esc_attr($prefix); ?>edition_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
+                                                <input type="date" id="<?php echo esc_attr($prefix); ?>edition_end" name="<?php echo esc_attr($prefix); ?>edition_end" value="<?php echo esc_attr($end); ?>">
+                                            </div>
+                                        </div>
+                                    </section>
 
-                                                                        <!-- Current Edition Configuration -->
-                                                                        <section class="wcem-section">
-                                                                            <div class="wcem-section-header">
-                                                                                <span class="wcem-dot"></span>
-                                                                                <h4><?php _e('Current Edition Configuration', 'prepmedico-course-management'); ?></h4>
-                                                                            </div>
-                                                                            <div class="wcem-fields-grid wcem-fields-3col">
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>current_edition"><?php _e('Edition Number', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="number" id="<?php echo esc_attr($prefix); ?>current_edition" name="<?php echo esc_attr($prefix); ?>current_edition" value="<?php echo esc_attr($current); ?>" min="1">
-                                                                                </div>
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>edition_start"><?php _e('Start Date', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>edition_start" name="<?php echo esc_attr($prefix); ?>edition_start" value="<?php echo esc_attr($start); ?>">
-                                                                                </div>
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>edition_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>edition_end" name="<?php echo esc_attr($prefix); ?>edition_end" value="<?php echo esc_attr($end); ?>">
-                                                                                </div>
-                                                                            </div>
-                                                                        </section>
+                                    <!-- Early Bird -->
+                                    <section class="wcem-section wcem-early-bird-section">
+                                        <div class="wcem-section-header wcem-section-header-toggle">
+                                            <div class="wcem-section-title-group">
+                                                <div class="wcem-icon-box wcem-icon-amber">
+                                                    <span class="material-icons-round">local_fire_department</span>
+                                                </div>
+                                                <div>
+                                                    <h4><?php _e('Early Bird Settings', 'prepmedico-course-management'); ?></h4>
+                                                    <p class="description"><?php _e('Open and close Early Bird window for this edition.', 'prepmedico-course-management'); ?></p>
+                                                </div>
+                                            </div>
+                                            <label class="wcem-toggle">
+                                                <input type="checkbox" name="<?php echo esc_attr($prefix); ?>early_bird_enabled" value="yes" <?php checked($eb_enabled, true); ?> class="wcem-early-bird-toggle" data-course="<?php echo esc_attr($category_slug); ?>">
+                                                <span class="wcem-toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="wcem-early-bird-fields" style="<?php echo $eb_enabled ? '' : 'display:none;'; ?>" data-course="<?php echo esc_attr($category_slug); ?>">
+                                            <div class="wcem-fields-grid wcem-fields-2col">
+                                                <div class="wcem-field">
+                                                    <label for="<?php echo esc_attr($prefix); ?>early_bird_start"><?php _e('Early Bird Start', 'prepmedico-course-management'); ?></label>
+                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>early_bird_start" name="<?php echo esc_attr($prefix); ?>early_bird_start" value="<?php echo esc_attr($eb_start); ?>">
+                                                </div>
+                                                <div class="wcem-field">
+                                                    <label for="<?php echo esc_attr($prefix); ?>early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
+                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>early_bird_end" name="<?php echo esc_attr($prefix); ?>early_bird_end" value="<?php echo esc_attr($eb_end); ?>">
+                                                </div>
+                                            </div>
+                                            <div class="wcem-info-banner">
+                                                <span class="material-icons-round">info</span>
+                                                <span><?php _e('Remember to align WooCommerce sale pricing with the Early Bird window.', 'prepmedico-course-management'); ?></span>
+                                            </div>
+                                        </div>
+                                    </section>
 
-                                                                        <!-- Early Bird Settings -->
-                                                                        <section class="wcem-section">
-                                                                            <div class="wcem-section-header wcem-section-header-toggle">
-                                                                                <div class="wcem-section-title-group">
-                                                                                    <span class="wcem-dot wcem-dot-blue"></span>
-                                                                                    <h4><?php _e('Early Bird Settings', 'prepmedico-course-management'); ?></h4>
-                                                                                    <?php if ($eb_enabled): ?>
-                                                                                        <span class="wcem-eb-status-badge <?php echo $eb_is_active ? 'wcem-eb-active' : 'wcem-eb-inactive'; ?>">
-                                                                                            <?php echo $eb_is_active ? __('Active', 'prepmedico-course-management') : __('Inactive', 'prepmedico-course-management'); ?>
-                                                                                        </span>
-                                                                                    <?php endif; ?>
-                                                                                </div>
-                                                                                <label class="wcem-toggle wcem-toggle-small">
-                                                                                    <input type="checkbox" name="<?php echo esc_attr($prefix); ?>early_bird_enabled" value="yes" <?php checked($eb_enabled); ?> class="wcem-early-bird-toggle" data-course="<?php echo esc_attr($category_slug); ?>">
-                                                                                    <span class="wcem-toggle-slider"></span>
-                                                                                </label>
-                                                                            </div>
-                                                                            <div class="wcem-early-bird-section wcem-early-bird-fields" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo !$eb_enabled ? 'display:none;' : ''; ?>">
-                                                                                <div class="wcem-fields-grid wcem-fields-2col">
-                                                                                    <div class="wcem-field">
-                                                                                        <label for="<?php echo esc_attr($prefix); ?>early_bird_start"><?php _e('Early Bird Start', 'prepmedico-course-management'); ?></label>
-                                                                                        <input type="date" id="<?php echo esc_attr($prefix); ?>early_bird_start" name="<?php echo esc_attr($prefix); ?>early_bird_start" value="<?php echo esc_attr($eb_start); ?>">
-                                                                                    </div>
-                                                                                    <div class="wcem-field">
-                                                                                        <label for="<?php echo esc_attr($prefix); ?>early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
-                                                                                        <input type="date" id="<?php echo esc_attr($prefix); ?>early_bird_end" name="<?php echo esc_attr($prefix); ?>early_bird_end" value="<?php echo esc_attr($eb_end_date); ?>">
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div class="wcem-info-banner">
-                                                                                    <span class="material-icons-round">info</span>
-                                                                                    <?php _e('Please update the sale price accordingly for Early Bird on the WooCommerce products.', 'prepmedico-course-management'); ?>
-                                                                                </div>
-                                                                            </div>
-                                                                        </section>
+                                    <!-- Next Edition -->
+                                    <section class="wcem-section wcem-next-edition-section">
+                                        <div class="wcem-section-header wcem-section-header-toggle">
+                                            <div class="wcem-section-title-group">
+                                                <div class="wcem-icon-box wcem-icon-blue">
+                                                    <span class="material-icons-round">fast_forward</span>
+                                                </div>
+                                                <div>
+                                                    <h4><?php _e('Next Edition (Slot B)', 'prepmedico-course-management'); ?></h4>
+                                                    <p class="description"><?php _e('Preconfigure the upcoming edition; it will be promoted when enabled.', 'prepmedico-course-management'); ?></p>
+                                                </div>
+                                            </div>
+                                            <label class="wcem-toggle">
+                                                <input type="checkbox" name="<?php echo esc_attr($prefix); ?>next_enabled" value="yes" <?php checked($next_enabled, true); ?> class="wcem-next-edition-toggle">
+                                                <span class="wcem-toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="wcem-next-edition-fields" style="<?php echo $next_enabled ? '' : 'display:none;'; ?>">
+                                            <div class="wcem-fields-grid wcem-fields-3col">
+                                                <div class="wcem-field">
+                                                    <label for="<?php echo esc_attr($prefix); ?>next_edition"><?php _e('Edition Number', 'prepmedico-course-management'); ?></label>
+                                                    <input type="number" id="<?php echo esc_attr($prefix); ?>next_edition" name="<?php echo esc_attr($prefix); ?>next_edition" value="<?php echo esc_attr($next_edition); ?>" min="1">
+                                                </div>
+                                                <div class="wcem-field">
+                                                    <label for="<?php echo esc_attr($prefix); ?>next_start"><?php _e('Start Date', 'prepmedico-course-management'); ?></label>
+                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>next_start" name="<?php echo esc_attr($prefix); ?>next_start" value="<?php echo esc_attr($next_start); ?>">
+                                                </div>
+                                                <div class="wcem-field">
+                                                    <label for="<?php echo esc_attr($prefix); ?>next_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
+                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>next_end" name="<?php echo esc_attr($prefix); ?>next_end" value="<?php echo esc_attr($next_end); ?>">
+                                                </div>
+                                            </div>
 
-                                                                        <!-- Next Edition (Slot B) -->
-                                                                        <section class="wcem-section wcem-next-edition-section">
-                                                                            <div class="wcem-section-header wcem-section-header-toggle">
-                                                                                <div class="wcem-section-title-group">
-                                                                                    <span class="wcem-dot wcem-dot-amber"></span>
-                                                                                    <h4><?php _e('Next Edition (Slot B)', 'prepmedico-course-management'); ?></h4>
-                                                                                </div>
-                                                                                <label class="wcem-toggle wcem-toggle-small">
-                                                                                    <input type="checkbox" name="<?php echo esc_attr($prefix); ?>next_enabled" value="yes" <?php checked($next_enabled); ?> class="wcem-next-edition-toggle" data-course="<?php echo esc_attr($category_slug); ?>">
-                                                                                    <span class="wcem-toggle-slider"></span>
-                                                                                </label>
-                                                                            </div>
-                                                                            <div class="wcem-next-edition-fields" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo !$next_enabled ? 'display:none;' : ''; ?>">
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>edition_start"><?php _e('Start Date', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>edition_start" name="<?php echo esc_attr($prefix); ?>edition_start" value="<?php echo esc_attr($edition_start); ?>">
-                                                                                </div>
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>edition_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>edition_end" name="<?php echo esc_attr($prefix); ?>edition_end" value="<?php echo esc_attr($edition_end); ?>">
-                                                                                </div>
-                                                                            </div>
-                                                                        </section>
+                                            <div class="wcem-next-eb-subsection">
+                                                <div class="wcem-subsection-header">
+                                                    <span><?php _e('Next Edition - Early Bird', 'prepmedico-course-management'); ?></span>
+                                                    <label class="wcem-toggle wcem-toggle-small">
+                                                        <input type="checkbox" name="<?php echo esc_attr($prefix); ?>next_early_bird_enabled" value="yes" <?php checked($next_eb_enabled, true); ?> class="wcem-next-early-bird-toggle">
+                                                        <span class="wcem-toggle-slider"></span>
+                                                    </label>
+                                                </div>
+                                                <div class="wcem-next-early-bird-fields" style="<?php echo $next_eb_enabled ? '' : 'display:none;'; ?>">
+                                                    <div class="wcem-fields-grid wcem-fields-2col">
+                                                        <div class="wcem-field">
+                                                            <label for="<?php echo esc_attr($prefix); ?>next_early_bird_start"><?php _e('Early Bird Start', 'prepmedico-course-management'); ?></label>
+                                                            <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_start" name="<?php echo esc_attr($prefix); ?>next_early_bird_start" value="<?php echo esc_attr($next_eb_start); ?>">
+                                                        </div>
+                                                        <div class="wcem-field">
+                                                            <label for="<?php echo esc_attr($prefix); ?>next_early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
+                                                            <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_end" name="<?php echo esc_attr($prefix); ?>next_early_bird_end" value="<?php echo esc_attr($next_eb_end); ?>">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
 
-                                                                        <!-- Early Bird Settings -->
-                                                                        <section class="wcem-section wcem-early-bird-section">
-                                                                            <div class="wcem-section-header wcem-section-header-toggle">
-                                                                                <div class="wcem-section-title-group">
-                                                                                    <span class="wcem-dot wcem-dot-amber"></span>
-                                                                                    <h4><?php _e('Early Bird Settings', 'prepmedico-course-management'); ?></h4>
-                                                                                    <?php if ($eb_enabled && $eb_status): ?>
-                                                                                        <span class="wcem-eb-status-badge wcem-eb-<?php echo esc_attr($eb_status_class); ?>"><?php echo esc_html($eb_status); ?></span>
-                                                                                    <?php endif; ?>
-                                                                                </div>
-                                                                                <label class="wcem-toggle">
-                                                                                    <input type="checkbox" name="<?php echo esc_attr($prefix); ?>early_bird_enabled" value="yes" <?php checked($eb_enabled, true); ?> class="wcem-early-bird-toggle">
-                                                                                    <span class="wcem-toggle-slider"></span>
-                                                                                    <span class="wcem-toggle-label"><?php _e('Enable Offer', 'prepmedico-course-management'); ?></span>
-                                                                                </label>
-                                                                            </div>
-                                                                            <div class="wcem-early-bird-fields wcem-fields-grid wcem-fields-2col" style="<?php echo $eb_enabled ? '' : 'display:none;'; ?>">
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>early_bird_start"><?php _e('Early Bird Start', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>early_bird_start" name="<?php echo esc_attr($prefix); ?>early_bird_start" value="<?php echo esc_attr($eb_start); ?>">
-                                                                                </div>
-                                                                                <div class="wcem-field">
-                                                                                    <label for="<?php echo esc_attr($prefix); ?>early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
-                                                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>early_bird_end" name="<?php echo esc_attr($prefix); ?>early_bird_end" value="<?php echo esc_attr($eb_end); ?>">
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="wcem-info-banner" style="<?php echo $eb_enabled ? '' : 'display:none;'; ?>">
-                                                                                <span class="material-icons-round">info</span>
-                                                                                <span><?php _e('Please update the sale price accordingly for Early Bird on the WooCommerce products.', 'prepmedico-course-management'); ?></span>
-                                                                            </div>
-                                                                        </section>
+                                    <!-- Manual increment -->
+                                    <section class="wcem-section">
+                                        <button type="button" class="button wcem-manual-increment" data-course="<?php echo esc_attr($category_slug); ?>">
+                                            <span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px;">add_circle</span>
+                                            <?php _e('Increment Edition (+1)', 'prepmedico-course-management'); ?>
+                                        </button>
+                                        <p class="description" style="margin-top:8px;">&nbsp;<?php _e('Manually increment edition number. If "Next Edition" is enabled it will be promoted to Current.', 'prepmedico-course-management'); ?></p>
+                                    </section>
+                                </div>
+                            </div>
+                        <?php
+                            $is_first = false;
+                        endforeach;
+                        ?>
+                    </form>
+                </main>
+            </div>
 
-                                                                        <!-- Next Edition (Slot B) -->
-                                                                        <section class="wcem-section wcem-next-edition-section">
-                                                                            <div class="wcem-section-header wcem-section-header-toggle">
-                                                                                <div class="wcem-section-title-group">
-                                                                                    <div class="wcem-icon-box wcem-icon-indigo">
-                                                                                        <span class="material-icons-round">fast_forward</span>
-                                                                                    </div>
-                                                                                    <h4><?php _e('Next Edition (Slot B)', 'prepmedico-course-management'); ?></h4>
-                                                                                </div>
-                                                                                <label class="wcem-toggle">
-                                                                                    <input type="checkbox" name="<?php echo esc_attr($prefix); ?>next_enabled" value="yes" <?php checked($next_enabled, true); ?> class="wcem-next-edition-toggle">
-                                                                                    <span class="wcem-toggle-slider"></span>
-                                                                                </label>
-                                                                            </div>
-                                                                            <div class="wcem-next-edition-fields" style="<?php echo $next_enabled ? '' : 'display:none;'; ?>">
-                                                                                <div class="wcem-fields-grid wcem-fields-3col">
-                                                                                    <div class="wcem-field">
-                                                                                        <label for="<?php echo esc_attr($prefix); ?>next_edition"><?php _e('Edition Number', 'prepmedico-course-management'); ?></label>
-                                                                                        <input type="number" id="<?php echo esc_attr($prefix); ?>next_edition" name="<?php echo esc_attr($prefix); ?>next_edition" value="<?php echo esc_attr($next_edition); ?>" min="1">
-                                                                                    </div>
-                                                                                    <div class="wcem-field">
-                                                                                        <label for="<?php echo esc_attr($prefix); ?>next_start"><?php _e('Start Date', 'prepmedico-course-management'); ?></label>
-                                                                                        <input type="date" id="<?php echo esc_attr($prefix); ?>next_start" name="<?php echo esc_attr($prefix); ?>next_start" value="<?php echo esc_attr($next_start); ?>">
-                                                                                    </div>
-                                                                                    <div class="wcem-field">
-                                                                                        <label for="<?php echo esc_attr($prefix); ?>next_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
-                                                                                        <input type="date" id="<?php echo esc_attr($prefix); ?>next_end" name="<?php echo esc_attr($prefix); ?>next_end" value="<?php echo esc_attr($next_end); ?>">
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <!-- Next Edition Early Bird -->
-                                                                                <div class="wcem-next-eb-subsection">
-                                                                                    <div class="wcem-subsection-header">
-                                                                                        <span><?php _e('Next Edition - Early Bird', 'prepmedico-course-management'); ?></span>
-                                                                                        <label class="wcem-toggle wcem-toggle-small">
-                                                                                            <input type="checkbox" name="<?php echo esc_attr($prefix); ?>next_early_bird_enabled" value="yes" <?php checked($next_eb_enabled); ?> class="wcem-next-early-bird-toggle" data-course="<?php echo esc_attr($category_slug); ?>">
-                                                                                            <span class="wcem-toggle-slider"></span>
-                                                                                        </label>
-                                                                                    </div>
-                                                                                    <div class="wcem-next-early-bird-fields" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo !$next_eb_enabled ? 'display:none;' : ''; ?>">
-                                                                                        <div class="wcem-fields-grid wcem-fields-2col">
-                                                                                            <div class="wcem-field">
-                                                                                                <label for="<?php echo esc_attr($prefix); ?>next_early_bird_start"><?php _e('Early Bird Start', 'prepmedico-course-management'); ?></label>
-                                                                                                <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_start" name="<?php echo esc_attr($prefix); ?>next_early_bird_start" value="<?php echo esc_attr($next_eb_start); ?>">
-                                                                                            </div>
-                                                                                            <div class="wcem-field">
-                                                                                                <label for="<?php echo esc_attr($prefix); ?>next_early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
-                                                                                                <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_end" name="<?php echo esc_attr($prefix); ?>next_early_bird_end" value="<?php echo esc_attr($next_eb_end); ?>">
-                                                                                            </div>
-                                                                                            <label for="<?php echo esc_attr($prefix); ?>next_early_bird_start"><?php _e('Early Bird Start', 'prepmedico-course-management'); ?></label>
-                                                                                            <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_start" name="<?php echo esc_attr($prefix); ?>next_early_bird_start" value="<?php echo esc_attr($next_eb_start); ?>">
-                                                                                        </div>
-                                                                                        <div class="wcem-field">
-                                                                                            <label for="<?php echo esc_attr($prefix); ?>next_early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
-                                                                                            <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_end" name="<?php echo esc_attr($prefix); ?>next_early_bird_end" value="<?php echo esc_attr($next_eb_end); ?>">
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        </section>
-
-                                                                        <!-- Manual Increment Button -->
-                                                                        <section class="wcem-section">
-                                                                            <button type="button" class="button wcem-manual-increment" data-course="<?php echo esc_attr($category_slug); ?>">
-                                                                                <span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px;">add_circle</span>
-                                                                                <?php _e('Increment Edition (+1)', 'prepmedico-course-management'); ?>
-                                                                            </button>
-                                                                            <p class="description" style="margin-top:8px;"><?php _e('Manually increment edition number. If "Next Edition" is enabled, it will be promoted to Current.', 'prepmedico-course-management'); ?></p>
-                                                                        </section>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div> <!-- .wcem-course-settings-panel -->
-                                                        <?php
-                                                            $is_first = false;
-                                                        endforeach;
-                                                        ?>
-                                                    </main>
-                                                </div> <!-- .wcem-two-column-container -->
-                                            </form>
-
-                                            <!-- Bottom Sections Grid -->
-                                            <div class="wcem-bottom-sections">
-
-                                                <!-- Shortcodes Section -->
-                                                <section class="wcem-card wcem-shortcodes-card">
-                                                    <div class="wcem-card-header">
-                                                        <div class="wcem-icon-box wcem-icon-emerald">
+            <!-- Bottom cards -->
+            <div class="wcem-bottom-sections">
+                <section class="wcem-card wcem-shortcodes-card">
+                    <div class="wcem-card-header">
+                        <div class="wcem-icon-box wcem-icon-emerald">
                             <span class="material-icons-round">code</span>
                         </div>
                         <h3><?php _e('Available Shortcodes', 'prepmedico-course-management'); ?></h3>
@@ -815,7 +676,6 @@ class PMCM_Admin
                     </div>
                 </section>
 
-                <!-- FluentCRM Integration Section -->
                 <section class="wcem-card wcem-fluentcrm-card">
                     <div class="wcem-card-header">
                         <div class="wcem-icon-box wcem-icon-indigo">
@@ -849,10 +709,8 @@ class PMCM_Admin
                         <?php endif; ?>
                     </div>
                 </section>
-
             </div>
 
-            <!-- Activity Log Section -->
             <section class="wcem-card wcem-activity-log-card">
                 <div class="wcem-card-header">
                     <h3><?php _e('Recent Activity Log', 'prepmedico-course-management'); ?></h3>
@@ -879,7 +737,6 @@ class PMCM_Admin
                 </div>
             </section>
 
-            <!-- Cron Status Section -->
             <section class="wcem-card wcem-cron-card">
                 <div class="wcem-card-header">
                     <h3><?php _e('Scheduled Tasks', 'prepmedico-course-management'); ?></h3>
@@ -899,75 +756,9 @@ class PMCM_Admin
                     </button>
                 </div>
             </section>
-
-            <!-- FluentCRM Card -->
-            <div class="wcem-card">
-                <div class="wcem-card-header">
-                    <span class="material-icons-round">hub</span>
-                    <h3><?php _e('FluentCRM Integration', 'prepmedico-course-management'); ?></h3>
-                </div>
-                <div class="wcem-card-body">
-                    <?php if (PMCM_FluentCRM::is_active()): ?>
-                        <div class="wcem-status-success" style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--pmcm-success-bg);border-radius:var(--pmcm-radius);margin-bottom:16px;">
-                            <span class="material-icons-round" style="color:var(--pmcm-success);">check_circle</span>
-                            <span style="color:var(--pmcm-success);font-weight:600;"><?php _e('FluentCRM is active and connected.', 'prepmedico-course-management'); ?></span>
-                        </div>
-                        <button type="button" class="button" id="wcem-test-fluentcrm">
-                            <span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px;">sync</span>
-                            <?php _e('Test Connection', 'prepmedico-course-management'); ?>
-                        </button>
-                    <?php else: ?>
-                        <div class="wcem-status-warning" style="display:flex;align-items:center;gap:8px;padding:12px;background:var(--pmcm-warning-bg);border-radius:var(--pmcm-radius);">
-                            <span class="material-icons-round" style="color:var(--pmcm-warning);">warning</span>
-                            <span style="color:var(--pmcm-warning);"><?php _e('FluentCRM is not active. Please install and activate FluentCRM.', 'prepmedico-course-management'); ?></span>
-                        </div>
-                    <?php endif; ?>
-
-                    <div style="margin-top:16px;">
-                        <h4 style="font-size:12px;color:var(--pmcm-text-secondary);margin-bottom:8px;"><?php _e('Required Tags', 'prepmedico-course-management'); ?></h4>
-                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                            <?php foreach (PMCM_Core::get_courses() as $course): ?>
-                                <code style="font-size:11px;"><?php echo esc_html($course['fluentcrm_tag']); ?></code>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-
-        <!-- Activity Log Section -->
-        <div class="wcem-card" style="margin-top:24px;">
-            <div class="wcem-card-header">
-                <span class="material-icons-round">history</span>
-                <h3><?php _e('Recent Activity Log', 'prepmedico-course-management'); ?></h3>
-            </div>
-            <div class="wcem-card-body">
-                <?php self::display_activity_log(); ?>
-                <div style="display:flex;gap:12px;margin-top:16px;">
-                    <button type="button" class="button" onclick="if(confirm('Clear all logs?')){location.href='<?php echo admin_url('admin.php?page=prepmedico-management&clear_log=1&_wpnonce=' . wp_create_nonce('clear_log')); ?>'}">
-                        <span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px;">delete_sweep</span>
-                        <?php _e('Clear Log', 'prepmedico-course-management'); ?>
-                    </button>
-                    <button type="button" class="button" id="wcem-run-cron">
-                        <span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:4px;">play_circle</span>
-                        <?php _e('Run Edition Check Now', 'prepmedico-course-management'); ?>
-                    </button>
-                </div>
-                <?php
-                $next_run = wp_next_scheduled('wcem_daily_edition_check');
-                if ($next_run):
-                    $next_run_local = get_date_from_gmt(date('Y-m-d H:i:s', $next_run), 'F j, Y g:i a');
-                ?>
-                    <p class="description" style="margin-top:12px;">
-                        <?php printf(__('Next scheduled check: %s', 'prepmedico-course-management'), '<strong>' . esc_html($next_run_local) . '</strong>'); ?>
-                    </p>
-                <?php endif; ?>
-            </div>
-        </div>
-        </div>
-    <?php
+<?php
     }
-
     /**
      * Render ASiT Coupon Management admin page
      */
