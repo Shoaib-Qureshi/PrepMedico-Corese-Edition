@@ -2003,6 +2003,11 @@
     max-width: none;
 }
 
+/* Hide outer duplicate container; keep inner instance */
+.wcem-modern-layout > .wcem-two-column-container:first-of-type {
+    display: none;
+}
+
 /* Two-Column Container */
 .wcem-two-column-container {
     display: flex;
@@ -2244,15 +2249,15 @@
     background: var(--pmcm-gradient);
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 10px 14px;
     border-radius: var(--pmcm-radius-lg);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 4px 12px rgba(141, 32, 99, 0.3);
+    gap: 6px;
+    box-shadow: 0 4px 10px rgba(141, 32, 99, 0.2);
     transition: all var(--pmcm-transition);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -2271,8 +2276,8 @@
 .wcem-panel-body {
     background: var(--pmcm-surface);
     border: 1px solid var(--pmcm-border);
-    border-radius: var(--pmcm-radius-xl);
-    padding: 24px;
+    border-radius: var(--pmcm-radius-lg);
+    padding: 20px;
 }
 
 /* =====================================================
