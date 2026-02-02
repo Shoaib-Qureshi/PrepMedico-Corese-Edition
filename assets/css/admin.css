@@ -1988,3 +1988,927 @@
 @media (prefers-color-scheme: dark) {
     /* Ready for dark mode implementation */
 }
+
+/* =====================================================
+   MODERN EDITION MANAGEMENT LAYOUT
+   ===================================================== */
+
+/* Modern Layout Container */
+.wcem-modern-layout {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--pmcm-surface-secondary);
+    min-height: 100vh;
+    padding: 0;
+    margin: 20px 20px 20px 0;
+    max-width: none;
+}
+
+/* Two-Column Container */
+.wcem-two-column-container {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* =====================================================
+   COURSE LIST SIDEBAR
+   ===================================================== */
+.wcem-course-list-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-xl);
+    overflow: hidden;
+    height: fit-content;
+    position: sticky;
+    top: 52px;
+}
+
+.wcem-course-list-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--pmcm-border);
+    background: var(--pmcm-surface-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wcem-course-list-header h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+    border: none;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-refresh-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--pmcm-radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pmcm-text-muted);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-refresh-btn:hover {
+    background: var(--pmcm-surface-tertiary);
+    color: var(--pmcm-primary);
+}
+
+.wcem-course-list-items {
+    padding: 8px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+/* Course List Item */
+.wcem-course-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border-radius: var(--pmcm-radius-lg);
+    border: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+    margin-bottom: 4px;
+}
+
+.wcem-course-item:hover {
+    background: var(--pmcm-surface-secondary);
+}
+
+.wcem-course-item.active {
+    background: var(--pmcm-surface-secondary);
+    border-color: var(--pmcm-primary);
+}
+
+.wcem-course-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.wcem-course-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-course-item-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wcem-edition-label {
+    font-size: 10px;
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-course-item-footer .material-icons-round {
+    font-size: 16px;
+    color: var(--pmcm-text-muted);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-course-item.active .wcem-course-item-footer .material-icons-round {
+    color: var(--pmcm-primary);
+}
+
+.wcem-course-item:hover .wcem-course-item-footer .material-icons-round {
+    transform: translateX(4px);
+}
+
+/* Status Badges in Course List */
+.wcem-course-status {
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    border-radius: var(--pmcm-radius-sm);
+    letter-spacing: 0.02em;
+}
+
+.wcem-course-status.wcem-status-ending-soon {
+    background: var(--pmcm-warning-bg);
+    color: var(--pmcm-warning);
+}
+
+.wcem-course-status.wcem-status-needs-dates {
+    background: var(--pmcm-error-bg);
+    color: var(--pmcm-error);
+}
+
+.wcem-course-status.wcem-status-active {
+    background: var(--pmcm-success-bg);
+    color: var(--pmcm-success);
+}
+
+.wcem-course-status.wcem-status-early-bird {
+    background: var(--pmcm-info-bg);
+    color: var(--pmcm-info);
+}
+
+.wcem-course-status.wcem-status-expired {
+    background: var(--pmcm-error-bg);
+    color: var(--pmcm-error);
+}
+
+/* =====================================================
+   SETTINGS PANEL
+   ===================================================== */
+.wcem-settings-panel {
+    flex: 1;
+    min-width: 0;
+}
+
+.wcem-panel-header {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-left: 4px solid var(--pmcm-primary);
+    border-radius: var(--pmcm-radius-xl);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.wcem-panel-title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.wcem-panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-panel-subtitle {
+    font-size: 12px;
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-panel-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: var(--pmcm-radius);
+    letter-spacing: 0.05em;
+}
+
+.wcem-panel-status-badge.wcem-status-ending-soon {
+    background: var(--pmcm-warning-bg);
+    color: var(--pmcm-warning);
+}
+
+.wcem-panel-status-badge.wcem-status-needs-dates {
+    background: var(--pmcm-error-bg);
+    color: var(--pmcm-error);
+}
+
+.wcem-panel-status-badge.wcem-status-active {
+    background: var(--pmcm-success-bg);
+    color: var(--pmcm-success);
+}
+
+.wcem-panel-status-badge.wcem-status-early-bird {
+    background: var(--pmcm-info-bg);
+    color: var(--pmcm-info);
+}
+
+.wcem-panel-status-badge.wcem-status-expired {
+    background: var(--pmcm-error-bg);
+    color: var(--pmcm-error);
+}
+
+.wcem-save-btn {
+    background: var(--pmcm-gradient);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--pmcm-radius-lg);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(141, 32, 99, 0.3);
+    transition: all var(--pmcm-transition);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wcem-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(141, 32, 99, 0.4);
+}
+
+.wcem-save-btn .material-icons-round {
+    font-size: 18px;
+}
+
+/* Panel Body */
+.wcem-panel-body {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-xl);
+    padding: 24px;
+}
+
+/* =====================================================
+   SECTIONS WITHIN SETTINGS PANEL
+   ===================================================== */
+.wcem-section {
+    margin-bottom: 32px;
+}
+
+.wcem-section:last-child {
+    margin-bottom: 0;
+}
+
+.wcem-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.wcem-section-header h4 {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pmcm-text-secondary);
+    margin: 0;
+}
+
+.wcem-section-header-toggle {
+    justify-content: space-between;
+}
+
+.wcem-section-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcem-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pmcm-primary);
+    flex-shrink: 0;
+}
+
+.wcem-dot-amber {
+    background: var(--pmcm-warning);
+}
+
+.wcem-dot-blue {
+    background: var(--pmcm-info);
+}
+
+/* Early Bird Status Badge */
+.wcem-eb-status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: var(--pmcm-radius-sm);
+}
+
+.wcem-eb-status-badge.wcem-eb-active {
+    background: var(--pmcm-success-bg);
+    color: var(--pmcm-success);
+}
+
+.wcem-eb-status-badge.wcem-eb-inactive {
+    background: var(--pmcm-error-bg);
+    color: var(--pmcm-error);
+}
+
+/* Fields Grid */
+.wcem-fields-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.wcem-fields-3col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.wcem-fields-2col {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 900px) {
+    .wcem-fields-3col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .wcem-fields-3col,
+    .wcem-fields-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Form Fields */
+.wcem-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pmcm-text-secondary);
+    margin-bottom: 6px;
+}
+
+.wcem-field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    font-size: 14px;
+    background: var(--pmcm-surface-secondary);
+    transition: all var(--pmcm-transition);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-field input:hover {
+    border-color: var(--pmcm-text-muted);
+}
+
+.wcem-field input:focus {
+    outline: none;
+    border-color: var(--pmcm-primary);
+    box-shadow: 0 0 0 4px rgba(141, 32, 99, 0.1);
+    background: var(--pmcm-surface);
+}
+
+.wcem-field input[type="number"] {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* =====================================================
+   TOGGLE SWITCH
+   ===================================================== */
+.wcem-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.wcem-toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.wcem-toggle-slider {
+    width: 44px;
+    height: 24px;
+    background: var(--pmcm-border);
+    border-radius: 100px;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.wcem-toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.wcem-toggle input:checked + .wcem-toggle-slider {
+    background: var(--pmcm-primary);
+}
+
+.wcem-toggle input:checked + .wcem-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.wcem-toggle-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--pmcm-text-secondary);
+}
+
+.wcem-toggle-small .wcem-toggle-slider {
+    width: 36px;
+    height: 20px;
+}
+
+.wcem-toggle-small .wcem-toggle-slider::before {
+    width: 16px;
+    height: 16px;
+}
+
+.wcem-toggle-small input:checked + .wcem-toggle-slider::before {
+    transform: translateX(16px);
+}
+
+/* =====================================================
+   EARLY BIRD SECTION STYLING
+   ===================================================== */
+.wcem-early-bird-section {
+    background: var(--pmcm-surface-secondary);
+    padding: 20px;
+    border-radius: var(--pmcm-radius-lg);
+    border: 1px solid var(--pmcm-border-light);
+}
+
+.wcem-early-bird-fields {
+    margin-top: 16px;
+}
+
+/* Info Banner */
+.wcem-info-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--pmcm-info);
+    margin-top: 16px;
+    padding: 10px 12px;
+    background: var(--pmcm-info-bg);
+    border-radius: var(--pmcm-radius);
+}
+
+.wcem-info-banner .material-icons-round {
+    font-size: 16px;
+}
+
+/* =====================================================
+   NEXT EDITION SECTION STYLING
+   ===================================================== */
+.wcem-next-edition-section {
+    padding-top: 24px;
+    border-top: 1px solid var(--pmcm-border-light);
+}
+
+.wcem-next-edition-fields {
+    margin-top: 16px;
+}
+
+.wcem-next-eb-subsection {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--pmcm-warning-bg);
+    border-radius: var(--pmcm-radius);
+    border: 1px solid var(--pmcm-warning-border);
+}
+
+.wcem-subsection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--pmcm-text-primary);
+    margin-bottom: 12px;
+}
+
+.wcem-next-early-bird-fields {
+    margin-top: 12px;
+}
+
+/* Icon Box */
+.wcem-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--pmcm-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wcem-icon-box .material-icons-round {
+    font-size: 20px;
+}
+
+.wcem-icon-emerald {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.wcem-icon-indigo {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+/* Increment Action Area */
+.wcem-increment-action {
+    margin-top: 20px;
+    padding: 20px;
+    border: 2px dashed var(--pmcm-border);
+    border-radius: var(--pmcm-radius-lg);
+    text-align: center;
+}
+
+.wcem-increment-action p {
+    font-size: 12px;
+    color: var(--pmcm-text-secondary);
+    margin: 0 0 12px 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.wcem-increment-btn {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    padding: 10px 20px;
+    border-radius: var(--pmcm-radius);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-increment-btn:hover {
+    border-color: var(--pmcm-primary);
+    color: var(--pmcm-primary);
+    background: var(--pmcm-primary-light);
+}
+
+/* =====================================================
+   BOTTOM SECTIONS GRID
+   ===================================================== */
+.wcem-bottom-sections {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    padding: 0 24px 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+@media (max-width: 1024px) {
+    .wcem-bottom-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Card Styles */
+.wcem-card {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-xl);
+    overflow: hidden;
+}
+
+.wcem-card-header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--pmcm-border-light);
+}
+
+.wcem-card-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-card-body {
+    padding: 20px 24px;
+}
+
+/* Shortcodes Card */
+.wcem-shortcode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wcem-shortcode-item {
+    padding: 12px;
+    border: 1px solid var(--pmcm-border-light);
+    border-radius: var(--pmcm-radius);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-shortcode-item:hover {
+    background: var(--pmcm-surface-secondary);
+}
+
+.wcem-shortcode-code {
+    color: var(--pmcm-primary);
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--pmcm-surface-tertiary);
+    padding: 4px 8px;
+    border-radius: var(--pmcm-radius-sm);
+    display: inline-block;
+}
+
+.wcem-shortcode-desc {
+    font-size: 12px;
+    color: var(--pmcm-text-secondary);
+    margin: 8px 0 0 0;
+}
+
+/* FluentCRM Card */
+.wcem-connected-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--pmcm-success);
+    background: var(--pmcm-success-bg);
+    padding: 4px 10px;
+    border-radius: var(--pmcm-radius);
+    margin-left: auto;
+}
+
+.wcem-connected-badge .material-icons-round {
+    font-size: 14px;
+}
+
+.wcem-fluentcrm-info {
+    margin-bottom: 16px;
+}
+
+.wcem-fluentcrm-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--pmcm-surface-secondary);
+    border-radius: var(--pmcm-radius);
+    margin-bottom: 12px;
+}
+
+.wcem-fluentcrm-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-fluentcrm-count {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--pmcm-text-muted);
+    margin-left: auto;
+}
+
+.wcem-fluentcrm-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.wcem-tag {
+    font-size: 10px;
+    padding: 4px 10px;
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-sm);
+    color: var(--pmcm-text-secondary);
+}
+
+.wcem-btn-secondary {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    padding: 8px 16px;
+    border-radius: var(--pmcm-radius);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-btn-secondary:hover {
+    border-color: var(--pmcm-primary);
+    color: var(--pmcm-primary);
+    background: var(--pmcm-primary-light);
+}
+
+/* Activity Log Card */
+.wcem-activity-log-card {
+    margin: 0 24px 24px;
+    max-width: calc(1600px - 48px);
+}
+
+.wcem-activity-log-body {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.wcem-log-entry {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--pmcm-border-light);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-log-entry:last-child {
+    border-bottom: none;
+}
+
+.wcem-log-entry:hover {
+    background: var(--pmcm-surface-secondary);
+}
+
+.wcem-log-time {
+    font-size: 12px;
+    color: var(--pmcm-text-muted);
+    white-space: nowrap;
+    min-width: 150px;
+}
+
+.wcem-log-message {
+    flex: 1;
+    font-size: 14px;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-log-icon {
+    font-size: 18px;
+}
+
+.wcem-log-icon.wcem-log-success {
+    color: var(--pmcm-success);
+}
+
+.wcem-log-icon.wcem-log-error {
+    color: var(--pmcm-error);
+}
+
+.wcem-log-icon.wcem-log-info {
+    color: var(--pmcm-info);
+}
+
+.wcem-no-log {
+    text-align: center;
+    color: var(--pmcm-text-muted);
+    padding: 40px 20px;
+}
+
+/* Cron Status Card */
+.wcem-cron-card {
+    margin: 0 24px 24px;
+    max-width: calc(1600px - 48px);
+}
+
+.wcem-cron-card .wcem-card-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.wcem-cron-card .wcem-card-body p {
+    margin: 0;
+    flex: 1;
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+   ===================================================== */
+@media (max-width: 1200px) {
+    .wcem-two-column-container {
+        flex-direction: column;
+    }
+
+    .wcem-course-list-sidebar {
+        width: 100%;
+        position: relative;
+        top: auto;
+    }
+
+    .wcem-course-list-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        max-height: none;
+    }
+
+    .wcem-course-item {
+        flex: 1 1 200px;
+        max-width: 300px;
+    }
+
+    .wcem-panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wcem-save-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 782px) {
+    .wcem-modern-layout {
+        margin: 10px;
+    }
+
+    .wcem-two-column-container {
+        padding: 16px;
+    }
+
+    .wcem-bottom-sections {
+        padding: 0 16px 16px;
+    }
+
+    .wcem-activity-log-card,
+    .wcem-cron-card {
+        margin: 0 16px 16px;
+    }
+
+    .wcem-course-item {
+        flex: 1 1 100%;
+        max-width: none;
+    }
+
+    .wcem-panel-body {
+        padding: 16px;
+    }
+
+    .wcem-log-time {
+        min-width: auto;
+        display: none;
+    }
+}
