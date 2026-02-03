@@ -509,7 +509,7 @@ class PMCM_Admin
                                         </div>
                                         <span class="wcem-course-status wcem-status-<?php echo esc_attr($status_info['status']); ?>"><?php echo esc_html($status_info['label']); ?></span>
                                     </div>
-                                    <button type="submit" name="wcem_save_settings" class="wcem-btn-primary">
+                                    <button type="submit" name="wcem_save_settings" class="wcem-save-btn">
                                         <span class="material-icons-round">save</span>
                                         <?php _e('Save Settings', 'prepmedico-course-management'); ?>
                                     </button>
@@ -665,11 +665,11 @@ class PMCM_Admin
                     <div class="wcem-card-body">
                         <div class="wcem-shortcode-list">
                             <div class="wcem-shortcode-item">
-                                <code class="wcem-shortcode-code">[current_edition course="frcs"]</code>
+                                <code class="wcem-shortcode-code">[current_edition course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
                                 <p class="wcem-shortcode-desc"><?php _e('Displays the current edition name in standard format.', 'prepmedico-course-management'); ?></p>
                             </div>
                             <div class="wcem-shortcode-item">
-                                <code class="wcem-shortcode-code">[registration_status course="frcs"]</code>
+                                <code class="wcem-shortcode-code">[registration_status course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
                                 <p class="wcem-shortcode-desc"><?php _e('Shows status badges (Live / Closed / Early Bird).', 'prepmedico-course-management'); ?></p>
                             </div>
                         </div>

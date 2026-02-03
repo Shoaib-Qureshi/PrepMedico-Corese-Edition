@@ -13,6 +13,9 @@
             var $panel = $('.wcem-course-settings-panel[data-course="' + slug + '"]');
             $panel.show();
 
+            // Update dynamic shortcode examples
+            $('.wcem-dynamic-course').text(slug);
+
             if (history.replaceState) {
                 history.replaceState(null, null, '#' + slug);
             }
