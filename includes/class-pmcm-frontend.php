@@ -31,6 +31,9 @@ class PMCM_Frontend {
         // Email hooks for ASiT member display
         add_action('woocommerce_email_order_meta', [__CLASS__, 'display_asit_in_email'], 10, 3);
         add_action('woocommerce_thankyou', [__CLASS__, 'display_asit_on_thankyou'], 5);
+
+        // Dynamic CSS for disabling enrol buttons when dates unavailable
+        add_action('wp_head', [__CLASS__, 'output_dynamic_enrol_css']);
     }
 
     /**
@@ -201,9 +204,21 @@ class PMCM_Frontend {
     }
 
     /**
-     * Add edition to order item name (for emails)
+     * Add edition to order item name (for order confirmation and emails)
+     * Reads the saved edition from order item meta first, then falls back to current edition
      */
     public static function add_edition_to_order_item_name($name, $item) {
+        // Check if edition was saved to order item meta (from cart session at checkout)
+        $saved_edition_number = $item->get_meta('_course_edition');
+        if (!empty($saved_edition_number)) {
+            $edition_number = intval($saved_edition_number);
+            if ($edition_number > 0 && !preg_match('/^\d+(st|nd|rd|th)\s+-\s+/', $name)) {
+                return PMCM_Core::get_ordinal($edition_number) . ' - ' . $name;
+            }
+            return $name;
+        }
+
+        // Fallback to current edition from database
         $product_id = $item->get_product_id();
         return self::prepend_edition_to_title($name, $product_id);
     }
@@ -327,5 +342,50 @@ class PMCM_Frontend {
         echo '<div style="font-size: 22px; font-weight: 700;">#' . esc_html($asit_number) . '</div>';
         echo '</div>';
         echo '</div>';
+    }
+
+    /**
+     * Output dynamic CSS to disable .enrol_btn_course buttons
+     * when next edition dates are not available (TBA)
+     */
+    public static function output_dynamic_enrol_css() {
+        $courses = PMCM_Core::get_courses();
+        $disabled_courses = [];
+
+        foreach ($courses as $slug => $course) {
+            if (!isset($course['edition_management']) || !$course['edition_management']) {
+                continue;
+            }
+
+            $prefix = $course['settings_prefix'];
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+
+            $has_next_dates = false;
+            if ($next_enabled === 'yes') {
+                $next_start = get_option($prefix . 'next_start', '');
+                $next_end = get_option($prefix . 'next_end', '');
+                if (!empty($next_start) && !empty($next_end)) {
+                    $has_next_dates = true;
+                }
+            }
+
+            if (!$has_next_dates) {
+                $disabled_courses[] = $slug;
+            }
+        }
+
+        if (empty($disabled_courses)) {
+            return;
+        }
+
+        echo '<style id="pmcm-enrol-btn-css">';
+        foreach ($disabled_courses as $slug) {
+            echo '.pmcm-next-' . esc_attr($slug) . ' .enrol_btn_course,';
+            echo '.enrol_btn_course.pmcm-next-' . esc_attr($slug) . ',';
+        }
+        echo '.pmcm-dates-tba .enrol_btn_course,';
+        echo '.enrol_btn_course.pmcm-dates-tba';
+        echo '{ pointer-events: none !important; opacity: 0.5 !important; cursor: not-allowed !important; }';
+        echo '</style>';
     }
 }

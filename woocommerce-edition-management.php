@@ -3,7 +3,7 @@
 /**
  * Plugin Name: PrepMedico Course Management
  * Description: Manages course editions for WooCommerce products with FluentCRM integration, ASiT membership discounts, and Early Bird offers. Tracks which edition a customer purchased and enables precise segmentation.
- * Version: 2.3.1
+ * Version: 2.4.0
  * Author: Shoaib Qureshi - Tier2 Digital
  * Author URI: https://tier2.digital
  * Requires at least: 5.8
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('PMCM_VERSION', '2.3.1');
+define('PMCM_VERSION', '2.4.0');
 define('PMCM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PMCM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PMCM_PLUGIN_BASENAME', plugin_basename(__FILE__));

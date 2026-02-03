@@ -165,6 +165,22 @@
     color: #007cba;
 }
 
+/* Edition Button States */
+.pmcm-edition-btn.pmcm-dates-tba,
+.pmcm-edition-btn.pmcm-closed {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* External enrol button disabled when dates not available */
+.pmcm-dates-tba .enrol_btn_course,
+.enrol_btn_course.pmcm-dates-tba {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .wcem-edition-info {

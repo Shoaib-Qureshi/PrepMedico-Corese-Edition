@@ -383,13 +383,15 @@ class PMCM_Shortcodes {
 
         if ($slot === 'next') {
             $next_enabled = get_option($prefix . 'next_enabled', 'no');
-            if ($next_enabled !== 'yes') {
-                return '';
+            if ($next_enabled === 'yes') {
+                $edition = intval(get_option($prefix . 'next_edition', 0));
+                if ($edition > 0) {
+                    return PMCM_Core::get_ordinal($edition);
+                }
             }
-            $edition = intval(get_option($prefix . 'next_edition', 0));
-            if ($edition === 0) {
-                return '';
-            }
+            // Fallback: show current edition + 1
+            $current = intval(get_option($prefix . 'current_edition', 1));
+            return PMCM_Core::get_ordinal($current + 1);
         } else {
             $edition = intval(get_option($prefix . 'current_edition', 1));
         }
@@ -428,24 +430,27 @@ class PMCM_Shortcodes {
 
         if ($slot === 'next') {
             $next_enabled = get_option($prefix . 'next_enabled', 'no');
-            if ($next_enabled !== 'yes') {
-                return '';
+            if ($next_enabled === 'yes') {
+                $start = get_option($prefix . 'next_start', '');
+                $end = get_option($prefix . 'next_end', '');
+            } else {
+                // Next edition not configured - dates are TBA
+                $start = '';
+                $end = '';
             }
-            $start = get_option($prefix . 'next_start', '');
-            $end = get_option($prefix . 'next_end', '');
         } else {
             $start = get_option($prefix . 'edition_start', '');
             $end = get_option($prefix . 'edition_end', '');
         }
 
         if ($format === 'start') {
-            return $start ? date_i18n('F j, Y', strtotime($start)) : '';
+            return $start ? date_i18n('F j, Y', strtotime($start)) : __('TBA', 'prepmedico-course-management');
         } elseif ($format === 'end') {
-            return $end ? date_i18n('F j, Y', strtotime($end)) : '';
+            return $end ? date_i18n('F j, Y', strtotime($end)) : __('TBA', 'prepmedico-course-management');
         } else {
             // Range format
             if (empty($start) || empty($end)) {
-                return __('Dates TBA', 'prepmedico-course-management');
+                return __('TBA', 'prepmedico-course-management');
             }
             return date_i18n('F j, Y', strtotime($start)) . ' - ' . date_i18n('F j, Y', strtotime($end));
         }
@@ -484,11 +489,17 @@ class PMCM_Shortcodes {
 
         if ($slot === 'next') {
             $enabled = get_option($prefix . 'next_enabled', 'no');
-            if ($enabled !== 'yes') {
-                return $output === 'class' ? 'pmcm-disabled' : 'disabled';
+            if ($enabled === 'yes') {
+                $start = get_option($prefix . 'next_start', '');
+                $end = get_option($prefix . 'next_end', '');
+            } else {
+                $start = '';
+                $end = '';
             }
-            $start = get_option($prefix . 'next_start', '');
-            $end = get_option($prefix . 'next_end', '');
+            // If dates not set (either not enabled or dates empty), return dates-tba status
+            if (empty($start) || empty($end)) {
+                return $output === 'class' ? 'pmcm-dates-tba' : 'dates-tba';
+            }
         } else {
             $start = get_option($prefix . 'edition_start', '');
             $end = get_option($prefix . 'edition_end', '');
@@ -544,14 +555,23 @@ class PMCM_Shortcodes {
         $today_timestamp = strtotime($today);
 
         // Get edition info based on slot
+        $dates_unavailable = false;
         if ($slot === 'next') {
             $enabled = get_option($prefix . 'next_enabled', 'no');
-            if ($enabled !== 'yes') {
-                return ''; // Next slot not enabled, don't show button
+            if ($enabled === 'yes') {
+                $edition = intval(get_option($prefix . 'next_edition', 0));
+                $start = get_option($prefix . 'next_start', '');
+                $end = get_option($prefix . 'next_end', '');
+            } else {
+                // Fallback: current + 1, no dates
+                $edition = intval(get_option($prefix . 'current_edition', 1)) + 1;
+                $start = '';
+                $end = '';
             }
-            $edition = intval(get_option($prefix . 'next_edition', 0));
-            $start = get_option($prefix . 'next_start', '');
-            $end = get_option($prefix . 'next_end', '');
+            // Dates not available if start or end is empty
+            if (empty($start) || empty($end)) {
+                $dates_unavailable = true;
+            }
         } else {
             $edition = intval(get_option($prefix . 'current_edition', 1));
             $start = get_option($prefix . 'edition_start', '');
@@ -571,7 +591,9 @@ class PMCM_Shortcodes {
             $classes[] = $custom_class;
         }
 
-        if ($is_closed) {
+        if ($dates_unavailable) {
+            $classes[] = 'pmcm-dates-tba';
+        } elseif ($is_closed) {
             $classes[] = 'pmcm-closed';
         } elseif ($is_upcoming) {
             $classes[] = 'pmcm-upcoming';
@@ -581,7 +603,7 @@ class PMCM_Shortcodes {
 
         // Build inline styles for disabled state
         $style = '';
-        if ($is_closed) {
+        if ($is_closed || $dates_unavailable) {
             $style = 'pointer-events: none; opacity: 0.5; cursor: not-allowed;';
         }
 
@@ -625,13 +647,15 @@ class PMCM_Shortcodes {
 
         if ($slot === 'next') {
             $next_enabled = get_option($prefix . 'next_enabled', 'no');
-            if ($next_enabled !== 'yes') {
-                return '';
+            if ($next_enabled === 'yes') {
+                $edition = intval(get_option($prefix . 'next_edition', 0));
+                if ($edition > 0) {
+                    return strval($edition);
+                }
             }
-            $edition = intval(get_option($prefix . 'next_edition', 0));
-            if ($edition === 0) {
-                return '';
-            }
+            // Fallback: current edition + 1
+            $current = intval(get_option($prefix . 'current_edition', 1));
+            return strval($current + 1);
         } else {
             $edition = intval(get_option($prefix . 'current_edition', 1));
         }
@@ -848,12 +872,15 @@ class PMCM_Shortcodes {
 
         if ($slot === 'next') {
             $next_enabled = get_option($prefix . 'next_enabled', 'no');
-            if ($next_enabled !== 'yes') {
-                return '';
-            }
-            $edition = intval(get_option($prefix . 'next_edition', 0));
-            if ($edition === 0) {
-                return '';
+            if ($next_enabled === 'yes') {
+                $edition = intval(get_option($prefix . 'next_edition', 0));
+                if ($edition === 0) {
+                    // Next enabled but no edition set - use current + 1
+                    $edition = intval(get_option($prefix . 'current_edition', 1)) + 1;
+                }
+            } else {
+                // Fallback: current + 1
+                $edition = intval(get_option($prefix . 'current_edition', 1)) + 1;
             }
         } else {
             $edition = intval(get_option($prefix . 'current_edition', 1));
