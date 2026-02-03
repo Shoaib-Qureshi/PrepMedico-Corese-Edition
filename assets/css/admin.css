@@ -1618,10 +1618,13 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 100000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     animation: modalFadeIn 0.2s ease-out;
+}
+.wcem-modal.wcem-modal-visible {
+    display: flex;
 }
 
 @keyframes modalFadeIn {
@@ -4547,10 +4550,13 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 100000;
-    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     animation: wcem-cfg-fadeIn 0.2s ease-out;
+    display: none !important;
+}
+.wcem-config-modern .wcem-modal.wcem-modal-visible {
+    display: flex !important;
 }
 
 @keyframes wcem-cfg-fadeIn {

@@ -2007,7 +2007,7 @@ class PMCM_Admin
                     $('#wcem-course-form')[0].reset();
                     $('#wcem-course-edition-mgmt').prop('checked', true);
                     $('#wcem-course-category').prop('disabled', false);
-                    $('#wcem-course-modal').show();
+                    $('#wcem-course-modal').addClass('wcem-modal-visible');
                 });
 
                 // Open modal for editing
@@ -2027,12 +2027,12 @@ class PMCM_Admin
                     $('#wcem-course-edition-mgmt').prop('checked', course.edition_management === true);
                     $('#wcem-course-asit').prop('checked', course.asit_eligible === true);
 
-                    $('#wcem-course-modal').show();
+                    $('#wcem-course-modal').addClass('wcem-modal-visible');
                 });
 
                 // Close modal
                 $('.wcem-modal-close, .wcem-modal-cancel').on('click', function() {
-                    $('#wcem-course-modal').hide();
+                    $('#wcem-course-modal').removeClass('wcem-modal-visible');
                 });
 
                 // Save course
@@ -2100,7 +2100,7 @@ class PMCM_Admin
                 // Close modal on outside click
                 $('#wcem-course-modal').on('click', function(e) {
                     if ($(e.target).is('.wcem-modal')) {
-                        $(this).hide();
+                        $(this).removeClass('wcem-modal-visible');
                     }
                 });
             });
