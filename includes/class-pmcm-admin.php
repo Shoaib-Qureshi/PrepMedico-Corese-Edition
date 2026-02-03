@@ -1731,85 +1731,185 @@ class PMCM_Admin
         $courses = PMCM_Core::get_courses();
         $wc_categories = PMCM_Core::get_wc_categories();
     ?>
-        <div class="wrap wcem-admin-wrap">
-            <h1><?php _e('Course Configuration', 'prepmedico-course-management'); ?></h1>
-
-            <div class="wcem-header-info">
-                <p><?php _e('Configure which WooCommerce categories are managed as courses. Map each category to its FluentCRM tag and custom field.', 'prepmedico-course-management'); ?></p>
-            </div>
-
-            <!-- FluentCRM Setup Instructions -->
-            <div class="wcem-fluentcrm-setup-info" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 20px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; color: #856404;"><span class="dashicons dashicons-info"></span> <?php _e('FluentCRM Custom Field Setup', 'prepmedico-course-management'); ?></h3>
-                <p style="color: #856404;"><?php _e('Before adding a course, create the custom field in FluentCRM:', 'prepmedico-course-management'); ?></p>
-                <ol style="color: #856404; margin-left: 20px;">
-                    <li><?php _e('Go to FluentCRM → Settings → Custom Fields', 'prepmedico-course-management'); ?></li>
-                    <li><?php _e('Click "Add Field"', 'prepmedico-course-management'); ?></li>
-                    <li><?php _e('Field Type: <strong>Text</strong>', 'prepmedico-course-management'); ?></li>
-                    <li><?php _e('Field Label: e.g., "FRCS Edition"', 'prepmedico-course-management'); ?></li>
-                    <li><?php _e('Field Slug: e.g., "frcs_edition" (use this below)', 'prepmedico-course-management'); ?></li>
-                    <li><?php _e('Save the field', 'prepmedico-course-management'); ?></li>
-                </ol>
-            </div>
-
-            <!-- Add New Course Button -->
-            <p>
-                <button type="button" id="wcem-add-course" class="button button-primary">
-                    <span class="dashicons dashicons-plus-alt" style="margin-top: 4px;"></span>
+        <div class="wrap wcem-admin-wrap wcem-config-modern">
+            <!-- Header -->
+            <header class="wcem-cfg-header">
+                <div class="wcem-cfg-header-content">
+                    <span class="material-icons-round wcem-cfg-icon">school</span>
+                    <div>
+                        <h1><?php _e('Course Configuration', 'prepmedico-course-management'); ?></h1>
+                        <p class="wcem-cfg-header-desc"><?php _e('Configure which WooCommerce categories are managed as courses. Map each category to its FluentCRM tag and custom field.', 'prepmedico-course-management'); ?></p>
+                    </div>
+                </div>
+                <button type="button" id="wcem-add-course" class="wcem-cfg-add-btn">
+                    <span class="material-icons-round">add</span>
                     <?php _e('Add New Course', 'prepmedico-course-management'); ?>
                 </button>
-            </p>
+            </header>
 
-            <!-- Course List -->
-            <div class="wcem-courses-list">
-                <?php foreach ($courses as $slug => $course): ?>
-                    <div class="wcem-course-config-card" data-slug="<?php echo esc_attr($slug); ?>">
-                        <div class="wcem-course-header">
-                            <h3><?php echo esc_html($course['name']); ?></h3>
-                            <div class="wcem-course-badges">
-                                <?php if (!empty($course['edition_management']) && $course['edition_management']): ?>
-                                    <span class="badge badge-edition"><?php _e('Edition Mgmt', 'prepmedico-course-management'); ?></span>
-                                <?php endif; ?>
-                                <?php if (!empty($course['asit_eligible']) && $course['asit_eligible']): ?>
-                                    <span class="badge badge-asit">ASiT</span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="wcem-course-actions">
-                                <button type="button" class="button wcem-edit-course" data-slug="<?php echo esc_attr($slug); ?>">
-                                    <span class="dashicons dashicons-edit" style="margin-top: 4px;"></span> <?php _e('Edit', 'prepmedico-course-management'); ?>
-                                </button>
-                                <button type="button" class="button wcem-delete-course" data-slug="<?php echo esc_attr($slug); ?>" data-name="<?php echo esc_attr($course['name']); ?>">
-                                    <span class="dashicons dashicons-trash" style="margin-top: 4px;"></span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="wcem-course-details">
-                            <div class="detail-row">
-                                <span class="label"><?php _e('Category:', 'prepmedico-course-management'); ?></span>
-                                <code><?php echo esc_html($slug); ?></code>
-                            </div>
-                            <div class="detail-row">
-                                <span class="label"><?php _e('FluentCRM Tag:', 'prepmedico-course-management'); ?></span>
-                                <code><?php echo esc_html($course['fluentcrm_tag']); ?></code>
-                            </div>
-                            <div class="detail-row">
-                                <span class="label"><?php _e('FluentCRM Field:', 'prepmedico-course-management'); ?></span>
-                                <code><?php echo esc_html($course['fluentcrm_field']); ?></code>
-                            </div>
-                            <?php if (!empty($course['children'])): ?>
-                                <div class="detail-row">
-                                    <span class="label"><?php _e('Child Categories:', 'prepmedico-course-management'); ?></span>
-                                    <span class="children-list">
-                                        <?php foreach ($course['children'] as $child): ?>
-                                            <code><?php echo esc_html($child); ?></code>
-                                        <?php endforeach; ?>
-                                    </span>
-                                </div>
-                            <?php endif; ?>
-                        </div>
+            <!-- FluentCRM Setup Instructions -->
+            <section class="wcem-cfg-instructions">
+                <div class="wcem-cfg-instructions-header">
+                    <span class="material-icons-round">help_outline</span>
+                    <h3><?php _e('FluentCRM Custom Field Setup', 'prepmedico-course-management'); ?></h3>
+                </div>
+                <div class="wcem-cfg-instructions-body">
+                    <p><?php _e('Before adding a course, create the custom field in FluentCRM:', 'prepmedico-course-management'); ?></p>
+                    <ol>
+                        <li><?php _e('Go to FluentCRM &rarr; Settings &rarr; Custom Fields', 'prepmedico-course-management'); ?></li>
+                        <li><?php _e('Click "Add Field"', 'prepmedico-course-management'); ?></li>
+                        <li><?php _e('Field Type: <strong>Text</strong>', 'prepmedico-course-management'); ?></li>
+                        <li><?php _e('Field Label: e.g., "FRCS Edition"', 'prepmedico-course-management'); ?></li>
+                        <li><?php _e('Field Slug: e.g., "frcs_edition" (use this below)', 'prepmedico-course-management'); ?></li>
+                        <li><?php _e('Save the field', 'prepmedico-course-management'); ?></li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Course Summary Stats -->
+            <?php
+            $total_courses = count($courses);
+            $edition_count = 0;
+            $asit_count = 0;
+            foreach ($courses as $c) {
+                if (!empty($c['edition_management'])) $edition_count++;
+                if (!empty($c['asit_eligible'])) $asit_count++;
+            }
+            ?>
+            <div class="wcem-cfg-stats">
+                <div class="wcem-cfg-stat-card">
+                    <span class="material-icons-round">library_books</span>
+                    <div>
+                        <span class="wcem-cfg-stat-value"><?php echo $total_courses; ?></span>
+                        <span class="wcem-cfg-stat-label"><?php _e('Total Courses', 'prepmedico-course-management'); ?></span>
                     </div>
-                <?php endforeach; ?>
+                </div>
+                <div class="wcem-cfg-stat-card">
+                    <span class="material-icons-round">layers</span>
+                    <div>
+                        <span class="wcem-cfg-stat-value"><?php echo $edition_count; ?></span>
+                        <span class="wcem-cfg-stat-label"><?php _e('Edition Managed', 'prepmedico-course-management'); ?></span>
+                    </div>
+                </div>
+                <div class="wcem-cfg-stat-card">
+                    <span class="material-icons-round">local_offer</span>
+                    <div>
+                        <span class="wcem-cfg-stat-value"><?php echo $asit_count; ?></span>
+                        <span class="wcem-cfg-stat-label"><?php _e('ASiT Eligible', 'prepmedico-course-management'); ?></span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Courses Section -->
+            <section class="wcem-cfg-courses-section">
+                <div class="wcem-cfg-courses-header">
+                    <div>
+                        <h2><?php _e('Registered Courses', 'prepmedico-course-management'); ?></h2>
+                        <p class="wcem-cfg-subtitle"><?php _e('Manage course-to-category mappings and FluentCRM integration settings.', 'prepmedico-course-management'); ?></p>
+                    </div>
+                    <div class="wcem-cfg-courses-count">
+                        <span><?php echo $total_courses; ?> <?php _e('courses', 'prepmedico-course-management'); ?></span>
+                    </div>
+                </div>
+
+                <!-- Course Cards Grid -->
+                <div class="wcem-cfg-courses-grid">
+                    <?php if (empty($courses)): ?>
+                        <div class="wcem-cfg-empty-state">
+                            <span class="material-icons-round">school</span>
+                            <h3><?php _e('No Courses Configured', 'prepmedico-course-management'); ?></h3>
+                            <p><?php _e('Click "Add New Course" to get started.', 'prepmedico-course-management'); ?></p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($courses as $slug => $course):
+                            $has_edition = !empty($course['edition_management']);
+                            $has_asit = !empty($course['asit_eligible']);
+                            $children = !empty($course['children']) ? $course['children'] : [];
+                        ?>
+                            <div class="wcem-cfg-course-card" data-slug="<?php echo esc_attr($slug); ?>">
+                                <!-- Card Header -->
+                                <div class="wcem-cfg-card-header">
+                                    <div class="wcem-cfg-card-title-row">
+                                        <h3><?php echo esc_html($course['name']); ?></h3>
+                                        <div class="wcem-cfg-card-badges">
+                                            <?php if ($has_edition): ?>
+                                                <span class="wcem-cfg-badge edition"><?php _e('Edition Mgmt', 'prepmedico-course-management'); ?></span>
+                                            <?php endif; ?>
+                                            <?php if ($has_asit): ?>
+                                                <span class="wcem-cfg-badge asit"><?php _e('ASiT', 'prepmedico-course-management'); ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <span class="wcem-cfg-card-slug"><?php echo esc_html(strtoupper($slug)); ?></span>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="wcem-cfg-card-body">
+                                    <div class="wcem-cfg-detail-row">
+                                        <span class="wcem-cfg-detail-icon"><span class="material-icons-round">category</span></span>
+                                        <div class="wcem-cfg-detail-content">
+                                            <span class="wcem-cfg-detail-label"><?php _e('Category', 'prepmedico-course-management'); ?></span>
+                                            <code class="wcem-cfg-detail-value"><?php echo esc_html($slug); ?></code>
+                                        </div>
+                                    </div>
+                                    <div class="wcem-cfg-detail-row">
+                                        <span class="wcem-cfg-detail-icon"><span class="material-icons-round">sell</span></span>
+                                        <div class="wcem-cfg-detail-content">
+                                            <span class="wcem-cfg-detail-label"><?php _e('FluentCRM Tag', 'prepmedico-course-management'); ?></span>
+                                            <code class="wcem-cfg-detail-value"><?php echo esc_html($course['fluentcrm_tag']); ?></code>
+                                        </div>
+                                    </div>
+                                    <div class="wcem-cfg-detail-row">
+                                        <span class="wcem-cfg-detail-icon"><span class="material-icons-round">data_object</span></span>
+                                        <div class="wcem-cfg-detail-content">
+                                            <span class="wcem-cfg-detail-label"><?php _e('FluentCRM Field', 'prepmedico-course-management'); ?></span>
+                                            <code class="wcem-cfg-detail-value"><?php echo esc_html($course['fluentcrm_field']); ?></code>
+                                        </div>
+                                    </div>
+                                    <?php if (!empty($children)): ?>
+                                        <div class="wcem-cfg-detail-row">
+                                            <span class="wcem-cfg-detail-icon"><span class="material-icons-round">account_tree</span></span>
+                                            <div class="wcem-cfg-detail-content">
+                                                <span class="wcem-cfg-detail-label"><?php _e('Child Categories', 'prepmedico-course-management'); ?></span>
+                                                <div class="wcem-cfg-children-tags">
+                                                    <?php foreach ($children as $child): ?>
+                                                        <code class="wcem-cfg-child-tag"><?php echo esc_html($child); ?></code>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Card Footer -->
+                                <div class="wcem-cfg-card-footer">
+                                    <div class="wcem-cfg-card-features">
+                                        <?php if ($has_edition): ?>
+                                            <span class="wcem-cfg-feature active"><span class="material-icons-round">check_circle</span> <?php _e('Editions', 'prepmedico-course-management'); ?></span>
+                                        <?php else: ?>
+                                            <span class="wcem-cfg-feature"><span class="material-icons-round">cancel</span> <?php _e('Editions', 'prepmedico-course-management'); ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($has_asit): ?>
+                                            <span class="wcem-cfg-feature active"><span class="material-icons-round">check_circle</span> <?php _e('ASiT', 'prepmedico-course-management'); ?></span>
+                                        <?php else: ?>
+                                            <span class="wcem-cfg-feature"><span class="material-icons-round">cancel</span> <?php _e('ASiT', 'prepmedico-course-management'); ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="wcem-cfg-card-actions">
+                                        <button type="button" class="wcem-cfg-edit-btn wcem-edit-course" data-slug="<?php echo esc_attr($slug); ?>">
+                                            <span class="material-icons-round">edit</span>
+                                            <?php _e('Edit', 'prepmedico-course-management'); ?>
+                                        </button>
+                                        <button type="button" class="wcem-cfg-delete-btn wcem-delete-course" data-slug="<?php echo esc_attr($slug); ?>" data-name="<?php echo esc_attr($course['name']); ?>">
+                                            <span class="material-icons-round">delete_outline</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </section>
 
             <!-- Add/Edit Course Modal -->
             <div id="wcem-course-modal" class="wcem-modal" style="display: none;">
@@ -1823,70 +1923,73 @@ class PMCM_Admin
                             <input type="hidden" id="wcem-edit-mode" value="add">
                             <input type="hidden" id="wcem-original-slug" value="">
 
-                            <table class="form-table">
-                                <tr>
-                                    <th><label for="wcem-course-category"><?php _e('Category', 'prepmedico-course-management'); ?> <span class="required">*</span></label></th>
-                                    <td>
-                                        <select id="wcem-course-category" name="category_slug" required style="width: 100%;">
-                                            <option value=""><?php _e('Select a category...', 'prepmedico-course-management'); ?></option>
-                                            <?php foreach ($wc_categories as $cat_slug => $cat_name): ?>
-                                                <option value="<?php echo esc_attr($cat_slug); ?>"><?php echo esc_html($cat_name); ?> (<?php echo esc_html($cat_slug); ?>)</option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <p class="description"><?php _e('Select the WooCommerce product category for this course.', 'prepmedico-course-management'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><label for="wcem-course-name"><?php _e('Display Name', 'prepmedico-course-management'); ?> <span class="required">*</span></label></th>
-                                    <td>
-                                        <input type="text" id="wcem-course-name" name="name" required class="regular-text">
-                                        <p class="description"><?php _e('The display name for this course (e.g., "FRCS", "FRCOphth Part 1").', 'prepmedico-course-management'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><label for="wcem-course-tag"><?php _e('FluentCRM Tag', 'prepmedico-course-management'); ?> <span class="required">*</span></label></th>
-                                    <td>
-                                        <input type="text" id="wcem-course-tag" name="fluentcrm_tag" required class="regular-text">
-                                        <p class="description"><?php _e('The tag name in FluentCRM (e.g., "FRCS", "FRCOphth-Part1"). Create this tag in FluentCRM first.', 'prepmedico-course-management'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><label for="wcem-course-field"><?php _e('FluentCRM Custom Field', 'prepmedico-course-management'); ?> <span class="required">*</span></label></th>
-                                    <td>
-                                        <input type="text" id="wcem-course-field" name="fluentcrm_field" required class="regular-text">
-                                        <p class="description"><?php _e('The custom field slug in FluentCRM (e.g., "frcs_edition"). Create this as a TEXT field in FluentCRM first.', 'prepmedico-course-management'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><label for="wcem-course-children"><?php _e('Child Categories', 'prepmedico-course-management'); ?></label></th>
-                                    <td>
-                                        <select id="wcem-course-children" name="children[]" multiple style="width: 100%; min-height: 120px;">
-                                            <?php foreach ($wc_categories as $cat_slug => $cat_name): ?>
-                                                <option value="<?php echo esc_attr($cat_slug); ?>"><?php echo esc_html($cat_name); ?> (<?php echo esc_html($cat_slug); ?>)</option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <p class="description"><?php _e('Select child categories that should inherit this course\'s tag and field. Hold Ctrl/Cmd to select multiple.', 'prepmedico-course-management'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><?php _e('Options', 'prepmedico-course-management'); ?></th>
-                                    <td>
-                                        <label style="display: block; margin-bottom: 8px;">
-                                            <input type="checkbox" id="wcem-course-edition-mgmt" name="edition_management" value="1" checked>
-                                            <?php _e('Enable Edition Management', 'prepmedico-course-management'); ?>
-                                        </label>
-                                        <label style="display: block;">
-                                            <input type="checkbox" id="wcem-course-asit" name="asit_eligible" value="1">
-                                            <?php _e('ASiT Eligible', 'prepmedico-course-management'); ?>
-                                        </label>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div class="wcem-cfg-form-group">
+                                <label for="wcem-course-category"><?php _e('Category', 'prepmedico-course-management'); ?> <span class="wcem-cfg-required">*</span></label>
+                                <select id="wcem-course-category" name="category_slug" required>
+                                    <option value=""><?php _e('Select a category...', 'prepmedico-course-management'); ?></option>
+                                    <?php foreach ($wc_categories as $cat_slug => $cat_name): ?>
+                                        <option value="<?php echo esc_attr($cat_slug); ?>"><?php echo esc_html($cat_name); ?> (<?php echo esc_html($cat_slug); ?>)</option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="wcem-cfg-form-hint"><?php _e('Select the WooCommerce product category for this course.', 'prepmedico-course-management'); ?></p>
+                            </div>
+
+                            <div class="wcem-cfg-form-group">
+                                <label for="wcem-course-name"><?php _e('Display Name', 'prepmedico-course-management'); ?> <span class="wcem-cfg-required">*</span></label>
+                                <input type="text" id="wcem-course-name" name="name" required>
+                                <p class="wcem-cfg-form-hint"><?php _e('The display name for this course (e.g., "FRCS", "FRCOphth Part 1").', 'prepmedico-course-management'); ?></p>
+                            </div>
+
+                            <div class="wcem-cfg-form-row">
+                                <div class="wcem-cfg-form-group">
+                                    <label for="wcem-course-tag"><?php _e('FluentCRM Tag', 'prepmedico-course-management'); ?> <span class="wcem-cfg-required">*</span></label>
+                                    <input type="text" id="wcem-course-tag" name="fluentcrm_tag" required>
+                                    <p class="wcem-cfg-form-hint"><?php _e('Tag name in FluentCRM (e.g., "FRCS").', 'prepmedico-course-management'); ?></p>
+                                </div>
+                                <div class="wcem-cfg-form-group">
+                                    <label for="wcem-course-field"><?php _e('FluentCRM Custom Field', 'prepmedico-course-management'); ?> <span class="wcem-cfg-required">*</span></label>
+                                    <input type="text" id="wcem-course-field" name="fluentcrm_field" required>
+                                    <p class="wcem-cfg-form-hint"><?php _e('Custom field slug (e.g., "frcs_edition").', 'prepmedico-course-management'); ?></p>
+                                </div>
+                            </div>
+
+                            <div class="wcem-cfg-form-group">
+                                <label for="wcem-course-children"><?php _e('Child Categories', 'prepmedico-course-management'); ?></label>
+                                <select id="wcem-course-children" name="children[]" multiple>
+                                    <?php foreach ($wc_categories as $cat_slug => $cat_name): ?>
+                                        <option value="<?php echo esc_attr($cat_slug); ?>"><?php echo esc_html($cat_name); ?> (<?php echo esc_html($cat_slug); ?>)</option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="wcem-cfg-form-hint"><?php _e('Select child categories that inherit this course\'s tag and field. Hold Ctrl/Cmd to select multiple.', 'prepmedico-course-management'); ?></p>
+                            </div>
+
+                            <div class="wcem-cfg-form-group">
+                                <label><?php _e('Options', 'prepmedico-course-management'); ?></label>
+                                <div class="wcem-cfg-checkbox-group">
+                                    <label class="wcem-cfg-checkbox-label">
+                                        <input type="checkbox" id="wcem-course-edition-mgmt" name="edition_management" value="1" checked>
+                                        <span class="wcem-cfg-checkbox-text">
+                                            <strong><?php _e('Enable Edition Management', 'prepmedico-course-management'); ?></strong>
+                                            <small><?php _e('Track edition numbers and dates', 'prepmedico-course-management'); ?></small>
+                                        </span>
+                                    </label>
+                                    <label class="wcem-cfg-checkbox-label">
+                                        <input type="checkbox" id="wcem-course-asit" name="asit_eligible" value="1">
+                                        <span class="wcem-cfg-checkbox-text">
+                                            <strong><?php _e('ASiT Eligible', 'prepmedico-course-management'); ?></strong>
+                                            <small><?php _e('Enable ASiT membership discounts', 'prepmedico-course-management'); ?></small>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
                         </form>
                     </div>
                     <div class="wcem-modal-footer">
-                        <button type="button" class="button wcem-modal-cancel"><?php _e('Cancel', 'prepmedico-course-management'); ?></button>
-                        <button type="button" class="button button-primary" id="wcem-save-course"><?php _e('Save Course', 'prepmedico-course-management'); ?></button>
+                        <button type="button" class="wcem-cfg-modal-cancel wcem-modal-cancel"><?php _e('Cancel', 'prepmedico-course-management'); ?></button>
+                        <button type="button" class="wcem-cfg-modal-save" id="wcem-save-course">
+                            <span class="material-icons-round">save</span>
+                            <?php _e('Save Course', 'prepmedico-course-management'); ?>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1908,7 +2011,7 @@ class PMCM_Admin
                 });
 
                 // Open modal for editing
-                $('.wcem-edit-course').on('click', function() {
+                $(document).on('click', '.wcem-edit-course', function() {
                     var slug = $(this).data('slug');
                     var course = coursesData[slug];
 
@@ -1955,10 +2058,10 @@ class PMCM_Admin
                         asit_eligible: $('#wcem-course-asit').is(':checked') ? 1 : 0
                     };
 
-                    btn.prop('disabled', true).text('<?php _e('Saving...', 'prepmedico-course-management'); ?>');
+                    btn.prop('disabled', true).find('.material-icons-round').text('hourglass_empty');
 
                     $.post(ajaxurl, data, function(response) {
-                        btn.prop('disabled', false).text('<?php _e('Save Course', 'prepmedico-course-management'); ?>');
+                        btn.prop('disabled', false).find('.material-icons-round').text('save');
 
                         if (response.success) {
                             location.reload();
@@ -1969,13 +2072,16 @@ class PMCM_Admin
                 });
 
                 // Delete course
-                $('.wcem-delete-course').on('click', function() {
+                $(document).on('click', '.wcem-delete-course', function() {
                     var slug = $(this).data('slug');
                     var name = $(this).data('name');
 
                     if (!confirm('<?php _e('Are you sure you want to delete the course:', 'prepmedico-course-management'); ?> ' + name + '?')) {
                         return;
                     }
+
+                    var $card = $(this).closest('.wcem-cfg-course-card');
+                    $card.css('opacity', '0.5');
 
                     $.post(ajaxurl, {
                         action: 'wcem_delete_course',
@@ -1985,6 +2091,7 @@ class PMCM_Admin
                         if (response.success) {
                             location.reload();
                         } else {
+                            $card.css('opacity', '1');
                             alert(response.data.message || '<?php _e('Error deleting course.', 'prepmedico-course-management'); ?>');
                         }
                     });
