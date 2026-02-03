@@ -2016,7 +2016,8 @@
    COURSE LIST SIDEBAR
    ===================================================== */
 .wcem-course-list-sidebar {
-    width: 320px;
+    width: 280px;
+    min-width: 280px;
     flex-shrink: 0;
     background: var(--pmcm-surface);
     border: 1px solid var(--pmcm-border);
@@ -2068,6 +2069,9 @@
     padding: 8px;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 /* Course List Item */
@@ -2080,7 +2084,6 @@
     background: transparent;
     cursor: pointer;
     transition: all var(--pmcm-transition);
-    margin-bottom: 4px;
 }
 
 .wcem-course-item:hover {
@@ -2885,7 +2888,7 @@
 /* =====================================================
    RESPONSIVE DESIGN
    ===================================================== */
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
     .wcem-two-column-container {
         flex-direction: column;
     }
@@ -2897,7 +2900,7 @@
     }
 
     .wcem-course-list-items {
-        display: flex;
+        flex-direction: row;
         flex-wrap: wrap;
         gap: 8px;
         max-height: none;
