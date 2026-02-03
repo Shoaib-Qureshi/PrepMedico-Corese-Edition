@@ -774,452 +774,504 @@ class PMCM_Admin
         }
 
         $coupon_code = get_option('pmcm_asit_coupon_code', 'ASIT');
+        $default_discount = get_option('pmcm_asit_discount_normal', 15);
         $all_courses = PMCM_Core::get_courses();
     ?>
-        <div class="wrap wcem-admin-wrap">
-            <h1><?php _e('ASiT Coupon Management', 'prepmedico-course-management'); ?></h1>
+        <div class="wrap wcem-admin-wrap wcem-asit-modern">
+            <!-- Header -->
+            <header class="wcem-asit-header">
+                <div class="wcem-asit-header-content">
+                    <span class="material-icons-round wcem-asit-icon">local_offer</span>
+                    <h1><?php _e('ASiT Coupon Management', 'prepmedico-course-management'); ?></h1>
+                </div>
+            </header>
 
-            <!-- Current Status Overview -->
-            <div class="wcem-status-overview">
-                <h2><?php _e('Current Status', 'prepmedico-course-management'); ?></h2>
-                <table class="wp-list-table widefat fixed striped">
-                    <tr>
-                        <th style="width:200px;"><?php _e('Coupon Code', 'prepmedico-course-management'); ?></th>
-                        <td><code style="font-size:16px;"><?php echo esc_html($coupon_code); ?></code></td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- Per-Course ASiT Status -->
-            <div class="wcem-status-overview">
-                <h2><?php _e('Per-Course ASiT Discount Status', 'prepmedico-course-management'); ?></h2>
-                <p class="description"><?php _e('Current discount status for each course based on configured rules:', 'prepmedico-course-management'); ?></p>
-                <table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
-                    <thead>
-                        <tr>
-                            <th><?php _e('Course', 'prepmedico-course-management'); ?></th>
-                            <th><?php _e('Discount Mode', 'prepmedico-course-management'); ?></th>
-                            <th><?php _e('Early Bird Status', 'prepmedico-course-management'); ?></th>
-                            <th><?php _e('Current Discount', 'prepmedico-course-management'); ?></th>
-                            <th><?php _e('Show Field', 'prepmedico-course-management'); ?></th>
-                            <th><?php _e('Product Filter', 'prepmedico-course-management'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($all_courses as $slug => $course):
-                            $config = PMCM_Core::get_asit_discount_for_course($slug);
-                            $mode = isset($course['asit_discount_mode']) ? $course['asit_discount_mode'] : 'none';
-                            $is_eb_active = PMCM_Core::is_course_early_bird_active($slug);
-                            $show_field = isset($course['asit_show_field']) ? $course['asit_show_field'] : false;
-                            $product_filter = isset($course['asit_product_filter']) ? (bool) $course['asit_product_filter'] : false;
-                            $selected_count = isset($course['asit_selected_products']) ? count((array) $course['asit_selected_products']) : 0;
-
-                            $mode_label = __('No Discount', 'prepmedico-course-management');
-                            $mode_class = 'wcem-status-expired';
-                            if ($mode === 'always') {
-                                $mode_label = __('Always Active', 'prepmedico-course-management');
-                                $mode_class = 'wcem-status-active';
-                            } elseif ($mode === 'early_bird_only') {
-                                $mode_label = __('Early Bird Only', 'prepmedico-course-management');
-                                $mode_class = 'wcem-status-early-bird';
-                            }
-                        ?>
-                            <tr>
-                                <td><strong><?php echo esc_html($course['name']); ?></strong></td>
-                                <td><span class="wcem-status <?php echo esc_attr($mode_class); ?>"><?php echo esc_html($mode_label); ?></span></td>
-                                <td>
-                                    <?php if ($mode === 'early_bird_only'): ?>
-                                        <?php if ($is_eb_active): ?>
-                                            <span class="wcem-status wcem-status-early-bird"><?php _e('Active', 'prepmedico-course-management'); ?></span>
-                                        <?php else: ?>
-                                            <span class="wcem-status wcem-status-expired"><?php _e('Not Active', 'prepmedico-course-management'); ?></span>
-                                        <?php endif; ?>
-                                    <?php else: ?>
-                                        <span style="color: #94a3b8;">—</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($config['discount'] > 0): ?>
-                                        <strong style="color: #059669; font-size: 16px;"><?php echo esc_html($config['discount']); ?>%</strong>
-                                    <?php else: ?>
-                                        <span style="color: #94a3b8;">0%</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($show_field): ?>
-                                        <span style="color: #059669;">✓</span>
-                                    <?php else: ?>
-                                        <span style="color: #94a3b8;">✗</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Settings Form -->
-            <form method="post" action="">
+            <!-- Global Coupon Configuration Card -->
+            <form method="post" action="" id="wcem-asit-form">
                 <?php wp_nonce_field('pmcm_asit_settings_nonce'); ?>
 
-                <!-- Global Settings -->
-                <div class="wcem-status-overview">
-                    <h2><?php _e('Global ASiT Settings', 'prepmedico-course-management'); ?></h2>
-                    <table class="form-table">
-                        <tr>
-                            <th><label for="pmcm_asit_coupon_code"><?php _e('Coupon Code', 'prepmedico-course-management'); ?></label></th>
-                            <td>
-                                <input type="text" id="pmcm_asit_coupon_code" name="pmcm_asit_coupon_code" value="<?php echo esc_attr($coupon_code); ?>" class="regular-text">
-                                <p class="description"><?php _e('The WooCommerce coupon code for ASiT members.', 'prepmedico-course-management'); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><label for="pmcm_asit_discount_normal"><?php _e('Default ASiT Discount (%)', 'prepmedico-course-management'); ?></label></th>
-                            <td>
-                                <input type="number" id="pmcm_asit_discount_normal" name="pmcm_asit_discount_normal" value="<?php echo esc_attr(get_option('pmcm_asit_discount_normal', 10)); ?>" min="0" max="100" class="small-text"> %
-                                <p class="description"><?php _e('Used for products without per-course overrides (e.g., library subscription selections).', 'prepmedico-course-management'); ?></p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
+                <section class="wcem-asit-global-config">
+                    <div class="wcem-asit-global-header">
+                        <div class="wcem-asit-global-icon">
+                            <span class="material-icons-round">settings</span>
+                        </div>
+                        <h2><?php _e('Global Coupon Configuration', 'prepmedico-course-management'); ?></h2>
+                        <button type="submit" name="pmcm_save_asit_settings" class="wcem-asit-save-global">
+                            <span class="material-icons-round">save</span>
+                            <?php _e('Save Global Settings', 'prepmedico-course-management'); ?>
+                        </button>
+                    </div>
+                    <div class="wcem-asit-global-body">
+                        <div class="wcem-asit-global-field">
+                            <label><?php _e('Active Coupon Code', 'prepmedico-course-management'); ?></label>
+                            <div class="wcem-asit-input-with-tag">
+                                <input type="text" name="pmcm_asit_coupon_code" value="<?php echo esc_attr($coupon_code); ?>" class="wcem-asit-coupon-input">
+                                <span class="wcem-asit-tag"><?php _e('GLOBAL OVERRIDE', 'prepmedico-course-management'); ?></span>
+                            </div>
+                        </div>
+                        <div class="wcem-asit-global-field">
+                            <label><?php _e('Default Discount Percentage', 'prepmedico-course-management'); ?></label>
+                            <div class="wcem-asit-input-with-note">
+                                <input type="number" name="pmcm_asit_discount_normal" value="<?php echo esc_attr($default_discount); ?>" min="0" max="100" class="wcem-asit-discount-input">
+                                <span class="wcem-asit-percent">%</span>
+                            </div>
+                            <p class="wcem-asit-field-note"><?php _e('Default value applied to all courses unless specified below.', 'prepmedico-course-management'); ?></p>
+                        </div>
+                    </div>
+                </section>
 
-                <!-- Per-Course ASiT Configuration -->
-                <div class="wcem-status-overview">
-                    <h2><?php _e('Per-Course ASiT Configuration', 'prepmedico-course-management'); ?></h2>
-                    <p class="description" style="margin-bottom: 20px;"><?php _e('Configure ASiT discount settings for each course individually:', 'prepmedico-course-management'); ?></p>
+                <!-- Per-Course Discount Status Section -->
+                <section class="wcem-asit-courses-section">
+                    <div class="wcem-asit-courses-header">
+                        <div>
+                            <h2><?php _e('Per-Course Discount Status', 'prepmedico-course-management'); ?></h2>
+                            <p class="wcem-asit-subtitle"><?php _e('Manage granular discount logic and frontend visibility per course module.', 'prepmedico-course-management'); ?></p>
+                        </div>
+                        <div class="wcem-asit-courses-actions">
+                            <div class="wcem-asit-view-toggle">
+                                <button type="button" class="wcem-asit-view-btn active" data-view="grid">
+                                    <span class="material-icons-round">grid_view</span>
+                                </button>
+                                <button type="button" class="wcem-asit-view-btn" data-view="list">
+                                    <span class="material-icons-round">view_list</span>
+                                </button>
+                            </div>
+                            <div class="wcem-asit-sort-dropdown">
+                                <span><?php _e('Sort:', 'prepmedico-course-management'); ?></span>
+                                <select id="wcem-asit-sort">
+                                    <option value="alpha"><?php _e('A-Z Alphabetical', 'prepmedico-course-management'); ?></option>
+                                    <option value="status"><?php _e('By Status', 'prepmedico-course-management'); ?></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
-                    <div class="wcem-courses-settings">
+                    <!-- Course Cards Grid -->
+                    <div class="wcem-asit-courses-grid" id="wcem-asit-courses-grid">
                         <?php foreach ($all_courses as $slug => $course):
                             $mode = isset($course['asit_discount_mode']) ? $course['asit_discount_mode'] : 'none';
                             $eb_discount = isset($course['asit_early_bird_discount']) ? intval($course['asit_early_bird_discount']) : 0;
                             $normal_discount = isset($course['asit_normal_discount']) ? intval($course['asit_normal_discount']) : 0;
                             $show_field = isset($course['asit_show_field']) ? $course['asit_show_field'] : false;
+                            $product_filter = isset($course['asit_product_filter']) ? (bool) $course['asit_product_filter'] : false;
+                            $selected_products = isset($course['asit_selected_products']) ? (array) $course['asit_selected_products'] : [];
+                            $is_eb_active = PMCM_Core::is_course_early_bird_active($slug);
+
+                            // Determine status badge
+                            $status_class = 'inactive';
+                            $status_label = __('Inactive', 'prepmedico-course-management');
+                            if ($mode === 'always') {
+                                $status_class = 'active';
+                                $status_label = __('Active', 'prepmedico-course-management');
+                            } elseif ($mode === 'early_bird_only') {
+                                $status_class = 'early-bird';
+                                $status_label = __('Early Bird Only', 'prepmedico-course-management');
+                            }
+
+                            // Current discount
+                            $current_discount = 0;
+                            if ($mode === 'always') {
+                                $current_discount = $normal_discount;
+                            } elseif ($mode === 'early_bird_only' && $is_eb_active) {
+                                $current_discount = $eb_discount;
+                            }
+
+                            // Get products for this course
+                            $course_products = get_posts([
+                                'post_type' => 'product',
+                                'numberposts' => -1,
+                                'orderby' => 'title',
+                                'order' => 'ASC',
+                                'tax_query' => [
+                                    [
+                                        'taxonomy' => 'product_cat',
+                                        'field' => 'slug',
+                                        'terms' => [$slug],
+                                        'include_children' => true
+                                    ]
+                                ]
+                            ]);
                         ?>
-                            <div class="wcem-course-card">
-                                <h3><?php echo esc_html($course['name']); ?></h3>
-                                <p class="description">
-                                    <?php _e('Category:', 'prepmedico-course-management'); ?> <code><?php echo esc_html($slug); ?></code>
-                                </p>
+                            <div class="wcem-asit-course-card" data-course="<?php echo esc_attr($slug); ?>" data-status="<?php echo esc_attr($status_class); ?>">
+                                <div class="wcem-asit-card-header">
+                                    <div class="wcem-asit-card-title">
+                                        <h3><?php echo esc_html($course['name']); ?></h3>
+                                        <span class="wcem-asit-status-badge <?php echo esc_attr($status_class); ?>"><?php echo esc_html($status_label); ?></span>
+                                    </div>
+                                    <span class="wcem-asit-card-category"><?php echo esc_html(strtoupper($slug)); ?></span>
+                                </div>
 
-                                <div class="wcem-edition-group">
-                                    <h4><?php _e('ASiT Discount Settings', 'prepmedico-course-management'); ?></h4>
+                                <div class="wcem-asit-card-body">
+                                    <!-- Discount Mode Toggle -->
+                                    <div class="wcem-asit-mode-section">
+                                        <label class="wcem-asit-mode-label"><?php _e('Discount Mode', 'prepmedico-course-management'); ?></label>
+                                        <div class="wcem-asit-mode-toggle" data-course="<?php echo esc_attr($slug); ?>">
+                                            <button type="button" class="wcem-asit-mode-btn <?php echo ($mode === 'none') ? 'active' : ''; ?>" data-mode="none">
+                                                <?php _e('No Discount', 'prepmedico-course-management'); ?>
+                                            </button>
+                                            <button type="button" class="wcem-asit-mode-btn <?php echo ($mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only">
+                                                <?php _e('Early Bird', 'prepmedico-course-management'); ?>
+                                            </button>
+                                            <button type="button" class="wcem-asit-mode-btn <?php echo ($mode === 'always') ? 'active' : ''; ?>" data-mode="always">
+                                                <?php _e('Always Active', 'prepmedico-course-management'); ?>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="asit_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($mode); ?>" class="wcem-asit-mode-input" data-course="<?php echo esc_attr($slug); ?>">
+                                    </div>
 
-                                    <table class="form-table">
-                                        <tr>
-                                            <th><label><?php _e('Discount Mode', 'prepmedico-course-management'); ?></label></th>
-                                            <td>
-                                                <select name="asit_config[<?php echo esc_attr($slug); ?>][mode]" class="asit-mode-select" data-course="<?php echo esc_attr($slug); ?>">
-                                                    <option value="none" <?php selected($mode, 'none'); ?>><?php _e('No Discount', 'prepmedico-course-management'); ?></option>
-                                                    <option value="early_bird_only" <?php selected($mode, 'early_bird_only'); ?>><?php _e('Early Bird Only', 'prepmedico-course-management'); ?></option>
-                                                    <option value="always" <?php selected($mode, 'always'); ?>><?php _e('Always Active', 'prepmedico-course-management'); ?></option>
-                                                </select>
-                                                <p class="description">
-                                                    <strong><?php _e('No Discount:', 'prepmedico-course-management'); ?></strong> <?php _e('No ASiT discount, field hidden', 'prepmedico-course-management'); ?><br>
-                                                    <strong><?php _e('Early Bird Only:', 'prepmedico-course-management'); ?></strong> <?php _e('Discount only during early bird period', 'prepmedico-course-management'); ?><br>
-                                                    <strong><?php _e('Always Active:', 'prepmedico-course-management'); ?></strong> <?php _e('Discount always applies', 'prepmedico-course-management'); ?>
-                                                </p>
-                                            </td>
-                                        </tr>
-                                        <tr class="asit-eb-discount-row" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode === 'early_bird_only') ? '' : 'display:none;'; ?>">
-                                            <th><label><?php _e('Early Bird Discount', 'prepmedico-course-management'); ?></label></th>
-                                            <td>
-                                                <input type="number" name="asit_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($eb_discount); ?>" min="0" max="100" class="small-text"> %
-                                                <p class="description"><?php _e('Discount percentage during early bird period.', 'prepmedico-course-management'); ?></p>
-                                            </td>
-                                        </tr>
-                                        <tr class="asit-normal-discount-row" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode === 'always') ? '' : 'display:none;'; ?>">
-                                            <th><label><?php _e('Discount Percentage', 'prepmedico-course-management'); ?></label></th>
-                                            <td>
-                                                <input type="number" name="asit_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($normal_discount); ?>" min="0" max="100" class="small-text"> %
-                                                <p class="description"><?php _e('Discount percentage (applies all the time).', 'prepmedico-course-management'); ?></p>
-                                            </td>
-                                        </tr>
-                                        <tr class="asit-show-field-row" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode !== 'none') ? '' : 'display:none;'; ?>">
-                                            <th><label><?php _e('Show ASiT Field', 'prepmedico-course-management'); ?></label></th>
-                                            <td>
-                                                <label>
-                                                    <input type="checkbox" name="asit_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($show_field, true); ?>>
-                                                    <?php _e('Show ASiT membership field at checkout for this course', 'prepmedico-course-management'); ?>
-                                                </label>
-                                            </td>
-                                        </tr>
-                                        <?php
-                                        // Product filtering options
-                                        $product_filter = isset($course['asit_product_filter']) ? (bool) $course['asit_product_filter'] : false;
-                                        $include_children = isset($course['asit_include_children']) ? (bool) $course['asit_include_children'] : false;
-                                        $selected_products = isset($course['asit_selected_products']) ? (array) $course['asit_selected_products'] : [];
-
-                                        // Get products for this course
-                                        $course_products = get_posts([
-                                            'post_type' => 'product',
-                                            'numberposts' => -1,
-                                            'orderby' => 'title',
-                                            'order' => 'ASC',
-                                            'tax_query' => [
-                                                [
-                                                    'taxonomy' => 'product_cat',
-                                                    'field' => 'slug',
-                                                    'terms' => [$slug],
-                                                    'include_children' => true
-                                                ]
-                                            ]
-                                        ]);
-                                        ?>
-                                        <tr class="asit-product-filter-row" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode !== 'none') ? '' : 'display:none;'; ?>">
-                                            <th><label><?php _e('Product Filtering', 'prepmedico-course-management'); ?></label></th>
-                                            <td>
-                                                <label style="display: block; margin-bottom: 8px;">
-                                                    <input type="checkbox" name="asit_config[<?php echo esc_attr($slug); ?>][product_filter]" value="1" class="asit-product-filter-toggle" data-course="<?php echo esc_attr($slug); ?>" <?php checked($product_filter, true); ?>>
-                                                    <?php _e('Enable product-level filtering (select specific products)', 'prepmedico-course-management'); ?>
-                                                </label>
-                                                <p class="description" style="margin-top: 0;"><?php _e('When enabled, only selected products will receive the ASiT discount.', 'prepmedico-course-management'); ?></p>
-                                            </td>
-                                        </tr>
-                                        <tr class="asit-product-selection-row" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode !== 'none' && $product_filter) ? '' : 'display:none;'; ?>">
-                                            <th></th>
-                                            <td>
-                                                <div style="padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                                    <p style="margin: 0 0 10px 0;">
-                                                        <button type="button" class="button button-small asit-toggle-products" data-course="<?php echo esc_attr($slug); ?>"><?php _e('Show Products', 'prepmedico-course-management'); ?></button>
-                                                        <button type="button" class="button button-small asit-select-all-products" data-course="<?php echo esc_attr($slug); ?>" style="margin-left: 5px;"><?php _e('Select All', 'prepmedico-course-management'); ?></button>
-                                                        <button type="button" class="button button-small asit-deselect-all-products" data-course="<?php echo esc_attr($slug); ?>" style="margin-left: 5px;"><?php _e('Deselect All', 'prepmedico-course-management'); ?></button>
-                                                        <span class="asit-selected-count" data-course="<?php echo esc_attr($slug); ?>" style="margin-left: 8px; color: #555; font-size: 12px;"><?php printf(__('Selected: %d / %d', 'prepmedico-course-management'), count($selected_products), count($course_products)); ?></span>
-                                                    </p>
-                                                    <div class="asit-products-list" data-course="<?php echo esc_attr($slug); ?>" style="display: none; max-height: 250px; overflow: auto; padding: 10px; border: 1px solid #d9dce3; border-radius: 6px; background: #fff;">
-                                                        <?php if (empty($course_products)): ?>
-                                                            <p style="color: #666; margin: 0;"><?php _e('No products found in this category.', 'prepmedico-course-management'); ?></p>
-                                                        <?php else: ?>
-                                                            <?php
-                                                            // Group by category
-                                                            $grouped = [];
-                                                            foreach ($course_products as $product) {
-                                                                $cats = wp_get_post_terms($product->ID, 'product_cat', ['fields' => 'all']);
-                                                                $cat_name = $course['name'];
-                                                                foreach ($cats as $cat) {
-                                                                    if ($cat->slug !== $slug) {
-                                                                        $cat_name = $cat->name;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                                if (!isset($grouped[$cat_name])) {
-                                                                    $grouped[$cat_name] = [];
-                                                                }
-                                                                $grouped[$cat_name][] = $product;
-                                                            }
-                                                            ksort($grouped);
-                                                            ?>
-                                                            <?php foreach ($grouped as $cat_name => $products): ?>
-                                                                <div style="margin-bottom: 10px;">
-                                                                    <strong style="color: #1e3a5f; font-size: 11px; display: block; margin-bottom: 4px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px;"><?php echo esc_html($cat_name); ?></strong>
-                                                                    <?php foreach ($products as $product): ?>
-                                                                        <?php $is_selected = in_array($product->ID, array_map('intval', $selected_products), true); ?>
-                                                                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; padding-left: 6px; font-size: 12px;">
-                                                                            <input type="checkbox" class="asit-course-product-checkbox" data-course="<?php echo esc_attr($slug); ?>" name="asit_config[<?php echo esc_attr($slug); ?>][selected_products][]" value="<?php echo esc_attr($product->ID); ?>" <?php checked($is_selected); ?>>
-                                                                            <span style="flex: 1;"><?php echo esc_html(get_the_title($product)); ?></span>
-                                                                        </label>
-                                                                    <?php endforeach; ?>
-                                                                </div>
-                                                            <?php endforeach; ?>
-                                                        <?php endif; ?>
-                                                    </div>
+                                    <!-- Discount Percentage -->
+                                    <div class="wcem-asit-discount-section" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode === 'none') ? 'display:none;' : ''; ?>">
+                                        <div class="wcem-asit-discount-row">
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('Discount %', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <?php if ($mode === 'early_bird_only'): ?>
+                                                        <input type="number" name="asit_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($eb_discount); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
+                                                    <?php else: ?>
+                                                        <input type="number" name="asit_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($normal_discount); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
+                                                    <?php endif; ?>
+                                                    <span>%</span>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                            </div>
+                                            <div class="wcem-asit-toggles">
+                                                <label class="wcem-asit-toggle-item">
+                                                    <span><?php _e('Show ASiT Field', 'prepmedico-course-management'); ?></span>
+                                                    <input type="checkbox" name="asit_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($show_field, true); ?> class="wcem-asit-toggle-checkbox">
+                                                    <span class="wcem-asit-toggle-slider"></span>
+                                                </label>
+                                                <label class="wcem-asit-toggle-item">
+                                                    <span><?php _e('Product Filtering', 'prepmedico-course-management'); ?></span>
+                                                    <input type="checkbox" name="asit_config[<?php echo esc_attr($slug); ?>][product_filter]" value="1" <?php checked($product_filter, true); ?> class="wcem-asit-toggle-checkbox wcem-asit-product-filter-toggle" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <span class="wcem-asit-toggle-slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Hidden Early Bird Discount (keep for form submission when mode changes) -->
+                                        <?php if ($mode !== 'early_bird_only'): ?>
+                                            <input type="hidden" name="asit_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($eb_discount); ?>">
+                                        <?php endif; ?>
+                                        <?php if ($mode !== 'always'): ?>
+                                            <input type="hidden" name="asit_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($normal_discount); ?>">
+                                        <?php endif; ?>
+
+                                        <!-- Product Selection (collapsible) -->
+                                        <div class="wcem-asit-product-selection" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($product_filter) ? '' : 'display:none;'; ?>">
+                                            <div class="wcem-asit-product-header">
+                                                <button type="button" class="wcem-asit-toggle-products" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <span class="material-icons-round">expand_more</span>
+                                                    <?php _e('Select Products', 'prepmedico-course-management'); ?>
+                                                </button>
+                                                <span class="wcem-asit-product-count" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <?php printf(__('%d / %d selected', 'prepmedico-course-management'), count($selected_products), count($course_products)); ?>
+                                                </span>
+                                            </div>
+                                            <div class="wcem-asit-products-list" data-course="<?php echo esc_attr($slug); ?>" style="display:none;">
+                                                <div class="wcem-asit-products-actions">
+                                                    <button type="button" class="wcem-asit-select-all" data-course="<?php echo esc_attr($slug); ?>"><?php _e('Select All', 'prepmedico-course-management'); ?></button>
+                                                    <button type="button" class="wcem-asit-deselect-all" data-course="<?php echo esc_attr($slug); ?>"><?php _e('Deselect All', 'prepmedico-course-management'); ?></button>
+                                                </div>
+                                                <div class="wcem-asit-products-scroll">
+                                                    <?php if (empty($course_products)): ?>
+                                                        <p class="wcem-asit-no-products"><?php _e('No products found.', 'prepmedico-course-management'); ?></p>
+                                                    <?php else: ?>
+                                                        <?php
+                                                        $grouped = [];
+                                                        foreach ($course_products as $product) {
+                                                            $cats = wp_get_post_terms($product->ID, 'product_cat', ['fields' => 'all']);
+                                                            $cat_name = $course['name'];
+                                                            foreach ($cats as $cat) {
+                                                                if ($cat->slug !== $slug) {
+                                                                    $cat_name = $cat->name;
+                                                                    break;
+                                                                }
+                                                            }
+                                                            if (!isset($grouped[$cat_name])) {
+                                                                $grouped[$cat_name] = [];
+                                                            }
+                                                            $grouped[$cat_name][] = $product;
+                                                        }
+                                                        ksort($grouped);
+                                                        ?>
+                                                        <?php foreach ($grouped as $cat_name => $products): ?>
+                                                            <div class="wcem-asit-product-group">
+                                                                <span class="wcem-asit-product-group-title"><?php echo esc_html($cat_name); ?></span>
+                                                                <?php foreach ($products as $product): ?>
+                                                                    <?php $is_selected = in_array($product->ID, array_map('intval', $selected_products), true); ?>
+                                                                    <label class="wcem-asit-product-item">
+                                                                        <input type="checkbox" class="wcem-asit-product-checkbox" data-course="<?php echo esc_attr($slug); ?>" name="asit_config[<?php echo esc_attr($slug); ?>][selected_products][]" value="<?php echo esc_attr($product->ID); ?>" <?php checked($is_selected); ?>>
+                                                                        <span><?php echo esc_html(get_the_title($product)); ?></span>
+                                                                    </label>
+                                                                <?php endforeach; ?>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="wcem-asit-card-footer">
+                                    <?php if ($mode === 'early_bird_only'): ?>
+                                        <?php if ($is_eb_active): ?>
+                                            <span class="wcem-asit-footer-status active">
+                                                <span class="material-icons-round">check_circle</span>
+                                                <?php _e('Early Bird Active', 'prepmedico-course-management'); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="wcem-asit-footer-status expired">
+                                                <span class="material-icons-round">schedule</span>
+                                                <?php _e('Ends Nov 15th', 'prepmedico-course-management'); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php elseif ($mode === 'none'): ?>
+                                        <span class="wcem-asit-footer-status disabled">
+                                            <span class="material-icons-round">block</span>
+                                            <?php _e('Disabled', 'prepmedico-course-management'); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="wcem-asit-footer-status active">
+                                            <span class="material-icons-round">verified</span>
+                                            <?php printf(__('%d%% Discount Active', 'prepmedico-course-management'), $current_discount); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <a href="#" class="wcem-asit-settings-link" data-course="<?php echo esc_attr($slug); ?>">
+                                        <?php _e('Settings', 'prepmedico-course-management'); ?>
+                                        <span class="material-icons-round">arrow_forward</span>
+                                    </a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
+                </section>
 
-                    <p class="submit">
-                        <input type="submit" name="pmcm_save_asit_settings" class="button button-primary" value="<?php _e('Save ASiT Settings', 'prepmedico-course-management'); ?>">
-                    </p>
+                <!-- Sticky Save Bar -->
+                <div class="wcem-asit-sticky-save">
+                    <button type="submit" name="pmcm_save_asit_settings" class="wcem-asit-save-btn">
+                        <span class="material-icons-round">save</span>
+                        <?php _e('Save All Changes', 'prepmedico-course-management'); ?>
+                    </button>
                 </div>
             </form>
 
-            <!-- Instructions -->
-            <div class="wcem-fluentcrm-status">
-                <h2><?php _e('WooCommerce Coupon Setup', 'prepmedico-course-management'); ?></h2>
-                <p><?php _e('To make this work, ensure you have a WooCommerce coupon configured:', 'prepmedico-course-management'); ?></p>
-                <ol>
-                    <li><?php printf(__('Go to <a href="%s">WooCommerce → Coupons</a>', 'prepmedico-course-management'), admin_url('edit.php?post_type=shop_coupon')); ?></li>
-                    <li><?php printf(__('Create or edit a coupon with code: <code>%s</code>', 'prepmedico-course-management'), esc_html($coupon_code)); ?></li>
-                    <li><?php _e('Set "Discount type" to "Percentage discount"', 'prepmedico-course-management'); ?></li>
-                    <li><?php _e('Set any percentage (it will be overridden dynamically per product)', 'prepmedico-course-management'); ?></li>
-                </ol>
+            <!-- Instructions Section -->
+            <section class="wcem-asit-instructions">
+                <div class="wcem-asit-instructions-header">
+                    <span class="material-icons-round">help_outline</span>
+                    <h3><?php _e('WooCommerce Coupon Setup', 'prepmedico-course-management'); ?></h3>
+                </div>
+                <div class="wcem-asit-instructions-body">
+                    <ol>
+                        <li><?php printf(__('Go to <a href="%s">WooCommerce → Coupons</a>', 'prepmedico-course-management'), admin_url('edit.php?post_type=shop_coupon')); ?></li>
+                        <li><?php printf(__('Create or edit a coupon with code: <code>%s</code>', 'prepmedico-course-management'), esc_html($coupon_code)); ?></li>
+                        <li><?php _e('Set "Discount type" to "Percentage discount"', 'prepmedico-course-management'); ?></li>
+                        <li><?php _e('Set any percentage (it will be overridden dynamically per product)', 'prepmedico-course-management'); ?></li>
+                    </ol>
+                </div>
+            </section>
 
-                <h3><?php _e('How It Works', 'prepmedico-course-management'); ?></h3>
-                <ul>
-                    <li><strong><?php _e('No Discount:', 'prepmedico-course-management'); ?></strong> <?php _e('The ASiT field is hidden and no discount is applied.', 'prepmedico-course-management'); ?></li>
-                    <li><strong><?php _e('Early Bird Only:', 'prepmedico-course-management'); ?></strong> <?php _e('Discount only applies during the early bird period. Outside early bird, the field may still show but no discount is given.', 'prepmedico-course-management'); ?></li>
-                    <li><strong><?php _e('Always Active:', 'prepmedico-course-management'); ?></strong> <?php _e('Discount always applies regardless of early bird status.', 'prepmedico-course-management'); ?></li>
-                </ul>
-            </div>
+            <!-- Bulk Sync Section -->
+            <section class="wcem-asit-sync-section">
+                <div class="wcem-asit-sync-header">
+                    <span class="material-icons-round">sync</span>
+                    <h3><?php _e('Sync ASiT Orders to FluentCRM', 'prepmedico-course-management'); ?></h3>
+                </div>
+                <p class="wcem-asit-sync-desc"><?php _e('Scan old orders for ASiT coupon usage and sync them to FluentCRM.', 'prepmedico-course-management'); ?></p>
 
-            <!-- JavaScript for dynamic form behavior -->
-            <script>
-                jQuery(document).ready(function($) {
-                    $('.asit-mode-select').on('change', function() {
-                        var course = $(this).data('course');
-                        var mode = $(this).val();
-
-                        // Hide all conditional rows for this course
-                        $('.asit-eb-discount-row[data-course="' + course + '"]').hide();
-                        $('.asit-normal-discount-row[data-course="' + course + '"]').hide();
-                        $('.asit-show-field-row[data-course="' + course + '"]').hide();
-                        $('.asit-product-filter-row[data-course="' + course + '"]').hide();
-                        $('.asit-product-selection-row[data-course="' + course + '"]').hide();
-
-                        if (mode === 'early_bird_only') {
-                            $('.asit-eb-discount-row[data-course="' + course + '"]').show();
-                            $('.asit-show-field-row[data-course="' + course + '"]').show();
-                            $('.asit-product-filter-row[data-course="' + course + '"]').show();
-                            // Show product selection if filter is enabled
-                            if ($('.asit-product-filter-toggle[data-course="' + course + '"]').is(':checked')) {
-                                $('.asit-product-selection-row[data-course="' + course + '"]').show();
-                            }
-                        } else if (mode === 'always') {
-                            $('.asit-normal-discount-row[data-course="' + course + '"]').show();
-                            $('.asit-show-field-row[data-course="' + course + '"]').show();
-                            $('.asit-product-filter-row[data-course="' + course + '"]').show();
-                            // Show product selection if filter is enabled
-                            if ($('.asit-product-filter-toggle[data-course="' + course + '"]').is(':checked')) {
-                                $('.asit-product-selection-row[data-course="' + course + '"]').show();
-                            }
-                        }
-                    });
-
-                    // Product filter toggle
-                    $('.asit-product-filter-toggle').on('change', function() {
-                        var course = $(this).data('course');
-                        if ($(this).is(':checked')) {
-                            $('.asit-product-selection-row[data-course="' + course + '"]').slideDown(150);
-                        } else {
-                            $('.asit-product-selection-row[data-course="' + course + '"]').slideUp(150);
-                        }
-                    });
-
-                    // Toggle products list visibility
-                    $('.asit-toggle-products').on('click', function() {
-                        var course = $(this).data('course');
-                        var $list = $('.asit-products-list[data-course="' + course + '"]');
-                        $list.slideToggle(180);
-                        var isHidden = $list.is(':hidden');
-                        $(this).text(isHidden ? '<?php echo esc_js(__('Show Products', 'prepmedico-course-management')); ?>' : '<?php echo esc_js(__('Hide Products', 'prepmedico-course-management')); ?>');
-                    });
-
-                    // Select all products for a course
-                    $('.asit-select-all-products').on('click', function() {
-                        var course = $(this).data('course');
-                        $('.asit-course-product-checkbox[data-course="' + course + '"]').prop('checked', true);
-                        updateCourseProductCount(course);
-                    });
-
-                    // Deselect all products for a course
-                    $('.asit-deselect-all-products').on('click', function() {
-                        var course = $(this).data('course');
-                        $('.asit-course-product-checkbox[data-course="' + course + '"]').prop('checked', false);
-                        updateCourseProductCount(course);
-                    });
-
-                    // Update count when product checkbox changes
-                    $('.asit-course-product-checkbox').on('change', function() {
-                        var course = $(this).data('course');
-                        updateCourseProductCount(course);
-                    });
-
-                    function updateCourseProductCount(course) {
-                        var checked = $('.asit-course-product-checkbox[data-course="' + course + '"]:checked').length;
-                        var total = $('.asit-course-product-checkbox[data-course="' + course + '"]').length;
-                        $('.asit-selected-count[data-course="' + course + '"]').text('<?php echo esc_js(__('Selected: ', 'prepmedico-course-management')); ?>' + checked + ' / ' + total);
-                    }
-                });
-            </script>
-
-            <!-- Bulk Sync ASiT Orders to FluentCRM -->
-            <div class="wcem-status-overview">
-                <h2><?php _e('Sync ASiT Orders to FluentCRM', 'prepmedico-course-management'); ?></h2>
-                <p><?php _e('Scan old orders for ASiT coupon usage and sync them to FluentCRM. This will update the "asit" custom field for all contacts who used the ASiT coupon.', 'prepmedico-course-management'); ?></p>
-
-                <div id="wcem-asit-sync-results" style="margin: 15px 0; padding: 15px; background: #f6f7f7; border-radius: 4px; display: none;">
+                <div id="wcem-asit-sync-results" class="wcem-asit-sync-results" style="display: none;">
                     <div id="wcem-asit-sync-progress"></div>
                 </div>
 
-                <p>
-                    <button type="button" id="wcem-scan-asit-orders" class="button button-secondary">
-                        <?php _e('Scan Orders for ASiT Coupon', 'prepmedico-course-management'); ?>
+                <div class="wcem-asit-sync-buttons">
+                    <button type="button" id="wcem-scan-asit-orders" class="wcem-asit-scan-btn">
+                        <span class="material-icons-round">search</span>
+                        <?php _e('Scan Orders', 'prepmedico-course-management'); ?>
                     </button>
-                    <button type="button" id="wcem-bulk-sync-asit" class="button button-primary" style="margin-left: 10px;" disabled>
-                        <?php _e('Sync All to FluentCRM', 'prepmedico-course-management'); ?>
+                    <button type="button" id="wcem-bulk-sync-asit" class="wcem-asit-sync-btn" disabled>
+                        <span class="material-icons-round">cloud_upload</span>
+                        <?php _e('Sync to FluentCRM', 'prepmedico-course-management'); ?>
                     </button>
-                </p>
+                </div>
+            </section>
+        </div>
 
-                <script>
-                    jQuery(document).ready(function($) {
-                        var asitOrders = [];
+        <script>
+            jQuery(document).ready(function($) {
+                // Mode toggle buttons
+                $('.wcem-asit-mode-toggle').on('click', '.wcem-asit-mode-btn', function() {
+                    var $btn = $(this);
+                    var $toggle = $btn.closest('.wcem-asit-mode-toggle');
+                    var course = $toggle.data('course');
+                    var mode = $btn.data('mode');
 
-                        $('#wcem-scan-asit-orders').on('click', function() {
-                            var btn = $(this);
-                            btn.prop('disabled', true).text('<?php _e('Scanning...', 'prepmedico-course-management'); ?>');
-                            $('#wcem-asit-sync-results').show();
-                            $('#wcem-asit-sync-progress').html('<p><?php _e('Scanning orders for ASiT coupon usage...', 'prepmedico-course-management'); ?></p>');
+                    // Update active button
+                    $toggle.find('.wcem-asit-mode-btn').removeClass('active');
+                    $btn.addClass('active');
 
-                            $.post(ajaxurl, {
-                                action: 'wcem_bulk_sync_asit',
-                                mode: 'scan',
-                                nonce: '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>'
-                            }, function(response) {
-                                btn.prop('disabled', false).text('<?php _e('Scan Orders for ASiT Coupon', 'prepmedico-course-management'); ?>');
+                    // Update hidden input
+                    $('.wcem-asit-mode-input[data-course="' + course + '"]').val(mode);
 
-                                if (response.success) {
-                                    asitOrders = response.data.orders;
-                                    var html = '<p><strong>' + response.data.found + '</strong> <?php _e('orders found with ASiT coupon.', 'prepmedico-course-management'); ?></p>';
-                                    html += '<p><?php _e('Already synced:', 'prepmedico-course-management'); ?> <strong>' + response.data.already_synced + '</strong></p>';
-                                    html += '<p><?php _e('Need to sync:', 'prepmedico-course-management'); ?> <strong>' + response.data.need_sync + '</strong></p>';
+                    // Show/hide discount section
+                    var $card = $btn.closest('.wcem-asit-course-card');
+                    var $discountSection = $card.find('.wcem-asit-discount-section');
 
-                                    if (response.data.need_sync > 0) {
-                                        $('#wcem-bulk-sync-asit').prop('disabled', false);
-                                    }
+                    if (mode === 'none') {
+                        $discountSection.slideUp(150);
+                    } else {
+                        $discountSection.slideDown(150);
+                    }
 
-                                    $('#wcem-asit-sync-progress').html(html);
-                                } else {
-                                    $('#wcem-asit-sync-progress').html('<p style="color:red;">' + response.data.message + '</p>');
-                                }
-                            });
+                    // Update status badge
+                    var $badge = $card.find('.wcem-asit-status-badge');
+                    $badge.removeClass('active early-bird inactive');
+                    if (mode === 'always') {
+                        $badge.addClass('active').text('<?php echo esc_js(__('Active', 'prepmedico-course-management')); ?>');
+                    } else if (mode === 'early_bird_only') {
+                        $badge.addClass('early-bird').text('<?php echo esc_js(__('Early Bird Only', 'prepmedico-course-management')); ?>');
+                    } else {
+                        $badge.addClass('inactive').text('<?php echo esc_js(__('Inactive', 'prepmedico-course-management')); ?>');
+                    }
+
+                    $card.attr('data-status', mode === 'always' ? 'active' : (mode === 'early_bird_only' ? 'early-bird' : 'inactive'));
+                });
+
+                // Product filter toggle
+                $('.wcem-asit-product-filter-toggle').on('change', function() {
+                    var course = $(this).data('course');
+                    var $selection = $('.wcem-asit-product-selection[data-course="' + course + '"]');
+                    if ($(this).is(':checked')) {
+                        $selection.slideDown(150);
+                    } else {
+                        $selection.slideUp(150);
+                    }
+                });
+
+                // Toggle products list
+                $('.wcem-asit-toggle-products').on('click', function() {
+                    var course = $(this).data('course');
+                    var $list = $('.wcem-asit-products-list[data-course="' + course + '"]');
+                    var $icon = $(this).find('.material-icons-round');
+                    $list.slideToggle(150);
+                    $icon.text($list.is(':visible') ? 'expand_less' : 'expand_more');
+                });
+
+                // Select/Deselect all products
+                $('.wcem-asit-select-all').on('click', function() {
+                    var course = $(this).data('course');
+                    $('.wcem-asit-product-checkbox[data-course="' + course + '"]').prop('checked', true);
+                    updateProductCount(course);
+                });
+
+                $('.wcem-asit-deselect-all').on('click', function() {
+                    var course = $(this).data('course');
+                    $('.wcem-asit-product-checkbox[data-course="' + course + '"]').prop('checked', false);
+                    updateProductCount(course);
+                });
+
+                // Update count on change
+                $('.wcem-asit-product-checkbox').on('change', function() {
+                    var course = $(this).data('course');
+                    updateProductCount(course);
+                });
+
+                function updateProductCount(course) {
+                    var checked = $('.wcem-asit-product-checkbox[data-course="' + course + '"]:checked').length;
+                    var total = $('.wcem-asit-product-checkbox[data-course="' + course + '"]').length;
+                    $('.wcem-asit-product-count[data-course="' + course + '"]').text(checked + ' / ' + total + ' <?php echo esc_js(__('selected', 'prepmedico-course-management')); ?>');
+                }
+
+                // View toggle
+                $('.wcem-asit-view-btn').on('click', function() {
+                    var view = $(this).data('view');
+                    $('.wcem-asit-view-btn').removeClass('active');
+                    $(this).addClass('active');
+                    $('#wcem-asit-courses-grid').removeClass('list-view grid-view').addClass(view + '-view');
+                });
+
+                // Sort dropdown
+                $('#wcem-asit-sort').on('change', function() {
+                    var sortBy = $(this).val();
+                    var $grid = $('#wcem-asit-courses-grid');
+                    var $cards = $grid.children('.wcem-asit-course-card').detach();
+
+                    if (sortBy === 'alpha') {
+                        $cards.sort(function(a, b) {
+                            return $(a).find('h3').text().localeCompare($(b).find('h3').text());
                         });
+                    } else if (sortBy === 'status') {
+                        var order = {'active': 1, 'early-bird': 2, 'inactive': 3};
+                        $cards.sort(function(a, b) {
+                            return order[$(a).data('status')] - order[$(b).data('status')];
+                        });
+                    }
 
-                        $('#wcem-bulk-sync-asit').on('click', function() {
-                            if (!confirm('<?php _e('This will sync all ASiT orders to FluentCRM. Continue?', 'prepmedico-course-management'); ?>')) {
-                                return;
+                    $grid.append($cards);
+                });
+
+                // Bulk sync functionality
+                var asitOrders = [];
+
+                $('#wcem-scan-asit-orders').on('click', function() {
+                    var btn = $(this);
+                    btn.prop('disabled', true).find('span:last').text('<?php _e('Scanning...', 'prepmedico-course-management'); ?>');
+                    $('#wcem-asit-sync-results').show();
+                    $('#wcem-asit-sync-progress').html('<p><?php _e('Scanning orders for ASiT coupon usage...', 'prepmedico-course-management'); ?></p>');
+
+                    $.post(ajaxurl, {
+                        action: 'wcem_bulk_sync_asit',
+                        mode: 'scan',
+                        nonce: '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>'
+                    }, function(response) {
+                        btn.prop('disabled', false).find('span:last').text('<?php _e('Scan Orders', 'prepmedico-course-management'); ?>');
+
+                        if (response.success) {
+                            asitOrders = response.data.orders;
+                            var html = '<p><strong>' + response.data.found + '</strong> <?php _e('orders found with ASiT coupon.', 'prepmedico-course-management'); ?></p>';
+                            html += '<p><?php _e('Already synced:', 'prepmedico-course-management'); ?> <strong>' + response.data.already_synced + '</strong></p>';
+                            html += '<p><?php _e('Need to sync:', 'prepmedico-course-management'); ?> <strong>' + response.data.need_sync + '</strong></p>';
+
+                            if (response.data.need_sync > 0) {
+                                $('#wcem-bulk-sync-asit').prop('disabled', false);
                             }
 
-                            var btn = $(this);
-                            btn.prop('disabled', true).text('<?php _e('Syncing...', 'prepmedico-course-management'); ?>');
-
-                            $.post(ajaxurl, {
-                                action: 'wcem_bulk_sync_asit',
-                                mode: 'sync',
-                                nonce: '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>'
-                            }, function(response) {
-                                btn.prop('disabled', true).text('<?php _e('Sync All to FluentCRM', 'prepmedico-course-management'); ?>');
-
-                                if (response.success) {
-                                    var html = '<p style="color:green;"><strong><?php _e('Sync completed!', 'prepmedico-course-management'); ?></strong></p>';
-                                    html += '<p><?php _e('Orders processed:', 'prepmedico-course-management'); ?> <strong>' + response.data.processed + '</strong></p>';
-                                    html += '<p><?php _e('Contacts updated:', 'prepmedico-course-management'); ?> <strong>' + response.data.synced + '</strong></p>';
-                                    if (response.data.errors > 0) {
-                                        html += '<p style="color:orange;"><?php _e('Errors:', 'prepmedico-course-management'); ?> <strong>' + response.data.errors + '</strong></p>';
-                                    }
-                                    $('#wcem-asit-sync-progress').html(html);
-                                } else {
-                                    $('#wcem-asit-sync-progress').html('<p style="color:red;">' + response.data.message + '</p>');
-                                }
-                            });
-                        });
+                            $('#wcem-asit-sync-progress').html(html);
+                        } else {
+                            $('#wcem-asit-sync-progress').html('<p style="color:red;">' + response.data.message + '</p>');
+                        }
                     });
-                </script>
-            </div>
-        </div>
+                });
+
+                $('#wcem-bulk-sync-asit').on('click', function() {
+                    if (!confirm('<?php _e('This will sync all ASiT orders to FluentCRM. Continue?', 'prepmedico-course-management'); ?>')) {
+                        return;
+                    }
+
+                    var btn = $(this);
+                    btn.prop('disabled', true).find('span:last').text('<?php _e('Syncing...', 'prepmedico-course-management'); ?>');
+
+                    $.post(ajaxurl, {
+                        action: 'wcem_bulk_sync_asit',
+                        mode: 'sync',
+                        nonce: '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>'
+                    }, function(response) {
+                        btn.prop('disabled', true).find('span:last').text('<?php _e('Sync to FluentCRM', 'prepmedico-course-management'); ?>');
+
+                        if (response.success) {
+                            var html = '<p style="color:green;"><strong><?php _e('Sync completed!', 'prepmedico-course-management'); ?></strong></p>';
+                            html += '<p><?php _e('Orders processed:', 'prepmedico-course-management'); ?> <strong>' + response.data.processed + '</strong></p>';
+                            html += '<p><?php _e('Contacts updated:', 'prepmedico-course-management'); ?> <strong>' + response.data.synced + '</strong></p>';
+                            if (response.data.errors > 0) {
+                                html += '<p style="color:orange;"><?php _e('Errors:', 'prepmedico-course-management'); ?> <strong>' + response.data.errors + '</strong></p>';
+                            }
+                            $('#wcem-asit-sync-progress').html(html);
+                        } else {
+                            $('#wcem-asit-sync-progress').html('<p style="color:red;">' + response.data.message + '</p>');
+                        }
+                    });
+                });
+            });
+        </script>
     <?php
     }
 

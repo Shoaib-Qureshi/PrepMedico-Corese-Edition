@@ -2957,3 +2957,1017 @@
         display: none;
     }
 }
+
+/* =====================================================
+   ASIT MODERN LAYOUT STYLES
+   ===================================================== */
+
+.wcem-asit-modern {
+    max-width: 1600px;
+    padding: 0;
+}
+
+/* ASIT Header */
+.wcem-asit-header {
+    background: var(--pmcm-surface);
+    border-bottom: 1px solid var(--pmcm-border);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    border-radius: var(--pmcm-radius-lg);
+    box-shadow: var(--pmcm-shadow-sm);
+}
+
+.wcem-asit-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wcem-asit-icon {
+    font-size: 32px;
+    color: var(--pmcm-primary);
+}
+
+.wcem-asit-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+}
+
+/* Global Coupon Configuration Card */
+.wcem-asit-global-config {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-xl);
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: var(--pmcm-shadow);
+}
+
+.wcem-asit-global-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--pmcm-border);
+    background: var(--pmcm-surface-secondary);
+}
+
+.wcem-asit-global-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pmcm-primary-light);
+    border-radius: var(--pmcm-radius);
+    color: var(--pmcm-primary);
+}
+
+.wcem-asit-global-header h2 {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.wcem-asit-save-global {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--pmcm-success);
+    color: #fff;
+    border: none;
+    border-radius: var(--pmcm-radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-save-global:hover {
+    background: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.wcem-asit-save-global .material-icons-round {
+    font-size: 18px;
+}
+
+.wcem-asit-global-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    padding: 24px;
+}
+
+.wcem-asit-global-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wcem-asit-global-field > label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pmcm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wcem-asit-input-with-tag {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wcem-asit-coupon-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+    background: var(--pmcm-surface-secondary);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-coupon-input:focus {
+    outline: none;
+    border-color: var(--pmcm-primary);
+    box-shadow: 0 0 0 3px var(--pmcm-primary-light);
+}
+
+.wcem-asit-tag {
+    padding: 6px 12px;
+    background: var(--pmcm-primary-light);
+    color: var(--pmcm-primary);
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: var(--pmcm-radius-sm);
+    white-space: nowrap;
+}
+
+.wcem-asit-input-with-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcem-asit-discount-input {
+    width: 100px;
+    padding: 12px 16px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+    background: var(--pmcm-surface-secondary);
+    text-align: center;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-discount-input:focus {
+    outline: none;
+    border-color: var(--pmcm-primary);
+    box-shadow: 0 0 0 3px var(--pmcm-primary-light);
+}
+
+.wcem-asit-percent {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-asit-field-note {
+    font-size: 12px;
+    color: var(--pmcm-text-muted);
+    margin: 0;
+    font-style: italic;
+}
+
+/* Per-Course Section */
+.wcem-asit-courses-section {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-xl);
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: var(--pmcm-shadow);
+}
+
+.wcem-asit-courses-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--pmcm-border);
+    background: var(--pmcm-surface-secondary);
+    flex-wrap: wrap;
+}
+
+.wcem-asit-courses-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.wcem-asit-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-asit-courses-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.wcem-asit-view-toggle {
+    display: flex;
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    overflow: hidden;
+}
+
+.wcem-asit-view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    color: var(--pmcm-text-muted);
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-view-btn:hover {
+    background: var(--pmcm-surface-secondary);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-asit-view-btn.active {
+    background: var(--pmcm-primary);
+    color: #fff;
+}
+
+.wcem-asit-view-btn .material-icons-round {
+    font-size: 20px;
+}
+
+.wcem-asit-sort-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--pmcm-text-secondary);
+}
+
+.wcem-asit-sort-dropdown select {
+    padding: 8px 12px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    background: var(--pmcm-surface);
+    font-size: 13px;
+    color: var(--pmcm-text-primary);
+    cursor: pointer;
+}
+
+/* Course Cards Grid */
+.wcem-asit-courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 24px;
+}
+
+.wcem-asit-courses-grid.list-view {
+    grid-template-columns: 1fr;
+}
+
+.wcem-asit-courses-grid.list-view .wcem-asit-course-card {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    align-items: center;
+}
+
+.wcem-asit-courses-grid.list-view .wcem-asit-card-body {
+    border: none;
+    padding: 0 24px;
+}
+
+.wcem-asit-courses-grid.list-view .wcem-asit-card-footer {
+    flex-direction: column;
+    border: none;
+    padding: 16px;
+}
+
+/* Course Card */
+.wcem-asit-course-card {
+    background: var(--pmcm-surface);
+    border: 2px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-lg);
+    overflow: hidden;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-course-card:hover {
+    border-color: var(--pmcm-primary);
+    box-shadow: var(--pmcm-shadow-md);
+}
+
+.wcem-asit-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--pmcm-border-light);
+}
+
+.wcem-asit-card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.wcem-asit-card-title h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-asit-status-badge {
+    padding: 4px 10px;
+    border-radius: var(--pmcm-radius-sm);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wcem-asit-status-badge.active {
+    background: var(--pmcm-success-bg);
+    color: var(--pmcm-success);
+}
+
+.wcem-asit-status-badge.early-bird {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.wcem-asit-status-badge.inactive {
+    background: var(--pmcm-surface-tertiary);
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-asit-card-category {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--pmcm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Card Body */
+.wcem-asit-card-body {
+    padding: 20px;
+}
+
+.wcem-asit-mode-section {
+    margin-bottom: 16px;
+}
+
+.wcem-asit-mode-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pmcm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.wcem-asit-mode-toggle {
+    display: flex;
+    background: var(--pmcm-surface-secondary);
+    border-radius: var(--pmcm-radius);
+    padding: 4px;
+    gap: 4px;
+}
+
+.wcem-asit-mode-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    border-radius: var(--pmcm-radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pmcm-text-secondary);
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+    white-space: nowrap;
+}
+
+.wcem-asit-mode-btn:hover {
+    background: var(--pmcm-surface);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-asit-mode-btn.active {
+    background: var(--pmcm-primary);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(141, 32, 99, 0.2);
+}
+
+/* Discount Section */
+.wcem-asit-discount-section {
+    padding-top: 16px;
+    border-top: 1px dashed var(--pmcm-border);
+}
+
+.wcem-asit-discount-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.wcem-asit-discount-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pmcm-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.wcem-asit-discount-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wcem-asit-card-discount-input {
+    width: 70px;
+    padding: 10px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pmcm-text-primary);
+    text-align: center;
+    background: var(--pmcm-surface-secondary);
+}
+
+.wcem-asit-card-discount-input:focus {
+    outline: none;
+    border-color: var(--pmcm-primary);
+    box-shadow: 0 0 0 3px var(--pmcm-primary-light);
+}
+
+.wcem-asit-discount-input-wrap span {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pmcm-text-muted);
+}
+
+/* Toggle Items */
+.wcem-asit-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wcem-asit-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--pmcm-text-secondary);
+}
+
+.wcem-asit-toggle-item span:first-child {
+    flex: 1;
+}
+
+.wcem-asit-toggle-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.wcem-asit-toggle-slider {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--pmcm-border);
+    border-radius: 10px;
+    transition: all var(--pmcm-transition);
+    flex-shrink: 0;
+}
+
+.wcem-asit-toggle-slider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-toggle-checkbox:checked + .wcem-asit-toggle-slider {
+    background: var(--pmcm-primary);
+}
+
+.wcem-asit-toggle-checkbox:checked + .wcem-asit-toggle-slider::before {
+    transform: translateX(16px);
+}
+
+/* Product Selection */
+.wcem-asit-product-selection {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--pmcm-border-light);
+}
+
+.wcem-asit-product-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.wcem-asit-toggle-products {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--pmcm-surface-secondary);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--pmcm-text-secondary);
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-toggle-products:hover {
+    background: var(--pmcm-surface);
+    border-color: var(--pmcm-primary);
+    color: var(--pmcm-primary);
+}
+
+.wcem-asit-toggle-products .material-icons-round {
+    font-size: 18px;
+}
+
+.wcem-asit-product-count {
+    font-size: 11px;
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-asit-products-list {
+    margin-top: 12px;
+    background: var(--pmcm-surface-secondary);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    overflow: hidden;
+}
+
+.wcem-asit-products-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-bottom: 1px solid var(--pmcm-border);
+}
+
+.wcem-asit-select-all,
+.wcem-asit-deselect-all {
+    padding: 4px 10px;
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-sm);
+    font-size: 11px;
+    color: var(--pmcm-text-secondary);
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-select-all:hover,
+.wcem-asit-deselect-all:hover {
+    border-color: var(--pmcm-primary);
+    color: var(--pmcm-primary);
+}
+
+.wcem-asit-products-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.wcem-asit-product-group {
+    margin-bottom: 12px;
+}
+
+.wcem-asit-product-group:last-child {
+    margin-bottom: 0;
+}
+
+.wcem-asit-product-group-title {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--pmcm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--pmcm-border);
+}
+
+.wcem-asit-product-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 12px;
+    color: var(--pmcm-text-secondary);
+    cursor: pointer;
+}
+
+.wcem-asit-product-item:hover {
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-asit-product-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.wcem-asit-no-products {
+    text-align: center;
+    color: var(--pmcm-text-muted);
+    font-size: 12px;
+    padding: 20px;
+    margin: 0;
+}
+
+/* Card Footer */
+.wcem-asit-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--pmcm-surface-secondary);
+    border-top: 1px solid var(--pmcm-border);
+}
+
+.wcem-asit-footer-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.wcem-asit-footer-status .material-icons-round {
+    font-size: 14px;
+}
+
+.wcem-asit-footer-status.active {
+    color: var(--pmcm-success);
+}
+
+.wcem-asit-footer-status.expired {
+    color: var(--pmcm-warning);
+}
+
+.wcem-asit-footer-status.disabled {
+    color: var(--pmcm-text-muted);
+}
+
+.wcem-asit-settings-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pmcm-primary);
+    text-decoration: none;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-settings-link:hover {
+    color: var(--pmcm-primary-hover);
+}
+
+.wcem-asit-settings-link .material-icons-round {
+    font-size: 16px;
+    transition: transform var(--pmcm-transition);
+}
+
+.wcem-asit-settings-link:hover .material-icons-round {
+    transform: translateX(2px);
+}
+
+/* Sticky Save Bar */
+.wcem-asit-sticky-save {
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin-top: 24px;
+}
+
+.wcem-asit-save-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: var(--pmcm-gradient);
+    color: #fff;
+    border: none;
+    border-radius: var(--pmcm-radius-lg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(141, 32, 99, 0.3);
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(141, 32, 99, 0.4);
+}
+
+.wcem-asit-save-btn .material-icons-round {
+    font-size: 20px;
+}
+
+/* Instructions Section */
+.wcem-asit-instructions {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-lg);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.wcem-asit-instructions-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--pmcm-info-bg);
+    border-bottom: 1px solid var(--pmcm-info-border);
+}
+
+.wcem-asit-instructions-header .material-icons-round {
+    font-size: 24px;
+    color: var(--pmcm-info);
+}
+
+.wcem-asit-instructions-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pmcm-info);
+}
+
+.wcem-asit-instructions-body {
+    padding: 20px 24px;
+}
+
+.wcem-asit-instructions-body ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.wcem-asit-instructions-body li {
+    margin-bottom: 8px;
+    color: var(--pmcm-text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.wcem-asit-instructions-body a {
+    color: var(--pmcm-primary);
+    text-decoration: none;
+}
+
+.wcem-asit-instructions-body a:hover {
+    text-decoration: underline;
+}
+
+/* Sync Section */
+.wcem-asit-sync-section {
+    background: var(--pmcm-surface);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.wcem-asit-sync-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.wcem-asit-sync-header .material-icons-round {
+    font-size: 24px;
+    color: var(--pmcm-primary);
+}
+
+.wcem-asit-sync-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.wcem-asit-sync-desc {
+    margin: 0 0 20px 0;
+    color: var(--pmcm-text-secondary);
+    font-size: 13px;
+}
+
+.wcem-asit-sync-results {
+    background: var(--pmcm-surface-secondary);
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.wcem-asit-sync-results p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+}
+
+.wcem-asit-sync-results p:last-child {
+    margin-bottom: 0;
+}
+
+.wcem-asit-sync-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.wcem-asit-scan-btn,
+.wcem-asit-sync-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+}
+
+.wcem-asit-scan-btn {
+    background: var(--pmcm-surface);
+    color: var(--pmcm-text-primary);
+}
+
+.wcem-asit-scan-btn:hover {
+    background: var(--pmcm-surface-secondary);
+    border-color: var(--pmcm-primary);
+    color: var(--pmcm-primary);
+}
+
+.wcem-asit-sync-btn {
+    background: var(--pmcm-primary);
+    border-color: var(--pmcm-primary);
+    color: #fff;
+}
+
+.wcem-asit-sync-btn:hover:not(:disabled) {
+    background: var(--pmcm-primary-hover);
+}
+
+.wcem-asit-sync-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.wcem-asit-scan-btn .material-icons-round,
+.wcem-asit-sync-btn .material-icons-round {
+    font-size: 18px;
+}
+
+/* ASIT Responsive Styles */
+@media (max-width: 1024px) {
+    .wcem-asit-courses-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    .wcem-asit-courses-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wcem-asit-courses-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .wcem-asit-global-header {
+        flex-wrap: wrap;
+    }
+
+    .wcem-asit-global-header h2 {
+        order: 1;
+        flex: 1;
+    }
+
+    .wcem-asit-save-global {
+        order: 2;
+        width: 100%;
+        justify-content: center;
+        margin-top: 12px;
+    }
+
+    .wcem-asit-global-body {
+        grid-template-columns: 1fr;
+    }
+
+    .wcem-asit-courses-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wcem-asit-discount-row {
+        flex-direction: column;
+    }
+
+    .wcem-asit-toggles {
+        width: 100%;
+    }
+
+    .wcem-asit-mode-btn {
+        padding: 6px 8px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wcem-asit-header {
+        padding: 16px;
+    }
+
+    .wcem-asit-header h1 {
+        font-size: 20px;
+    }
+
+    .wcem-asit-global-config,
+    .wcem-asit-courses-section {
+        border-radius: var(--pmcm-radius-lg);
+    }
+
+    .wcem-asit-card-header,
+    .wcem-asit-card-body,
+    .wcem-asit-card-footer {
+        padding: 12px 16px;
+    }
+
+    .wcem-asit-sticky-save {
+        padding: 12px;
+    }
+
+    .wcem-asit-save-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
