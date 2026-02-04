@@ -459,6 +459,55 @@ For issues and feature requests, contact the development team or create an issue
 
 ---
 
+
+
+flowchart TD
+    A[WordPress Loads] --> B[Plugin Bootstrap File]
+    B --> C[Load Core Classes]
+    C --> D[Register Hooks & Filters]
+
+    D --> E[Admin Panel]
+    D --> F[Frontend Shortcodes]
+    D --> G[WooCommerce Cart & Checkout]
+
+    G --> H[Order Created]
+    H --> I[Store Edition & Membership Meta]
+    I --> J[Sync Data to FluentCRM]
+
+
+flowchart TD
+    A[Admin Sets Current Edition] --> B[Edition Start & End Date Saved]
+    B --> C{Edition Ended?}
+
+    C -- No --> D[Show Current Edition]
+    C -- Yes --> E[Increment Edition Number]
+
+    E --> F[Mark Old Edition as Completed]
+    F --> G[Activate Next Edition]
+    G --> H[Frontend Shows New Edition]
+
+
+flowchart TD
+    A[User Adds Course to Cart] --> B[Check Edition Pricing Rules]
+
+    B --> C{Early Bird Active?}
+    C -- Yes --> D[Apply Early Bird Price]
+    C -- No --> E[Apply Regular Price]
+
+    D --> F[Checkout Page]
+    E --> F
+
+    F --> G{ASiT Member?}
+    G -- Yes --> H[Apply ASiT Discount]
+    G -- No --> I[Skip Discount]
+
+    H --> J[Order Placed]
+    I --> J
+
+    J --> K[Save Edition & Membership Data]
+    K --> L[Sync Contact to FluentCRM]
+
+
 ## License
 
 This plugin is proprietary software developed for PrepMedico.
