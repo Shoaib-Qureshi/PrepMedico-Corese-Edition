@@ -2697,6 +2697,8 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+     max-height: 150px;
+    overflow-y: scroll;
 }
 
 .wcem-shortcode-item {

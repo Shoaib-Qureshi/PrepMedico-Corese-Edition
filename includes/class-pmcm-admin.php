@@ -479,7 +479,7 @@ class PMCM_Admin
                 </aside>
 
                 <main class="wcem-settings-panel">
-                    <form method="post" id="wcem-edition-form">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=prepmedico-management')); ?>" id="wcem-edition-form">
                         <?php wp_nonce_field('wcem_settings_nonce'); ?>
                         <?php
                         $is_first = true;
@@ -509,7 +509,7 @@ class PMCM_Admin
                                         </div>
                                         <span class="wcem-course-status wcem-status-<?php echo esc_attr($status_info['status']); ?>"><?php echo esc_html($status_info['label']); ?></span>
                                     </div>
-                                    <button type="submit" name="wcem_save_settings" class="wcem-save-btn">
+                                    <button type="submit" name="wcem_save_settings" value="1" class="wcem-save-btn">
                                         <span class="material-icons-round">save</span>
                                         <?php _e('Save Settings', 'prepmedico-course-management'); ?>
                                     </button>
