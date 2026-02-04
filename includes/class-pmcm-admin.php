@@ -662,15 +662,70 @@ class PMCM_Admin
                         </div>
                         <h3><?php _e('Available Shortcodes', 'prepmedico-course-management'); ?></h3>
                     </div>
-                    <div class="wcem-card-body">
+                    <div class="wcem-card-body wcem-shortcodes-body">
                         <div class="wcem-shortcode-list">
+                            <h4 class="wcem-shortcode-group-title"><?php _e('Display Shortcodes', 'prepmedico-course-management'); ?></h4>
                             <div class="wcem-shortcode-item">
                                 <code class="wcem-shortcode-code">[current_edition course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
-                                <p class="wcem-shortcode-desc"><?php _e('Displays the current edition name in standard format.', 'prepmedico-course-management'); ?></p>
+                                <p class="wcem-shortcode-desc"><?php _e('Displays the current edition name in standard format (e.g. "12th - Current Edition").', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[edition_number course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Displays just the edition ordinal number (e.g. "12th").', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[edition_info course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" show_dates="yes"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Shows edition info box with name and enrollment dates.', 'prepmedico-course-management'); ?></p>
                             </div>
                             <div class="wcem-shortcode-item">
                                 <code class="wcem-shortcode-code">[registration_status course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
-                                <p class="wcem-shortcode-desc"><?php _e('Shows status badges (Live / Closed / Early Bird).', 'prepmedico-course-management'); ?></p>
+                                <p class="wcem-shortcode-desc"><?php _e('Shows status badges (Live / Closed / Early Bird / Opening Soon).', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[early_bird_message course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Shows early bird offer message with end date (only visible during early bird period).', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[course_registration_info course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Complete registration info box with edition name, dates, status badge, and early bird message.', 'prepmedico-course-management'); ?></p>
+                            </div>
+
+                            <h4 class="wcem-shortcode-group-title" style="margin-top: 16px;"><?php _e('Elementor Table / Frontend Shortcodes', 'prepmedico-course-management'); ?></h4>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_ordinal course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Edition ordinal (e.g. "12th"). Use slot="next" for next edition. Falls back to current+1 if next is not configured.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_dates course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current" format="range"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Edition dates. format: "range", "start", "end". Returns "TBA" if next edition dates unavailable.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_status course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current" output="text"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Registration status as text (open/closed/upcoming/dates-tba) or CSS class (output="class").', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_button course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current" product="<?php echo esc_html($first_course_slug); ?>-course" text="Enrol"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Enrol button with edition URL. Auto-disables when closed or dates TBA.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_url course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current" product="<?php echo esc_html($first_course_slug); ?>-course"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Returns raw product URL with ?edition= parameter. Use inside href attributes.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_number_raw course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Raw edition number without ordinal suffix (e.g. "12"). Useful for data attributes.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_marker course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Hidden marker span with edition data. Place inside Elementor toggle button containers.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_product_script]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('JavaScript for handling edition parameter on product links with data-pmcm-edition buttons.', 'prepmedico-course-management'); ?></p>
+                            </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_edition_products_script]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Simplified JS for edition links. Works with pmcm_edition_marker - no data attributes needed on buttons.', 'prepmedico-course-management'); ?></p>
                             </div>
                         </div>
                     </div>

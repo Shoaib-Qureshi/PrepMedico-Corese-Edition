@@ -380,23 +380,57 @@ class PMCM_Shortcodes {
 
         $course = PMCM_Core::get_courses()[$course_slug];
         $prefix = $course['settings_prefix'];
+        $ordinal = '';
+        $early_bird_active = false;
 
         if ($slot === 'next') {
             $next_enabled = get_option($prefix . 'next_enabled', 'no');
             if ($next_enabled === 'yes') {
                 $edition = intval(get_option($prefix . 'next_edition', 0));
                 if ($edition > 0) {
-                    return PMCM_Core::get_ordinal($edition);
+                    $ordinal = PMCM_Core::get_ordinal($edition);
+                } else {
+                    $current = intval(get_option($prefix . 'current_edition', 1));
+                    $ordinal = PMCM_Core::get_ordinal($current + 1);
                 }
+                // Check next edition early bird
+                $eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no');
+                $eb_start = get_option($prefix . 'next_early_bird_start', '');
+                $eb_end = get_option($prefix . 'next_early_bird_end', '');
+                if ($eb_enabled === 'yes' && !empty($eb_end)) {
+                    $today = strtotime(current_time('Y-m-d'));
+                    $start_ok = empty($eb_start) || $today >= strtotime($eb_start);
+                    $end_ok = $today <= strtotime($eb_end);
+                    if ($start_ok && $end_ok) {
+                        $early_bird_active = true;
+                    }
+                }
+            } else {
+                $current = intval(get_option($prefix . 'current_edition', 1));
+                $ordinal = PMCM_Core::get_ordinal($current + 1);
             }
-            // Fallback: show current edition + 1
-            $current = intval(get_option($prefix . 'current_edition', 1));
-            return PMCM_Core::get_ordinal($current + 1);
         } else {
             $edition = intval(get_option($prefix . 'current_edition', 1));
+            $ordinal = PMCM_Core::get_ordinal($edition);
+            // Check current edition early bird
+            $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
+            $eb_start = get_option($prefix . 'early_bird_start', '');
+            $eb_end = get_option($prefix . 'early_bird_end', '');
+            if ($eb_enabled === 'yes' && !empty($eb_end)) {
+                $today = strtotime(current_time('Y-m-d'));
+                $start_ok = empty($eb_start) || $today >= strtotime($eb_start);
+                $end_ok = $today <= strtotime($eb_end);
+                if ($start_ok && $end_ok) {
+                    $early_bird_active = true;
+                }
+            }
         }
 
-        return PMCM_Core::get_ordinal($edition);
+        if ($early_bird_active) {
+            return $ordinal . ' <span class="pmcm-early-bird-chip">' . __('Early Bird Registration', 'prepmedico-course-management') . '</span>';
+        }
+
+        return $ordinal;
     }
 
     /**

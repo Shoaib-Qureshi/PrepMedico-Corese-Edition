@@ -120,20 +120,6 @@ class PMCM_Frontend {
                     echo '<input type="hidden" name="pmcm_selected_edition" value="' . esc_attr($selected_slot) . '">';
                     echo '<input type="hidden" name="pmcm_selected_course" value="' . esc_attr($parent_slug) . '">';
                     echo '<input type="hidden" name="pmcm_edition_number" value="' . esc_attr($url_edition) . '">';
-
-                    // Show selected edition info badge
-                    $ordinal = PMCM_Core::get_ordinal($url_edition);
-                    echo '<div class="pmcm-edition-selected" style="margin: 15px 0; padding: 12px 16px; background: linear-gradient(135deg, #8d2063, #442e8c); border-radius: 6px; color: #fff;">';
-                    echo '<div style="display: flex; align-items: center; gap: 10px;">';
-                    echo '<span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(255,255,255,0.2); border-radius: 50%;">';
-                    echo '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                    echo '</span>';
-                    echo '<div>';
-                    echo '<div style="font-size: 12px; opacity: 0.9;">' . __('Selected Edition', 'prepmedico-course-management') . '</div>';
-                    echo '<div style="font-size: 16px; font-weight: 600;">' . esc_html($ordinal . ' ' . $course['name']) . '</div>';
-                    echo '</div>';
-                    echo '</div>';
-                    echo '</div>';
                 } else {
                     // No edition in URL - use current edition by default
                     $active_editions = PMCM_Core::get_active_editions($parent_slug);
