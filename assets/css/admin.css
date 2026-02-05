@@ -2417,6 +2417,46 @@
     font-weight: 600;
 }
 
+/* Field Validation Errors */
+.wcem-field input.wcem-field-error {
+    border-color: var(--pmcm-error);
+    background: var(--pmcm-error-bg);
+}
+
+.wcem-field input.wcem-field-error:focus {
+    border-color: var(--pmcm-error);
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
+}
+
+.wcem-validation-error {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--pmcm-error);
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+/* Early Bird Validation Info */
+.wcem-validation-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--pmcm-info-bg);
+    border: 1px solid var(--pmcm-info-border);
+    border-radius: var(--pmcm-radius-sm);
+    font-size: 12px;
+    color: var(--pmcm-info);
+    margin-top: 12px;
+}
+
+.wcem-validation-info .material-icons-round {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
 /* =====================================================
    TOGGLE SWITCH
    ===================================================== */

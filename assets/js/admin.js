@@ -41,6 +41,128 @@
             selectCourse($(this).data('course'));
         });
 
+        // Save button handler - ensure form submits properly
+        $(document).on('click', '.wcem-save-btn', function(e) {
+            var $form = $('#wcem-edition-form');
+            if ($form.length) {
+                // Clear any validation errors first
+                $('.wcem-field-error').removeClass('wcem-field-error');
+                $('.wcem-validation-error').remove();
+
+                // Validate dates before submission
+                var hasErrors = false;
+                $('.wcem-course-settings-panel').each(function() {
+                    var $panel = $(this);
+                    if (!validatePanelDates($panel)) {
+                        hasErrors = true;
+                    }
+                });
+
+                if (hasErrors) {
+                    e.preventDefault();
+                    alert('Please fix the date validation errors before saving.');
+                    return false;
+                }
+
+                // Ensure form submits
+                $form.find('input[name="wcem_save_settings"]').remove();
+                $form.append('<input type="hidden" name="wcem_save_settings" value="1">');
+            }
+        });
+
+        // Comprehensive date validation function
+        function validatePanelDates($panel) {
+            var isValid = true;
+
+            // Get current edition dates
+            var startField = $panel.find('input[name$="edition_start"]').not('[name*="next_"]');
+            var endField = $panel.find('input[name$="edition_end"]').not('[name*="next_"]');
+            var ebStartField = $panel.find('input[name$="early_bird_start"]').not('[name*="next_"]');
+            var ebEndField = $panel.find('input[name$="early_bird_end"]').not('[name*="next_"]');
+            var ebEnabled = $panel.find('.wcem-early-bird-toggle').is(':checked');
+
+            var courseStart = startField.val() ? new Date(startField.val()) : null;
+            var courseEnd = endField.val() ? new Date(endField.val()) : null;
+            var ebStart = ebStartField.val() ? new Date(ebStartField.val()) : null;
+            var ebEnd = ebEndField.val() ? new Date(ebEndField.val()) : null;
+
+            // Validate course end > start
+            if (courseStart && courseEnd && courseEnd <= courseStart) {
+                markFieldError(endField, 'End date must be after start date');
+                isValid = false;
+            }
+
+            // Validate early bird dates if enabled
+            if (ebEnabled) {
+                // Early bird start must be before early bird end
+                if (ebStart && ebEnd && ebEnd <= ebStart) {
+                    markFieldError(ebEndField, 'Early bird end must be after early bird start');
+                    isValid = false;
+                }
+
+                // Early bird end must be before or equal to course start (early bird is PRE-course)
+                if (ebEnd && courseStart && ebEnd > courseStart) {
+                    markFieldError(ebEndField, 'Early bird must end before course starts');
+                    isValid = false;
+                }
+            }
+
+            // Validate next edition dates if enabled
+            var nextEnabled = $panel.find('.wcem-next-edition-toggle').is(':checked');
+            if (nextEnabled) {
+                var nextStartField = $panel.find('input[name$="next_start"]');
+                var nextEndField = $panel.find('input[name$="next_end"]');
+                var nextEbStartField = $panel.find('input[name$="next_early_bird_start"]');
+                var nextEbEndField = $panel.find('input[name$="next_early_bird_end"]');
+                var nextEbEnabled = $panel.find('.wcem-next-early-bird-toggle').is(':checked');
+
+                var nextStart = nextStartField.val() ? new Date(nextStartField.val()) : null;
+                var nextEnd = nextEndField.val() ? new Date(nextEndField.val()) : null;
+                var nextEbStart = nextEbStartField.val() ? new Date(nextEbStartField.val()) : null;
+                var nextEbEnd = nextEbEndField.val() ? new Date(nextEbEndField.val()) : null;
+
+                // Next course end > start
+                if (nextStart && nextEnd && nextEnd <= nextStart) {
+                    markFieldError(nextEndField, 'End date must be after start date');
+                    isValid = false;
+                }
+
+                // Next edition must start after current edition ends
+                if (courseEnd && nextStart && nextStart < courseEnd) {
+                    markFieldError(nextStartField, 'Next edition must start after current edition ends');
+                    isValid = false;
+                }
+
+                // Next early bird validation
+                if (nextEbEnabled) {
+                    if (nextEbStart && nextEbEnd && nextEbEnd <= nextEbStart) {
+                        markFieldError(nextEbEndField, 'Early bird end must be after early bird start');
+                        isValid = false;
+                    }
+
+                    if (nextEbEnd && nextStart && nextEbEnd > nextStart) {
+                        markFieldError(nextEbEndField, 'Early bird must end before course starts');
+                        isValid = false;
+                    }
+                }
+            }
+
+            return isValid;
+        }
+
+        function markFieldError($field, message) {
+            $field.addClass('wcem-field-error');
+            var $wrapper = $field.closest('.wcem-field');
+            if ($wrapper.find('.wcem-validation-error').length === 0) {
+                $wrapper.append('<span class="wcem-validation-error">' + message + '</span>');
+            }
+        }
+
+        function clearFieldError($field) {
+            $field.removeClass('wcem-field-error');
+            $field.closest('.wcem-field').find('.wcem-validation-error').remove();
+        }
+
         $(document).on('change', '.wcem-early-bird-toggle', function() {
             var $panel = $(this).closest('.wcem-course-settings-panel');
             var $fields = $panel.find('.wcem-early-bird-fields');
@@ -142,29 +264,76 @@
             });
         });
 
-        $('input[type="date"]').on('change', function() {
-            var fieldName = $(this).attr('name');
-            if (fieldName.includes('edition_end')) {
-                var prefix = fieldName.replace('edition_end', '');
-                var $start = $('input[name="' + prefix + 'edition_start"]');
-                if ($start.val() && $(this).val()) {
-                    var s = new Date($start.val());
-                    var e = new Date($(this).val());
-                    if (e <= s) {
-                        alert('End date must be after start date');
-                        $(this).val('');
-                    }
+        // Real-time date validation on change
+        $(document).on('change', 'input[type="date"]', function() {
+            var $field = $(this);
+            var fieldName = $field.attr('name');
+            var $panel = $field.closest('.wcem-course-settings-panel');
+
+            // Clear previous error on this field
+            clearFieldError($field);
+
+            // Determine which slot we're in (current or next)
+            var isNextSlot = fieldName.includes('next_');
+
+            if (isNextSlot) {
+                // Next edition validation
+                var nextStartField = $panel.find('input[name$="next_start"]');
+                var nextEndField = $panel.find('input[name$="next_end"]');
+                var nextEbStartField = $panel.find('input[name$="next_early_bird_start"]');
+                var nextEbEndField = $panel.find('input[name$="next_early_bird_end"]');
+                var currentEndField = $panel.find('input[name$="edition_end"]').not('[name*="next_"]');
+
+                var nextStart = nextStartField.val() ? new Date(nextStartField.val()) : null;
+                var nextEnd = nextEndField.val() ? new Date(nextEndField.val()) : null;
+                var nextEbStart = nextEbStartField.val() ? new Date(nextEbStartField.val()) : null;
+                var nextEbEnd = nextEbEndField.val() ? new Date(nextEbEndField.val()) : null;
+                var currentEnd = currentEndField.val() ? new Date(currentEndField.val()) : null;
+
+                // Validate next edition end > start
+                if (fieldName.includes('next_end') && nextStart && nextEnd && nextEnd <= nextStart) {
+                    markFieldError(nextEndField, 'End date must be after start date');
                 }
-            }
-            if (fieldName.includes('early_bird_end')) {
-                var prefix2 = fieldName.replace('early_bird_end', '');
-                var $end = $('input[name="' + prefix2 + 'edition_end"]');
-                if ($end.val() && $(this).val()) {
-                    var eb = new Date($(this).val());
-                    var ed = new Date($end.val());
-                    if (eb > ed) {
-                        alert('Early Bird end date should be before edition end date');
-                    }
+
+                // Validate next edition starts after current ends
+                if (fieldName.includes('next_start') && currentEnd && nextStart && nextStart < currentEnd) {
+                    markFieldError(nextStartField, 'Must start after current edition ends');
+                }
+
+                // Validate next early bird end > start
+                if (fieldName.includes('next_early_bird_end') && nextEbStart && nextEbEnd && nextEbEnd <= nextEbStart) {
+                    markFieldError(nextEbEndField, 'Early bird end must be after start');
+                }
+
+                // Validate next early bird end <= next course start (early bird is PRE-course only)
+                if (fieldName.includes('next_early_bird_end') && nextStart && nextEbEnd && nextEbEnd > nextStart) {
+                    markFieldError(nextEbEndField, 'Early bird must end before course starts');
+                }
+            } else {
+                // Current edition validation
+                var startField = $panel.find('input[name$="edition_start"]').not('[name*="next_"]');
+                var endField = $panel.find('input[name$="edition_end"]').not('[name*="next_"]');
+                var ebStartField = $panel.find('input[name$="early_bird_start"]').not('[name*="next_"]');
+                var ebEndField = $panel.find('input[name$="early_bird_end"]').not('[name*="next_"]');
+
+                var courseStart = startField.val() ? new Date(startField.val()) : null;
+                var courseEnd = endField.val() ? new Date(endField.val()) : null;
+                var ebStart = ebStartField.val() ? new Date(ebStartField.val()) : null;
+                var ebEnd = ebEndField.val() ? new Date(ebEndField.val()) : null;
+
+                // Validate course end > start
+                if (fieldName.includes('edition_end') && courseStart && courseEnd && courseEnd <= courseStart) {
+                    markFieldError(endField, 'End date must be after start date');
+                }
+
+                // Validate early bird end > start
+                if (fieldName.includes('early_bird_end') && ebStart && ebEnd && ebEnd <= ebStart) {
+                    markFieldError(ebEndField, 'Early bird end must be after start');
+                }
+
+                // Validate early bird end <= course start (early bird is PRE-course only)
+                if (fieldName.includes('early_bird_end') && courseStart && ebEnd && ebEnd > courseStart) {
+                    markFieldError(ebEndField, 'Early bird must end before course starts');
                 }
             }
         });

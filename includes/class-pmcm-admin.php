@@ -575,6 +575,10 @@ class PMCM_Admin
                                                 <span class="material-icons-round">info</span>
                                                 <span><?php _e('Remember to align WooCommerce sale pricing with the Early Bird window.', 'prepmedico-course-management'); ?></span>
                                             </div>
+                                            <div class="wcem-validation-info">
+                                                <span class="material-icons-round">rule</span>
+                                                <span><?php _e('Early Bird end date must be before or equal to Course Start date. Early Bird pricing only applies before the course begins.', 'prepmedico-course-management'); ?></span>
+                                            </div>
                                         </div>
                                     </section>
 
@@ -629,6 +633,10 @@ class PMCM_Admin
                                                             <label for="<?php echo esc_attr($prefix); ?>next_early_bird_end"><?php _e('Early Bird End', 'prepmedico-course-management'); ?></label>
                                                             <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_end" name="<?php echo esc_attr($prefix); ?>next_early_bird_end" value="<?php echo esc_attr($next_eb_end); ?>">
                                                         </div>
+                                                    </div>
+                                                    <div class="wcem-validation-info" style="margin-top:10px;">
+                                                        <span class="material-icons-round">rule</span>
+                                                        <span><?php _e('Early Bird end must be before Next Edition Start date.', 'prepmedico-course-management'); ?></span>
                                                     </div>
                                                 </div>
                                             </div>
