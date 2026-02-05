@@ -481,6 +481,7 @@ class PMCM_Admin
                 <main class="wcem-settings-panel">
                     <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=prepmedico-management')); ?>" id="wcem-edition-form">
                         <?php wp_nonce_field('wcem_settings_nonce'); ?>
+                        <input type="hidden" name="wcem_save_settings" value="1">
                         <?php
                         $is_first = true;
                         foreach ($courses as $category_slug => $course):
