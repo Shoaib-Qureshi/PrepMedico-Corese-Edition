@@ -50,13 +50,13 @@
             $('.wcem-field-error').removeClass('wcem-field-error');
             $('.wcem-validation-error').remove();
 
-            // Validate all panels
+            // Only validate the currently VISIBLE panel
             var hasErrors = false;
-            $('.wcem-course-settings-panel').each(function() {
-                if (!validatePanelDates($(this))) {
-                    hasErrors = true;
-                }
-            });
+            var $visiblePanel = $('.wcem-course-settings-panel:visible');
+
+            if ($visiblePanel.length && !validatePanelDates($visiblePanel)) {
+                hasErrors = true;
+            }
 
             if (hasErrors) {
                 e.preventDefault();
@@ -73,6 +73,7 @@
         // ============================================
         function validatePanelDates($panel) {
             var isValid = true;
+            var courseName = $panel.find('.wcem-settings-course').text() || 'Unknown';
 
             // Get current edition fields
             var $startField = $panel.find('input[name$="edition_start"]').not('[name*="next_"]');
@@ -86,22 +87,35 @@
             var ebStart = $ebStartField.val() ? new Date($ebStartField.val() + 'T00:00:00') : null;
             var ebEnd = $ebEndField.val() ? new Date($ebEndField.val() + 'T00:00:00') : null;
 
+            console.log('Validating:', courseName, {
+                courseStart: $startField.val(),
+                courseEnd: $endField.val(),
+                ebEnabled: ebEnabled,
+                ebStart: $ebStartField.val(),
+                ebEnd: $ebEndField.val()
+            });
+
             // Validate course end > start
             if (courseStart && courseEnd && courseEnd <= courseStart) {
+                console.log('Error: Course end must be after start');
                 markFieldError($endField, 'End date must be after start date');
                 isValid = false;
             }
 
-            // Validate early bird dates if enabled
-            if (ebEnabled && $ebEndField.val()) {
-                // Early bird end must be before early bird start
+            // Validate early bird dates if enabled AND has values
+            if (ebEnabled && $ebEndField.val() && $ebStartField.val()) {
+                // Early bird end must be after early bird start
                 if (ebStart && ebEnd && ebEnd < ebStart) {
+                    console.log('Error: Early bird end must be after start');
                     markFieldError($ebEndField, 'Early bird end must be after start');
                     isValid = false;
                 }
+            }
 
-                // Early bird end must be on or before course start
+            // Early bird end must be on or before course start (only if both have values)
+            if (ebEnabled && $ebEndField.val() && $startField.val()) {
                 if (ebEnd && courseStart && ebEnd > courseStart) {
+                    console.log('Error: Early bird must end before course starts', ebEnd, '>', courseStart);
                     markFieldError($ebEndField, 'Early bird must end before course starts');
                     isValid = false;
                 }
@@ -121,32 +135,48 @@
                 var nextEbStart = $nextEbStartField.val() ? new Date($nextEbStartField.val() + 'T00:00:00') : null;
                 var nextEbEnd = $nextEbEndField.val() ? new Date($nextEbEndField.val() + 'T00:00:00') : null;
 
-                // Next edition end > start
-                if (nextStart && nextEnd && nextEnd <= nextStart) {
+                console.log('Next Edition:', {
+                    nextEnabled: nextEnabled,
+                    nextStart: $nextStartField.val(),
+                    nextEnd: $nextEndField.val(),
+                    nextEbEnabled: nextEbEnabled,
+                    nextEbStart: $nextEbStartField.val(),
+                    nextEbEnd: $nextEbEndField.val()
+                });
+
+                // Next edition end > start (only if both have values)
+                if ($nextStartField.val() && $nextEndField.val() && nextStart && nextEnd && nextEnd <= nextStart) {
+                    console.log('Error: Next edition end must be after start');
                     markFieldError($nextEndField, 'End date must be after start date');
                     isValid = false;
                 }
 
-                // Next edition must start after current edition ends
-                if (courseEnd && nextStart && nextStart < courseEnd) {
+                // Next edition must start after current edition ends (only if both have values)
+                if ($endField.val() && $nextStartField.val() && courseEnd && nextStart && nextStart < courseEnd) {
+                    console.log('Error: Next edition must start after current edition ends');
                     markFieldError($nextStartField, 'Must start after current edition ends');
                     isValid = false;
                 }
 
-                // Next early bird validation
-                if (nextEbEnabled && $nextEbEndField.val()) {
+                // Next early bird validation (only if enabled and has values)
+                if (nextEbEnabled && $nextEbStartField.val() && $nextEbEndField.val()) {
                     if (nextEbStart && nextEbEnd && nextEbEnd < nextEbStart) {
+                        console.log('Error: Next early bird end must be after start');
                         markFieldError($nextEbEndField, 'Early bird end must be after start');
                         isValid = false;
                     }
+                }
 
+                if (nextEbEnabled && $nextEbEndField.val() && $nextStartField.val()) {
                     if (nextEbEnd && nextStart && nextEbEnd > nextStart) {
+                        console.log('Error: Next early bird must end before course starts');
                         markFieldError($nextEbEndField, 'Early bird must end before course starts');
                         isValid = false;
                     }
                 }
             }
 
+            console.log('Panel validation result:', isValid);
             return isValid;
         }
 
