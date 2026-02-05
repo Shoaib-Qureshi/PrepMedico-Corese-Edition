@@ -479,7 +479,7 @@ class PMCM_Admin
                 </aside>
 
                 <main class="wcem-settings-panel">
-                    <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=prepmedico-management')); ?>" id="wcem-edition-form">
+                    <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=prepmedico-management')); ?>" id="wcem-edition-form" novalidate>
                         <?php wp_nonce_field('wcem_settings_nonce'); ?>
                         <input type="hidden" name="wcem_save_settings" value="1">
                         <?php
@@ -493,7 +493,7 @@ class PMCM_Admin
                             $eb_start = get_option($prefix . 'early_bird_start', '');
                             $eb_end = get_option($prefix . 'early_bird_end', '');
                             $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
-                            $next_edition = get_option($prefix . 'next_edition', $current + 1);
+                            $next_edition = max(1, intval(get_option($prefix . 'next_edition', $current + 1)));
                             $next_start = get_option($prefix . 'next_start', '');
                             $next_end = get_option($prefix . 'next_end', '');
                             $next_eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no') === 'yes';
