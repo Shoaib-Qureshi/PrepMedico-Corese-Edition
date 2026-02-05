@@ -822,30 +822,9 @@ class PMCM_Admin
             </section>
         </div>
 
-        <!-- Inline backup script for form submission -->
+        <!-- Debug info -->
         <script type="text/javascript">
-        (function() {
-            console.log('PMCM Inline Script v2.5.0 loaded');
-
-            // Wait for DOM ready
-            document.addEventListener('DOMContentLoaded', function() {
-                var form = document.getElementById('wcem-edition-form');
-                var saveBtn = document.querySelector('.wcem-save-btn');
-
-                console.log('Form found:', !!form);
-                console.log('Save button found:', !!saveBtn);
-
-                if (saveBtn) {
-                    saveBtn.addEventListener('click', function(e) {
-                        console.log('Save button clicked!');
-                        if (form) {
-                            console.log('Submitting form...');
-                            form.submit();
-                        }
-                    });
-                }
-            });
-        })();
+        console.log('PMCM Admin v2.5.0 - Form validation active');
         </script>
 <?php
     }
