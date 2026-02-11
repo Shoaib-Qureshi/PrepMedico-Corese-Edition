@@ -33,6 +33,12 @@ class PMCM_Admin
         add_action('wp_ajax_wcem_bulk_sync_asit', [__CLASS__, 'ajax_bulk_sync_asit_orders']);
         add_action('wp_ajax_wcem_save_course', [__CLASS__, 'ajax_save_course']);
         add_action('wp_ajax_wcem_delete_course', [__CLASS__, 'ajax_delete_course']);
+
+        // Bulk actions on WooCommerce Orders page (HPOS + Legacy)
+        add_filter('bulk_actions-woocommerce_page_wc-orders', [__CLASS__, 'register_orders_bulk_actions']);
+        add_filter('bulk_actions-edit-shop_order', [__CLASS__, 'register_orders_bulk_actions']);
+        add_filter('handle_bulk_actions-woocommerce_page_wc-orders', [__CLASS__, 'handle_orders_bulk_action'], 10, 3);
+        add_filter('handle_bulk_actions-edit-shop_order', [__CLASS__, 'handle_orders_bulk_action'], 10, 3);
     }
 
     /**
@@ -194,6 +200,37 @@ class PMCM_Admin
             }
             echo '</ul>';
             echo '<p><a href="' . admin_url('admin.php?page=prepmedico-management') . '">' . __('Configure edition settings', 'prepmedico-course-management') . '</a></p>';
+            echo '</div>';
+        }
+
+        // Bulk action result notices
+        if (isset($_GET['pmcm_bulk_action']) && current_user_can('manage_woocommerce')) {
+            $action = sanitize_text_field($_GET['pmcm_bulk_action']);
+            $success = intval($_GET['pmcm_success'] ?? 0);
+            $failed = intval($_GET['pmcm_failed'] ?? 0);
+            $skipped = intval($_GET['pmcm_skipped'] ?? 0);
+            $total = $success + $failed + $skipped;
+
+            if ($action === 'pmcm_update_edition') {
+                $label = __('Update Edition Data', 'prepmedico-course-management');
+            } else {
+                $label = __('Sync to FluentCRM', 'prepmedico-course-management');
+            }
+
+            $notice_type = ($failed > 0) ? 'warning' : 'success';
+            $parts = [];
+            if ($success > 0) {
+                $parts[] = sprintf(_n('%d order processed', '%d orders processed', $success, 'prepmedico-course-management'), $success);
+            }
+            if ($skipped > 0) {
+                $parts[] = sprintf(_n('%d skipped (no course data)', '%d skipped (no course data)', $skipped, 'prepmedico-course-management'), $skipped);
+            }
+            if ($failed > 0) {
+                $parts[] = sprintf(_n('%d failed', '%d failed', $failed, 'prepmedico-course-management'), $failed);
+            }
+
+            echo '<div class="notice notice-' . esc_attr($notice_type) . ' is-dismissible">';
+            echo '<p><strong>PrepMedico ' . esc_html($label) . ':</strong> ' . esc_html(implode(', ', $parts)) . '.</p>';
             echo '</div>';
         }
     }
@@ -824,9 +861,9 @@ class PMCM_Admin
 
         <!-- Debug info -->
         <script type="text/javascript">
-        console.log('PMCM Admin v2.5.0 - Form validation active');
+            console.log('PMCM Admin v2.5.0 - Form validation active');
         </script>
-<?php
+    <?php
     }
     /**
      * Render ASiT Coupon Management admin page
@@ -1269,7 +1306,11 @@ class PMCM_Admin
                             return $(a).find('h3').text().localeCompare($(b).find('h3').text());
                         });
                     } else if (sortBy === 'status') {
-                        var order = {'active': 1, 'early-bird': 2, 'inactive': 3};
+                        var order = {
+                            'active': 1,
+                            'early-bird': 2,
+                            'inactive': 3
+                        };
                         $cards.sort(function(a, b) {
                             return order[$(a).data('status')] - order[$(b).data('status')];
                         });
@@ -2175,6 +2216,173 @@ class PMCM_Admin
             });
         </script>
 <?php
+    }
+
+    /**
+     * Register bulk actions on WooCommerce Orders page
+     */
+    public static function register_orders_bulk_actions($bulk_actions)
+    {
+        $bulk_actions['pmcm_update_edition'] = __('Update Edition Data (PrepMedico)', 'prepmedico-course-management');
+        $bulk_actions['pmcm_sync_fluentcrm'] = __('Sync to FluentCRM (PrepMedico)', 'prepmedico-course-management');
+        return $bulk_actions;
+    }
+
+    /**
+     * Handle bulk actions on WooCommerce Orders page
+     */
+    public static function handle_orders_bulk_action($redirect_to, $action, $order_ids)
+    {
+        if (!in_array($action, ['pmcm_update_edition', 'pmcm_sync_fluentcrm'])) {
+            return $redirect_to;
+        }
+
+        if (!current_user_can('manage_woocommerce')) {
+            return $redirect_to;
+        }
+
+        $success = 0;
+        $failed = 0;
+        $skipped = 0;
+
+        foreach ($order_ids as $order_id) {
+            $order = wc_get_order($order_id);
+            if (!$order) {
+                $failed++;
+                continue;
+            }
+
+            if ($action === 'pmcm_update_edition') {
+                $result = self::bulk_update_order_edition($order);
+                if ($result === 'updated') {
+                    $success++;
+                } elseif ($result === 'skipped') {
+                    $skipped++;
+                } else {
+                    $failed++;
+                }
+            } elseif ($action === 'pmcm_sync_fluentcrm') {
+                $result = self::bulk_sync_order_fluentcrm($order);
+                if ($result === 'synced') {
+                    $success++;
+                } elseif ($result === 'skipped') {
+                    $skipped++;
+                } else {
+                    $failed++;
+                }
+            }
+        }
+
+        $redirect_to = add_query_arg([
+            'pmcm_bulk_action' => $action,
+            'pmcm_success' => $success,
+            'pmcm_failed' => $failed,
+            'pmcm_skipped' => $skipped,
+        ], $redirect_to);
+
+        return $redirect_to;
+    }
+
+    /**
+     * Update edition data for a single order (bulk helper)
+     */
+    private static function bulk_update_order_edition($order)
+    {
+        $courses_in_order = [];
+        $processed_parents = [];
+
+        foreach ($order->get_items() as $item_id => $item) {
+            $product_id = $item->get_product_id();
+            $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+
+            foreach ($categories as $category_slug) {
+                $course_data = PMCM_Core::get_course_for_category($category_slug);
+
+                if ($course_data) {
+                    $parent_slug = $course_data['parent_slug'];
+
+                    if (in_array($parent_slug, $processed_parents)) {
+                        continue;
+                    }
+
+                    $course = $course_data['course'];
+                    $prefix = $course['settings_prefix'];
+                    $edition_number = get_option($prefix . 'current_edition', 1);
+                    $has_edition_management = isset($course['edition_management']) && $course['edition_management'] === true;
+
+                    $edition_name = $has_edition_management
+                        ? PMCM_Core::get_ordinal($edition_number) . ' ' . $course['name']
+                        : $course['name'];
+
+                    $edition_number_to_save = $has_edition_management ? $edition_number : null;
+                    $edition_start = get_option($prefix . 'edition_start', '');
+                    $edition_end = get_option($prefix . 'edition_end', '');
+
+                    // Update order meta
+                    $order->update_meta_data('_course_slug_' . $parent_slug, $parent_slug);
+                    $order->update_meta_data('_course_edition_' . $parent_slug, $edition_number_to_save);
+                    $order->update_meta_data('_edition_name_' . $parent_slug, $edition_name);
+                    $order->update_meta_data('_edition_start_' . $parent_slug, $edition_start);
+                    $order->update_meta_data('_edition_end_' . $parent_slug, $edition_end);
+                    $order->update_meta_data('_original_category_' . $parent_slug, $category_slug);
+
+                    // Update line item meta
+                    wc_update_order_item_meta($item_id, '_course_slug', $parent_slug);
+                    wc_update_order_item_meta($item_id, '_original_category', $category_slug);
+                    wc_update_order_item_meta($item_id, '_course_edition', $edition_number_to_save);
+                    wc_update_order_item_meta($item_id, '_edition_name', $edition_name);
+                    wc_update_order_item_meta($item_id, '_edition_start', $edition_start);
+                    wc_update_order_item_meta($item_id, '_edition_end', $edition_end);
+
+                    $courses_in_order[] = [
+                        'slug' => $parent_slug,
+                        'original_category' => $category_slug,
+                        'is_child' => $course_data['is_child'],
+                        'course' => $course,
+                        'edition' => $edition_number_to_save,
+                        'edition_name' => $edition_name
+                    ];
+
+                    $processed_parents[] = $parent_slug;
+                    break;
+                }
+            }
+        }
+
+        if (empty($courses_in_order)) {
+            return 'skipped';
+        }
+
+        $order->update_meta_data('_wcem_needs_fluentcrm_sync', 'yes');
+        $order->update_meta_data('_wcem_courses_data', json_encode($courses_in_order));
+        $order->delete_meta_data('_wcem_fluentcrm_synced');
+        $order->delete_meta_data('_wcem_fluentcrm_sync_time');
+        $order->save();
+
+        return 'updated';
+    }
+
+    /**
+     * Sync a single order to FluentCRM (bulk helper)
+     */
+    private static function bulk_sync_order_fluentcrm($order)
+    {
+        $order_id = $order->get_id();
+        $courses_data = $order->get_meta('_wcem_courses_data');
+
+        if (empty($courses_data)) {
+            return 'skipped';
+        }
+
+        $order->delete_meta_data('_wcem_fluentcrm_synced');
+        $order->save();
+
+        PMCM_FluentCRM::trigger_update($order_id);
+
+        $order = wc_get_order($order_id);
+        $synced = $order->get_meta('_wcem_fluentcrm_synced');
+
+        return ($synced === 'yes') ? 'synced' : 'failed';
     }
 
     /**
