@@ -272,13 +272,25 @@ class PMCM_Shortcodes {
     private static function enqueue_lottie_player() {
         wp_register_script(
             'pmcm-dotlottie-player',
-            'https://unpkg.com/@lottiefiles/dotlottie-wc@latest/dist/dotlottie-wc.js',
+            'https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.16/dist/dotlottie-wc.js',
             [],
-            PMCM_VERSION,
+            null,
             true
         );
-        wp_script_add_data('pmcm-dotlottie-player', 'type', 'module');
         wp_enqueue_script('pmcm-dotlottie-player');
+
+        // Add type="module" attribute via filter (wp_script_add_data 'type' is unreliable)
+        add_filter('script_loader_tag', [__CLASS__, 'add_module_type_to_lottie_script'], 10, 3);
+    }
+
+    /**
+     * Add type="module" to the dotLottie player script tag
+     */
+    public static function add_module_type_to_lottie_script($tag, $handle, $src) {
+        if ('pmcm-dotlottie-player' !== $handle) {
+            return $tag;
+        }
+        return str_replace('<script ', '<script type="module" ', $tag);
     }
 
     /**

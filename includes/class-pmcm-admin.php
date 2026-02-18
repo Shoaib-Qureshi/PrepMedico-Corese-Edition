@@ -124,14 +124,24 @@ class PMCM_Admin
      */
     public static function enqueue_scripts($hook)
     {
-        $allowed_hooks = [
-            'toplevel_page_prepmedico-management',
-            'prepmedico_page_prepmedico-asit-management',
-            'prepmedico_page_prepmedico-course-config',
-            'woocommerce_page_wc-edition-management'
+        // Check if we're on one of our plugin pages by looking for our page slugs
+        // in the hook name (robust against menu title changes that affect hook prefixes)
+        $our_slugs = [
+            'prepmedico-management',
+            'prepmedico-asit-management',
+            'prepmedico-course-config',
+            'wc-edition-management'
         ];
 
-        if (!in_array($hook, $allowed_hooks)) {
+        $is_our_page = false;
+        foreach ($our_slugs as $slug) {
+            if (strpos($hook, $slug) !== false) {
+                $is_our_page = true;
+                break;
+            }
+        }
+
+        if (!$is_our_page) {
             return;
         }
 
