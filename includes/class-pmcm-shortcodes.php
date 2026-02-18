@@ -123,7 +123,7 @@ class PMCM_Shortcodes {
             return '';
         }
 
-        return '<span class="wcem-registration-status ' . esc_attr($status_data['class']) . '">' . esc_html($status_data['label']) . '</span>';
+        return self::render_registration_status_html($status_data, $course_slug, 'span');
     }
 
     /**
@@ -194,7 +194,7 @@ class PMCM_Shortcodes {
         }
 
         if ($status_data) {
-            $output .= '<p class="wcem-registration-status ' . esc_attr($status_data['class']) . '">' . esc_html($status_data['label']) . '</p>';
+            $output .= self::render_registration_status_html($status_data, $course_slug, 'p');
         }
 
         if ($status_data && $status_data['status'] === 'early_bird') {
@@ -203,6 +203,82 @@ class PMCM_Shortcodes {
 
         $output .= '</div>';
         return $output;
+    }
+
+    /**
+     * Render registration status badge with optional Lottie icon
+     */
+    private static function render_registration_status_html($status_data, $course_slug, $tag = 'span') {
+        $allowed_tags = ['span', 'p', 'div'];
+        if (!in_array($tag, $allowed_tags, true)) {
+            $tag = 'span';
+        }
+
+        $status_class = isset($status_data['class']) ? $status_data['class'] : '';
+        $status_label = isset($status_data['label']) ? $status_data['label'] : '';
+        $status = isset($status_data['status']) ? $status_data['status'] : '';
+
+        $lottie_markup = self::get_registration_status_lottie($status, $course_slug);
+
+        if ($lottie_markup !== '') {
+            return '<' . $tag . ' class="wcem-registration-status ' . esc_attr($status_class) . '">'
+                . '<span class="wcem-registration-status-inner" style="display:inline-flex;align-items:center;gap:8px;">'
+                . $lottie_markup
+                . '<span class="wcem-registration-status-label">' . esc_html($status_label) . '</span>'
+                . '</span>'
+                . '</' . $tag . '>';
+        }
+
+        return '<' . $tag . ' class="wcem-registration-status ' . esc_attr($status_class) . '">' . esc_html($status_label) . '</' . $tag . '>';
+    }
+
+    /**
+     * Get Lottie icon markup for registration status
+     */
+    private static function get_registration_status_lottie($status, $course_slug) {
+        // Keep this targeted to the requested shortcode use case.
+        if (strtolower((string) $course_slug) !== 'frcs') {
+            return '';
+        }
+
+        $file_map = [
+            'live' => 'Registration live dot.lottie',
+            'early_bird' => 'Early bird dot.lottie',
+        ];
+
+        if (!isset($file_map[$status])) {
+            return '';
+        }
+
+        $file_name = $file_map[$status];
+        $file_path = PMCM_PLUGIN_DIR . 'assets/lottie/' . $file_name;
+
+        if (!file_exists($file_path)) {
+            return '';
+        }
+
+        self::enqueue_lottie_player();
+
+        $file_url = PMCM_PLUGIN_URL . 'assets/lottie/' . rawurlencode($file_name);
+
+        return '<span class="wcem-status-lottie" aria-hidden="true" style="display:inline-flex;width:18px;height:18px;flex-shrink:0;">'
+            . '<dotlottie-wc src="' . esc_url($file_url) . '" speed="1" autoplay loop style="width:18px;height:18px;display:block;"></dotlottie-wc>'
+            . '</span>';
+    }
+
+    /**
+     * Enqueue dotLottie web component for frontend rendering
+     */
+    private static function enqueue_lottie_player() {
+        wp_register_script(
+            'pmcm-dotlottie-player',
+            'https://unpkg.com/@lottiefiles/dotlottie-wc@latest/dist/dotlottie-wc.js',
+            [],
+            PMCM_VERSION,
+            true
+        );
+        wp_script_add_data('pmcm-dotlottie-player', 'type', 'module');
+        wp_enqueue_script('pmcm-dotlottie-player');
     }
 
     /**

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: PrepMedico Course Management
+ * Plugin Name: Edition/Course MGMT
  * Description: Manages course editions for WooCommerce products with FluentCRM integration, ASiT membership discounts, and Early Bird offers. Tracks which edition a customer purchased and enables precise segmentation.
  * Version: 2.5.0
  * Author: Shoaib Qureshi - Tier2 Digital
@@ -55,7 +55,7 @@ function pmcm_init()
     // Check if WooCommerce is active
     if (!class_exists('WooCommerce')) {
         add_action('admin_notices', function () {
-            echo '<div class="notice notice-error"><p>' . __('PrepMedico Course Management requires WooCommerce to be installed and active.', 'prepmedico-course-management') . '</p></div>';
+            echo '<div class="notice notice-error"><p>' . __('Edition/Course MGMT requires WooCommerce to be installed and active.', 'prepmedico-course-management') . '</p></div>';
         });
         return;
     }

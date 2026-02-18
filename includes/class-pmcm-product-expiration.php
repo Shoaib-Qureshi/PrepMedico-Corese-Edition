@@ -61,7 +61,7 @@ class PMCM_Product_Expiration {
         }
 
         echo '<div class="options_group pmcm-product-options" style="border-top: 1px solid #eee; padding-top: 10px;">';
-        echo '<h4 style="padding-left: 12px; color: #8d2063;">' . __('PrepMedico Edition Settings', 'prepmedico-course-management') . '</h4>';
+        echo '<h4 style="padding-left: 12px; color: #8d2063;">' . __('Edition/Course MGMT Edition Settings', 'prepmedico-course-management') . '</h4>';
 
         // Registration Close Date (Expiration Date)
         woocommerce_wp_text_input([

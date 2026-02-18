@@ -82,6 +82,28 @@
     letter-spacing: 0.5px;
 }
 
+.wcem-registration-status-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcem-status-lottie {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.wcem-status-lottie dotlottie-wc {
+    display: block;
+    width: 18px;
+    height: 18px;
+}
+
 .wcem-status-live {
     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
     color: #155724;

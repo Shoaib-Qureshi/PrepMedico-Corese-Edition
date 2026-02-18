@@ -47,8 +47,8 @@ class PMCM_Admin
     public static function add_admin_menu()
     {
         add_menu_page(
-            __('PrepMedico', 'prepmedico-course-management'),
-            __('PrepMedico', 'prepmedico-course-management'),
+            __('Edition/Course MGMT', 'prepmedico-course-management'),
+            __('Edition/Course MGMT', 'prepmedico-course-management'),
             'manage_woocommerce',
             'prepmedico-management',
             [__CLASS__, 'render_edition_page'],
@@ -193,7 +193,7 @@ class PMCM_Admin
 
         if (!empty($warnings) && current_user_can('manage_woocommerce')) {
             echo '<div class="notice notice-warning is-dismissible">';
-            echo '<p><strong>' . __('PrepMedico Edition Notice:', 'prepmedico-course-management') . '</strong></p>';
+            echo '<p><strong>' . __('Edition/Course MGMT Edition Notice:', 'prepmedico-course-management') . '</strong></p>';
             echo '<ul>';
             foreach ($warnings as $warning) {
                 echo '<li>' . esc_html($warning) . '</li>';
@@ -230,7 +230,7 @@ class PMCM_Admin
             }
 
             echo '<div class="notice notice-' . esc_attr($notice_type) . ' is-dismissible">';
-            echo '<p><strong>PrepMedico ' . esc_html($label) . ':</strong> ' . esc_html(implode(', ', $parts)) . '.</p>';
+            echo '<p><strong>Edition/Course MGMT ' . esc_html($label) . ':</strong> ' . esc_html(implode(', ', $parts)) . '.</p>';
             echo '</div>';
         }
     }
@@ -2223,8 +2223,8 @@ class PMCM_Admin
      */
     public static function register_orders_bulk_actions($bulk_actions)
     {
-        $bulk_actions['pmcm_update_edition'] = __('Update Edition Data (PrepMedico)', 'prepmedico-course-management');
-        $bulk_actions['pmcm_sync_fluentcrm'] = __('Sync to FluentCRM (PrepMedico)', 'prepmedico-course-management');
+        $bulk_actions['pmcm_update_edition'] = __('Update Edition Data (Edition/Course MGMT)', 'prepmedico-course-management');
+        $bulk_actions['pmcm_sync_fluentcrm'] = __('Sync to FluentCRM (Edition/Course MGMT)', 'prepmedico-course-management');
         return $bulk_actions;
     }
 
