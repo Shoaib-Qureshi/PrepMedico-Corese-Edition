@@ -1,0 +1,7 @@
+# Allow .lottie files to be served
+AddType application/octet-stream .lottie
+
+<FilesMatch "\.lottie$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Content-Type "application/octet-stream"
+</FilesMatch>

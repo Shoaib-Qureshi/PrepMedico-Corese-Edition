@@ -84,6 +84,21 @@ function pmcm_init()
 add_action('plugins_loaded', 'pmcm_init', 20);
 
 /**
+ * Allow .lottie files to be served with the correct MIME type
+ */
+add_filter('upload_mimes', function ($mimes) {
+    $mimes['lottie'] = 'application/octet-stream';
+    return $mimes;
+});
+add_filter('wp_check_filetype_and_ext', function ($data, $file, $filename, $mimes) {
+    if (str_ends_with($filename, '.lottie')) {
+        $data['ext'] = 'lottie';
+        $data['type'] = 'application/octet-stream';
+    }
+    return $data;
+}, 10, 4);
+
+/**
  * Plugin activation
  */
 function pmcm_activate()
