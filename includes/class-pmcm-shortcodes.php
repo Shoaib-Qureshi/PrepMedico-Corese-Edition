@@ -272,7 +272,7 @@ class PMCM_Shortcodes {
     private static function enqueue_lottie_player() {
         wp_register_script(
             'pmcm-dotlottie-player',
-            'https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.16/dist/dotlottie-wc.js',
+            'https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.2/dist/dotlottie-wc.js',
             [],
             null,
             true
