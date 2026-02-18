@@ -236,11 +236,6 @@ class PMCM_Shortcodes {
      * Get Lottie icon markup for registration status
      */
     private static function get_registration_status_lottie($status, $course_slug) {
-        // Keep this targeted to the requested shortcode use case.
-        if (strtolower((string) $course_slug) !== 'frcs') {
-            return '';
-        }
-
         $file_map = [
             'live' => 'Registration live dot.lottie',
             'early_bird' => 'Early bird dot.lottie',
@@ -261,15 +256,22 @@ class PMCM_Shortcodes {
 
         $file_url = PMCM_PLUGIN_URL . 'assets/lottie/' . rawurlencode($file_name);
 
-        return '<span class="wcem-status-lottie" aria-hidden="true" style="display:inline-flex;width:18px;height:18px;flex-shrink:0;">'
-            . '<dotlottie-wc src="' . esc_url($file_url) . '" speed="1" autoplay loop style="width:18px;height:18px;display:block;"></dotlottie-wc>'
+        return '<span class="wcem-status-lottie" aria-hidden="true" style="display:inline-flex;width:20px;height:20px;flex-shrink:0;">'
+            . '<dotlottie-wc src="' . esc_url($file_url) . '" speed="1.5" autoplay loop style="width:20px;height:20px;display:block;"></dotlottie-wc>'
             . '</span>';
     }
 
     /**
      * Enqueue dotLottie web component for frontend rendering
      */
+    private static $lottie_enqueued = false;
+
     private static function enqueue_lottie_player() {
+        if (self::$lottie_enqueued) {
+            return;
+        }
+        self::$lottie_enqueued = true;
+
         wp_register_script(
             'pmcm-dotlottie-player',
             'https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.2/dist/dotlottie-wc.js',
@@ -279,8 +281,13 @@ class PMCM_Shortcodes {
         );
         wp_enqueue_script('pmcm-dotlottie-player');
 
-        // Add type="module" attribute via filter (wp_script_add_data 'type' is unreliable)
+        // Add type="module" attribute via filter (only once)
         add_filter('script_loader_tag', [__CLASS__, 'add_module_type_to_lottie_script'], 10, 3);
+
+        // Preload hint for faster loading
+        add_action('wp_head', function () {
+            echo '<link rel="modulepreload" href="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.2/dist/dotlottie-wc.js">' . "\n";
+        }, 1);
     }
 
     /**
