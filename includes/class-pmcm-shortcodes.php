@@ -221,18 +221,11 @@ class PMCM_Shortcodes {
         $dot_markup = self::get_status_dot($status);
 
         if ($dot_markup !== '') {
-            self::enqueue_dot_css($status);
-            $anim_class = ($status === 'live') ? 'wcem-dot-live-anim' : 'wcem-dot-earlybird-anim';
+            self::enqueue_dot_css();
 
             return '<' . $tag . ' class="wcem-registration-status ' . esc_attr($status_class) . '">'
                 . '<span class="wcem-registration-status-inner" style="display:inline-flex;align-items:center;gap:8px;">'
-                . '<span class="' . $anim_class . '" style="'
-                    . 'display:inline-block;'
-                    . 'width:8px;height:8px;min-width:8px;min-height:8px;'
-                    . 'border-radius:50%;flex-shrink:0;'
-                    . 'background:' . esc_attr(($status === 'live') ? '#50c154' : '#9E1F63') . ';'
-                    . 'box-shadow:0 0 4px 2px ' . esc_attr(($status === 'live') ? '#50c154' : '#9E1F63') . ',0 0 8px 4px ' . esc_attr(($status === 'live') ? '#50c15450' : '#9E1F6350') . ';'
-                . '" aria-hidden="true"></span>'
+                . $dot_markup
                 . '<span class="wcem-registration-status-label">' . esc_html($status_label) . '</span>'
                 . '</span>'
                 . '</' . $tag . '>';
@@ -242,7 +235,8 @@ class PMCM_Shortcodes {
     }
 
     /**
-     * Get CSS glowing dot markup for registration status (fully inline styles)
+     * Get pulsing dot markup for registration status
+     * Renders a solid dot with two expanding ripple rings that fade out
      */
     private static function get_status_dot($status) {
         $colors = [
@@ -255,37 +249,43 @@ class PMCM_Shortcodes {
         }
 
         $color = $colors[$status];
+        $type = ($status === 'live') ? 'live' : 'eb';
 
-        return '<span aria-hidden="true" style="'
-            . 'display:inline-block;'
-            . 'width:8px;'
-            . 'height:8px;'
-            . 'min-width:8px;'
-            . 'min-height:8px;'
-            . 'border-radius:50%;'
-            . 'flex-shrink:0;'
-            . 'background:' . $color . ';'
-            . 'box-shadow:0 0 4px 2px ' . $color . ',0 0 8px 4px ' . $color . '50;'
-            . '"></span>';
+        // Container holds the solid dot + two ripple rings via ::before and ::after
+        return '<span class="wcem-pulse-dot wcem-pulse-' . $type . '" aria-hidden="true"'
+            . ' style="position:relative;display:inline-block;width:20px;height:20px;min-width:20px;min-height:20px;flex-shrink:0;">'
+            . '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
+                . 'width:8px;height:8px;border-radius:50%;background:' . $color . ';"></span>'
+            . '</span>';
     }
 
     /**
-     * Enqueue inline CSS for glowing dot animation
+     * Enqueue inline CSS for pulsing dot ripple animation
      */
     private static $dot_css_enqueued = false;
 
-    private static function enqueue_dot_css($status) {
+    private static function enqueue_dot_css() {
         if (self::$dot_css_enqueued) {
             return;
         }
         self::$dot_css_enqueued = true;
 
         add_action('wp_footer', function () {
-            echo '<style id="wcem-dot-glow">'
-                . '@keyframes wcem-glow-green{0%,100%{box-shadow:0 0 4px 2px #50c154,0 0 8px 4px #50c15450}50%{box-shadow:0 0 6px 3px #50c154,0 0 12px 6px #50c15460}}'
-                . '@keyframes wcem-glow-pink{0%,100%{box-shadow:0 0 4px 2px #9E1F63,0 0 8px 4px #9E1F6350}50%{box-shadow:0 0 6px 3px #9E1F63,0 0 12px 6px #9E1F6360}}'
-                . '.wcem-dot-live-anim{animation:wcem-glow-green 2s ease-in-out infinite!important}'
-                . '.wcem-dot-earlybird-anim{animation:wcem-glow-pink 2s ease-in-out infinite!important}'
+            echo '<style id="wcem-pulse-dot-css">'
+                . '.wcem-pulse-dot::before,.wcem-pulse-dot::after{'
+                    . 'content:"";position:absolute;top:50%;left:50%;'
+                    . 'width:8px;height:8px;border-radius:50%;'
+                    . 'transform:translate(-50%,-50%);'
+                    . 'opacity:0;'
+                . '}'
+                . '.wcem-pulse-dot::before{animation:wcem-ripple 1.5s ease-out infinite}'
+                . '.wcem-pulse-dot::after{animation:wcem-ripple 1.5s ease-out 0.5s infinite}'
+                . '.wcem-pulse-live::before,.wcem-pulse-live::after{background:rgba(80,193,84,0.4)}'
+                . '.wcem-pulse-eb::before,.wcem-pulse-eb::after{background:rgba(158,31,99,0.4)}'
+                . '@keyframes wcem-ripple{'
+                    . '0%{width:8px;height:8px;opacity:0.6}'
+                    . '100%{width:24px;height:24px;opacity:0}'
+                . '}'
                 . '</style>';
         }, 99);
     }
