@@ -224,7 +224,7 @@ class PMCM_Shortcodes {
             self::enqueue_dot_css();
 
             return '<' . $tag . ' class="wcem-registration-status ' . esc_attr($status_class) . '">'
-                . '<span class="wcem-registration-status-inner">'
+                . '<span class="wcem-registration-status-inner" style="display:inline-flex;align-items:center;gap:6px;">'
                 . $dot_markup
                 . '<span class="wcem-registration-status-label">' . esc_html($status_label) . '</span>'
                 . '</span>'
