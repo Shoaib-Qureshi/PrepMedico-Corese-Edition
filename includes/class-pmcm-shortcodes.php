@@ -218,12 +218,12 @@ class PMCM_Shortcodes {
         $status_label = isset($status_data['label']) ? $status_data['label'] : '';
         $status = isset($status_data['status']) ? $status_data['status'] : '';
 
-        $lottie_markup = self::get_registration_status_lottie($status, $course_slug);
+        $dot_markup = self::get_status_dot($status);
 
-        if ($lottie_markup !== '') {
+        if ($dot_markup !== '') {
             return '<' . $tag . ' class="wcem-registration-status ' . esc_attr($status_class) . '">'
                 . '<span class="wcem-registration-status-inner" style="display:inline-flex;align-items:center;gap:8px;">'
-                . $lottie_markup
+                . $dot_markup
                 . '<span class="wcem-registration-status-label">' . esc_html($status_label) . '</span>'
                 . '</span>'
                 . '</' . $tag . '>';
@@ -233,71 +233,19 @@ class PMCM_Shortcodes {
     }
 
     /**
-     * Get Lottie icon markup for registration status
+     * Get CSS glowing dot markup for registration status
      */
-    private static function get_registration_status_lottie($status, $course_slug) {
-        $file_map = [
-            'live' => 'Registration live dot.lottie',
-            'early_bird' => 'Early bird dot.lottie',
+    private static function get_status_dot($status) {
+        $dot_classes = [
+            'live'       => 'wcem-dot-live',
+            'early_bird' => 'wcem-dot-early-bird',
         ];
 
-        if (!isset($file_map[$status])) {
+        if (!isset($dot_classes[$status])) {
             return '';
         }
 
-        $file_name = $file_map[$status];
-        $file_path = PMCM_PLUGIN_DIR . 'assets/lottie/' . $file_name;
-
-        if (!file_exists($file_path)) {
-            return '';
-        }
-
-        self::enqueue_lottie_player();
-
-        $file_url = PMCM_PLUGIN_URL . 'assets/lottie/' . rawurlencode($file_name);
-
-        return '<span class="wcem-status-lottie" aria-hidden="true" style="display:inline-flex;width:20px;height:20px;flex-shrink:0;">'
-            . '<dotlottie-wc src="' . esc_url($file_url) . '" speed="1.5" autoplay loop style="width:20px;height:20px;display:block;"></dotlottie-wc>'
-            . '</span>';
-    }
-
-    /**
-     * Enqueue dotLottie web component for frontend rendering
-     */
-    private static $lottie_enqueued = false;
-
-    private static function enqueue_lottie_player() {
-        if (self::$lottie_enqueued) {
-            return;
-        }
-        self::$lottie_enqueued = true;
-
-        wp_register_script(
-            'pmcm-dotlottie-player',
-            'https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.2/dist/dotlottie-wc.js',
-            [],
-            null,
-            true
-        );
-        wp_enqueue_script('pmcm-dotlottie-player');
-
-        // Add type="module" attribute via filter (only once)
-        add_filter('script_loader_tag', [__CLASS__, 'add_module_type_to_lottie_script'], 10, 3);
-
-        // Preload hint for faster loading
-        add_action('wp_head', function () {
-            echo '<link rel="modulepreload" href="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.2/dist/dotlottie-wc.js">' . "\n";
-        }, 1);
-    }
-
-    /**
-     * Add type="module" to the dotLottie player script tag
-     */
-    public static function add_module_type_to_lottie_script($tag, $handle, $src) {
-        if ('pmcm-dotlottie-player' !== $handle) {
-            return $tag;
-        }
-        return str_replace('<script ', '<script type="module" ', $tag);
+        return '<span class="wcem-status-dot ' . esc_attr($dot_classes[$status]) . '" aria-hidden="true"></span>';
     }
 
     /**
