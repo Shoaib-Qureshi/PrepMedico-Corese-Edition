@@ -251,11 +251,10 @@ class PMCM_Shortcodes {
         $color = $colors[$status];
         $type = ($status === 'live') ? 'live' : 'eb';
 
-        // Container holds the solid dot + two ripple rings via ::before and ::after
+        // Container matches solid dot size; ripples overflow via position:absolute
         return '<span class="wcem-pulse-dot wcem-pulse-' . $type . '" aria-hidden="true"'
-            . ' style="position:relative;display:inline-block;width:28px;height:28px;min-width:28px;min-height:28px;flex-shrink:0;">'
-            . '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-                . 'width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
+            . ' style="position:relative;display:inline-block;width:12px;height:12px;min-width:12px;flex-shrink:0;overflow:visible;">'
+            . '<span style="position:absolute;top:0;left:0;width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
             . '</span>';
     }
 
@@ -275,7 +274,7 @@ class PMCM_Shortcodes {
                 . '.wcem-pulse-dot{overflow:visible}'
                 . '.wcem-pulse-dot::before,.wcem-pulse-dot::after{'
                     . 'content:"";position:absolute;top:50%;left:50%;'
-                    . 'width:12px;height:12px;border-radius:50%;'
+                    . 'border-radius:50%;'
                     . 'transform:translate(-50%,-50%);'
                     . 'opacity:0;pointer-events:none;'
                 . '}'

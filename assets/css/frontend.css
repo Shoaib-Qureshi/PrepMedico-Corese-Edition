@@ -89,9 +89,9 @@
     gap: 4px;
 }
 
-/* Pulsing dot container — prevent it from affecting badge size */
+/* Pulsing dot — ripples overflow without affecting badge size */
 .wcem-pulse-dot {
-    margin: -8px 0;
+    line-height: 0;
 }
 
 .wcem-status-live {
