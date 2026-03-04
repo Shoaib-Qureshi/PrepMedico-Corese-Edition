@@ -80,61 +80,18 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    overflow: visible;
 }
 
 .wcem-registration-status-inner {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
 
-/* Glowing status dot — uses ::before so it cannot be collapsed */
-.wcem-status-dot {
-    position: relative;
-    display: block;
-    width: 8px;
-    height: 8px;
-    flex: 0 0 8px;
-}
-
-.wcem-status-dot::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.wcem-dot-live::before {
-    background: #50c154;
-    box-shadow: 0 0 3px 1px rgba(80, 193, 84, 0.5), 0 0 6px 3px rgba(80, 193, 84, 0.25);
-    animation: wcem-dot-glow-live 2s ease-in-out infinite;
-}
-
-.wcem-dot-early-bird::before {
-    background: #9E1F63;
-    box-shadow: 0 0 3px 1px rgba(158, 31, 99, 0.5), 0 0 6px 3px rgba(158, 31, 99, 0.25);
-    animation: wcem-dot-glow-early-bird 2s ease-in-out infinite;
-}
-
-@keyframes wcem-dot-glow-live {
-    0%, 100% {
-        box-shadow: 0 0 3px 1px rgba(80, 193, 84, 0.5), 0 0 6px 3px rgba(80, 193, 84, 0.25);
-    }
-    50% {
-        box-shadow: 0 0 5px 2px rgba(80, 193, 84, 0.7), 0 0 10px 4px rgba(80, 193, 84, 0.35);
-    }
-}
-
-@keyframes wcem-dot-glow-early-bird {
-    0%, 100% {
-        box-shadow: 0 0 3px 1px rgba(158, 31, 99, 0.5), 0 0 6px 3px rgba(158, 31, 99, 0.25);
-    }
-    50% {
-        box-shadow: 0 0 5px 2px rgba(158, 31, 99, 0.7), 0 0 10px 4px rgba(158, 31, 99, 0.35);
-    }
+/* Pulsing dot container — prevent it from affecting badge size */
+.wcem-pulse-dot {
+    margin: -8px 0;
 }
 
 .wcem-status-live {
