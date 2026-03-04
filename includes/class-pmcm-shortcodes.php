@@ -224,7 +224,7 @@ class PMCM_Shortcodes {
             self::enqueue_dot_css();
 
             return '<' . $tag . ' class="wcem-registration-status ' . esc_attr($status_class) . '">'
-                . '<span class="wcem-registration-status-inner" style="display:inline-flex;align-items:center;gap:8px;">'
+                . '<span class="wcem-registration-status-inner">'
                 . $dot_markup
                 . '<span class="wcem-registration-status-label">' . esc_html($status_label) . '</span>'
                 . '</span>'
@@ -251,10 +251,11 @@ class PMCM_Shortcodes {
         $color = $colors[$status];
         $type = ($status === 'live') ? 'live' : 'eb';
 
-        // Container matches solid dot size; ripples overflow via position:absolute
+        // 12px dot container; ripples overflow via position:absolute
         return '<span class="wcem-pulse-dot wcem-pulse-' . $type . '" aria-hidden="true"'
-            . ' style="position:relative;display:inline-block;width:12px;height:12px;min-width:12px;flex-shrink:0;overflow:visible;">'
-            . '<span style="position:absolute;top:0;left:0;width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
+            . ' style="position:relative;display:inline-flex;align-items:center;justify-content:center;'
+            . 'width:12px;height:12px;min-width:12px;flex:0 0 12px;overflow:visible;">'
+            . '<span style="width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
             . '</span>';
     }
 

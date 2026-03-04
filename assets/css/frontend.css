@@ -73,25 +73,21 @@
 
 /* Registration Status Styles */
 .wcem-registration-status {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 6px 14px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    overflow: visible;
+    line-height: 1.4;
 }
 
 .wcem-registration-status-inner {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-}
-
-/* Pulsing dot — ripples overflow without affecting badge size */
-.wcem-pulse-dot {
-    line-height: 0;
+    gap: 6px;
 }
 
 .wcem-status-live {
