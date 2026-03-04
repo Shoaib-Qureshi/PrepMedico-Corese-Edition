@@ -253,9 +253,9 @@ class PMCM_Shortcodes {
 
         // Container holds the solid dot + two ripple rings via ::before and ::after
         return '<span class="wcem-pulse-dot wcem-pulse-' . $type . '" aria-hidden="true"'
-            . ' style="position:relative;display:inline-block;width:20px;height:20px;min-width:20px;min-height:20px;flex-shrink:0;">'
+            . ' style="position:relative;display:inline-block;width:28px;height:28px;min-width:28px;min-height:28px;flex-shrink:0;">'
             . '<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);'
-                . 'width:8px;height:8px;border-radius:50%;background:' . $color . ';"></span>'
+                . 'width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
             . '</span>';
     }
 
@@ -274,7 +274,7 @@ class PMCM_Shortcodes {
             echo '<style id="wcem-pulse-dot-css">'
                 . '.wcem-pulse-dot::before,.wcem-pulse-dot::after{'
                     . 'content:"";position:absolute;top:50%;left:50%;'
-                    . 'width:8px;height:8px;border-radius:50%;'
+                    . 'width:12px;height:12px;border-radius:50%;'
                     . 'transform:translate(-50%,-50%);'
                     . 'opacity:0;'
                 . '}'
@@ -283,8 +283,8 @@ class PMCM_Shortcodes {
                 . '.wcem-pulse-live::before,.wcem-pulse-live::after{background:rgba(80,193,84,0.4)}'
                 . '.wcem-pulse-eb::before,.wcem-pulse-eb::after{background:rgba(158,31,99,0.4)}'
                 . '@keyframes wcem-ripple{'
-                    . '0%{width:8px;height:8px;opacity:0.6}'
-                    . '100%{width:24px;height:24px;opacity:0}'
+                    . '0%{width:12px;height:12px;opacity:0.6}'
+                    . '100%{width:28px;height:28px;opacity:0}'
                 . '}'
                 . '</style>';
         }, 99);
