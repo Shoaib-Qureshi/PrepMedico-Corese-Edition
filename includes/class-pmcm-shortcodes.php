@@ -197,7 +197,7 @@ class PMCM_Shortcodes {
             $output .= self::render_registration_status_html($status_data, $course_slug, 'p');
         }
 
-        if ($status_data && $status_data['status'] === 'early_bird') {
+        if ($status_data && in_array($status_data['status'], ['early_bird'], true)) {
             $output .= do_shortcode('[early_bird_message course="' . esc_attr($course_slug) . '"]');
         }
 
@@ -240,8 +240,10 @@ class PMCM_Shortcodes {
      */
     private static function get_status_dot($status) {
         $colors = [
-            'live'       => '#50c154',
-            'early_bird' => '#9E1F63',
+            'opening_soon' => '#9CA3AF',
+            'live'         => '#50c154',
+            'course_live'  => '#50c154',
+            'early_bird'   => '#C026D3',
         ];
 
         if (!isset($colors[$status])) {
@@ -249,7 +251,13 @@ class PMCM_Shortcodes {
         }
 
         $color = $colors[$status];
-        $type = ($status === 'live') ? 'live' : 'eb';
+        if ($status === 'early_bird') {
+            $type = 'eb';
+        } elseif ($status === 'opening_soon') {
+            $type = 'grey';
+        } else {
+            $type = 'live';
+        }
 
         // 12px dot container; ripples overflow via position:absolute
         return '<span class="wcem-pulse-dot wcem-pulse-' . $type . '" aria-hidden="true"'
@@ -282,7 +290,8 @@ class PMCM_Shortcodes {
                 . '.wcem-pulse-dot::before{animation:wcem-ripple 1.5s ease-out infinite}'
                 . '.wcem-pulse-dot::after{animation:wcem-ripple 1.5s ease-out 0.5s infinite}'
                 . '.wcem-pulse-live::before,.wcem-pulse-live::after{background-color:#50c154}'
-                . '.wcem-pulse-eb::before,.wcem-pulse-eb::after{background-color:#9E1F63}'
+                . '.wcem-pulse-eb::before,.wcem-pulse-eb::after{background-color:#C026D3}'
+                . '.wcem-pulse-grey::before,.wcem-pulse-grey::after{background-color:#9CA3AF}'
                 . '@keyframes wcem-ripple{'
                     . '0%{width:12px;height:12px;opacity:0.5}'
                     . '50%{opacity:0.2}'
@@ -295,12 +304,12 @@ class PMCM_Shortcodes {
     /**
      * Get registration status for a course
      * Logic:
-     * - End Date passed → "Registration Opening Soon" (cron auto-increments edition)
+     * - End Date passed → "Coming Soon" (cron auto-increments edition)
      * - Early Bird enabled & within dates → "Early Bird Registration Open"
      * - Early Bird End == Today (and course end date still far) → "Registration is Live"
-     * - After Early Bird but before course end → "Registration is Live"
-     * - Before start date → "Registration Opening Soon"
-     * - Within start and end dates → "Registration is Live"
+     * - After Early Bird but before course end → "Registration is Live" or "Registration and Course is Live"
+     * - Before start date → "Coming Soon"
+     * - On/after start date, before end date → "Registration and Course is Live"
      */
     public static function get_registration_status($course_slug) {
         if (!isset(PMCM_Core::get_courses()[$course_slug])) {
@@ -324,12 +333,12 @@ class PMCM_Shortcodes {
         $early_bird_start_timestamp = !empty($early_bird_start) ? strtotime($early_bird_start) : null;
         $early_bird_end_timestamp = !empty($early_bird_end) ? strtotime($early_bird_end) : null;
 
-        // 1. Check if Current Edition End Date has passed → Registration Opening Soon
+        // 1. Check if Current Edition End Date has passed → Coming Soon
         // (Cron will auto-increment the edition number)
         if ($end_timestamp && $today_timestamp > $end_timestamp) {
             return [
                 'status' => 'opening_soon',
-                'label' => __('Registration Opening Soon', 'prepmedico-course-management'),
+                'label' => __('Coming Soon', 'prepmedico-course-management'),
                 'class' => 'wcem-status-upcoming'
             ];
         }
@@ -350,8 +359,16 @@ class PMCM_Shortcodes {
             }
 
             // Early Bird End Date == Today OR Early Bird has ended but course end date is still far
-            // → Registration is Live (early bird closed, course edition still active)
             if ($today_timestamp >= $early_bird_end_timestamp && $end_timestamp && $today_timestamp < $end_timestamp) {
+                // If course has started → "Registration and Course is Live"
+                if ($start_timestamp && $today_timestamp >= $start_timestamp) {
+                    return [
+                        'status' => 'course_live',
+                        'label' => __('Registration and Course is Live', 'prepmedico-course-management'),
+                        'class' => 'wcem-status-course-live'
+                    ];
+                }
+                // Before course start → "Registration is Live"
                 return [
                     'status' => 'live',
                     'label' => __('Registration is Live', 'prepmedico-course-management'),
@@ -360,11 +377,11 @@ class PMCM_Shortcodes {
             }
         }
 
-        // 3. If dates not set (after increment), show Opening Soon
+        // 3. If dates not set (after increment), show Coming Soon
         if (!$start_timestamp || !$end_timestamp) {
             return [
                 'status' => 'opening_soon',
-                'label' => __('Registration Opening Soon', 'prepmedico-course-management'),
+                'label' => __('Coming Soon', 'prepmedico-course-management'),
                 'class' => 'wcem-status-upcoming'
             ];
         }
@@ -373,16 +390,16 @@ class PMCM_Shortcodes {
         if ($today_timestamp < $start_timestamp) {
             return [
                 'status' => 'opening_soon',
-                'label' => __('Registration Opening Soon', 'prepmedico-course-management'),
+                'label' => __('Coming Soon', 'prepmedico-course-management'),
                 'class' => 'wcem-status-upcoming'
             ];
         }
 
-        // 5. Registration is Live (within start and end dates)
+        // 5. On or after start date → "Registration and Course is Live"
         return [
-            'status' => 'live',
-            'label' => __('Registration is Live', 'prepmedico-course-management'),
-            'class' => 'wcem-status-live'
+            'status' => 'course_live',
+            'label' => __('Registration and Course is Live', 'prepmedico-course-management'),
+            'class' => 'wcem-status-course-live'
         ];
     }
 
