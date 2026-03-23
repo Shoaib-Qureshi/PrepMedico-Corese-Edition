@@ -343,8 +343,8 @@ class PMCM_Shortcodes {
             ];
         }
 
-        // 2. If main course dates not set → Coming Soon (must check before early bird)
-        if (!$start_timestamp || !$end_timestamp) {
+        // 2. If both main course dates are TBA (e.g. after auto-increment) → Coming Soon
+        if (!$start_timestamp && !$end_timestamp) {
             return [
                 'status' => 'opening_soon',
                 'label' => __('Coming Soon', 'prepmedico-course-management'),
@@ -367,9 +367,17 @@ class PMCM_Shortcodes {
                 ];
             }
 
-            // Early Bird End Date == Today OR Early Bird has ended but course end date is still far
+            // Early Bird has ended and course end date is still in future
             if ($today_timestamp >= $early_bird_end_timestamp && $end_timestamp && $today_timestamp < $end_timestamp) {
-                // If course has started → "Registration and Course is Live"
+                // On the exact day EB ends → transition state: Registration is Live
+                if ($today_timestamp === $early_bird_end_timestamp) {
+                    return [
+                        'status' => 'live',
+                        'label' => __('Registration is Live', 'prepmedico-course-management'),
+                        'class' => 'wcem-status-live'
+                    ];
+                }
+                // After EB end day: course has started → "Registration and Course is Live"
                 if ($start_timestamp && $today_timestamp >= $start_timestamp) {
                     return [
                         'status' => 'course_live',
@@ -377,7 +385,7 @@ class PMCM_Shortcodes {
                         'class' => 'wcem-status-course-live'
                     ];
                 }
-                // Before course start → "Registration is Live"
+                // After EB end day: before course start → "Registration is Live"
                 return [
                     'status' => 'live',
                     'label' => __('Registration is Live', 'prepmedico-course-management'),
@@ -387,7 +395,15 @@ class PMCM_Shortcodes {
         }
 
         // 4. Check if before Current Edition Start Date
-        if ($today_timestamp < $start_timestamp) {
+        if ($start_timestamp && $today_timestamp < $start_timestamp) {
+            // Early bird existed and has ended → registration is open, course hasn't started yet
+            if ($early_bird_enabled === 'yes' && $early_bird_end_timestamp && $today_timestamp >= $early_bird_end_timestamp) {
+                return [
+                    'status' => 'live',
+                    'label' => __('Registration is Live', 'prepmedico-course-management'),
+                    'class' => 'wcem-status-live'
+                ];
+            }
             return [
                 'status' => 'opening_soon',
                 'label' => __('Coming Soon', 'prepmedico-course-management'),
