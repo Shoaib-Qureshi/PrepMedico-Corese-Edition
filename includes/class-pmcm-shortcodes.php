@@ -618,7 +618,7 @@ class PMCM_Shortcodes {
             if (empty($start) || empty($end)) {
                 return __('TBA', 'prepmedico-course-management');
             }
-            return date_i18n('F j, Y', strtotime($start)) . ' - ' . date_i18n('F j, Y', strtotime($end));
+            return date_i18n('j M Y', strtotime($start)) . ' – ' . date_i18n('j M Y', strtotime($end));
         }
     }
 
