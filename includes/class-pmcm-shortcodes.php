@@ -343,7 +343,16 @@ class PMCM_Shortcodes {
             ];
         }
 
-        // 2. Check Early Bird
+        // 2. If main course dates not set → Coming Soon (must check before early bird)
+        if (!$start_timestamp || !$end_timestamp) {
+            return [
+                'status' => 'opening_soon',
+                'label' => __('Coming Soon', 'prepmedico-course-management'),
+                'class' => 'wcem-status-upcoming'
+            ];
+        }
+
+        // 3. Check Early Bird
         if ($early_bird_enabled === 'yes' && $early_bird_end_timestamp) {
             $eb_start_ok = !$early_bird_start_timestamp || $today_timestamp >= $early_bird_start_timestamp;
             $eb_end_ok = $today_timestamp < $early_bird_end_timestamp;
@@ -375,15 +384,6 @@ class PMCM_Shortcodes {
                     'class' => 'wcem-status-live'
                 ];
             }
-        }
-
-        // 3. If dates not set (after increment), show Coming Soon
-        if (!$start_timestamp || !$end_timestamp) {
-            return [
-                'status' => 'opening_soon',
-                'label' => __('Coming Soon', 'prepmedico-course-management'),
-                'class' => 'wcem-status-upcoming'
-            ];
         }
 
         // 4. Check if before Current Edition Start Date
