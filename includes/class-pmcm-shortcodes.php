@@ -497,12 +497,12 @@ class PMCM_Shortcodes {
         $atts = shortcode_atts([
             'course'     => '',
             'slot'       => 'current',
-            'early_bird' => '0', // set to '1' to show chip when early bird is active
+            'early_bird' => '1', // '1' = show chip when EB active (default), '0' = never show chip
         ], $atts, 'pmcm_edition_ordinal');
 
         $course_slug  = sanitize_text_field($atts['course']);
         $slot         = sanitize_text_field($atts['slot']);
-        $show_chip    = ($atts['early_bird'] === '1');
+        $show_chip    = ($atts['early_bird'] !== '0');
 
         if (empty($course_slug)) {
             return '';

@@ -175,20 +175,20 @@
 
 /* Early Bird Registration Chip (shown next to edition ordinal) */
 .pmcm-early-bird-chip {
-    display: inline-block;
+    display: flex;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #0c5460;
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    border: 1px solid #17a2b8;
+    color: #9e1f63;
+    background: linear-gradient(135deg, rgba(158, 31, 99, 0.32) 0%, #fff 100%);
+    border: 1px solid #9e1f63;
     padding: 3px 10px;
     border-radius: 12px;
-    margin-left: 6px;
     vertical-align: middle;
     line-height: 1.4;
     white-space: nowrap;
+    width: fit-content;
 }
 
 /* Edition-aware sale price suppression (JS adds .pmcm-eb-inactive when slot has no early bird) */
