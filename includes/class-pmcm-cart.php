@@ -22,6 +22,7 @@ class PMCM_Cart {
         add_action('woocommerce_checkout_order_processed', [__CLASS__, 'save_edition_to_order'], 10, 3);
         add_action('woocommerce_store_api_checkout_order_processed', [__CLASS__, 'save_edition_to_order_block'], 10, 1);
         add_action('woocommerce_admin_order_data_after_billing_address', [__CLASS__, 'display_edition_in_admin_order']);
+        add_action('woocommerce_before_calculate_totals', [__CLASS__, 'override_cart_item_prices'], 20, 1);
     }
 
     /**
@@ -424,5 +425,39 @@ class PMCM_Cart {
         $output .= '</div>';
 
         echo $output;
+    }
+
+    /**
+     * Force regular price for any cart item whose edition slot does not have
+     * early bird active. Runs before WC recalculates totals.
+     */
+    public static function override_cart_item_prices($cart) {
+        if (is_admin() && !defined('DOING_AJAX')) return;
+        if (!WC()->session) return;
+
+        foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+            $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
+            if (!$edition_data) continue;
+
+            $slot        = isset($edition_data['edition_slot']) ? $edition_data['edition_slot'] : 'current';
+            $course_slug = isset($edition_data['course_slug'])  ? $edition_data['course_slug']  : '';
+            if (!$course_slug) continue;
+
+            /** @var WC_Product $product */
+            $product       = $cart_item['data'];
+            $sale_price    = $product->get_sale_price();
+            $regular_price = $product->get_regular_price();
+            if (empty($sale_price)) continue;
+
+            $current_eb = PMCM_Core::is_course_early_bird_active($course_slug);
+            $next_eb    = PMCM_Core::is_next_edition_early_bird_active($course_slug);
+
+            $should_have_early_bird = ($slot === 'current' && $current_eb)
+                                   || ($slot === 'next'    && $next_eb);
+
+            if (!$should_have_early_bird) {
+                $product->set_price($regular_price);
+            }
+        }
     }
 }

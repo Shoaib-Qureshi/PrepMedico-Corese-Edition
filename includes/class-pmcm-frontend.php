@@ -34,6 +34,10 @@ class PMCM_Frontend {
 
         // Dynamic CSS for disabling enrol buttons when dates unavailable
         add_action('wp_head', [__CLASS__, 'output_dynamic_enrol_css']);
+
+        // Edition-aware early bird price display on product pages
+        add_filter('woocommerce_product_get_sale_price', [__CLASS__, 'edition_aware_sale_price'], 20, 2);
+        add_filter('woocommerce_product_get_price',      [__CLASS__, 'edition_aware_price'],      20, 2);
     }
 
     /**
@@ -373,5 +377,88 @@ class PMCM_Frontend {
         echo '.enrol_btn_course.pmcm-dates-tba';
         echo '{ pointer-events: none !important; opacity: 0.5 !important; cursor: not-allowed !important; }';
         echo '</style>';
+    }
+
+    /**
+     * Determine which edition slot the customer is viewing on the product page.
+     * Returns 'current', 'next', or null (not a managed course product).
+     * Mirrors the logic in display_edition_selector() lines 99-117.
+     */
+    private static function get_viewed_edition_slot($product_id) {
+        $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        $course_data = null;
+        foreach ($categories as $cat_slug) {
+            $course_data = PMCM_Core::get_course_for_category($cat_slug);
+            if ($course_data) break;
+        }
+        if (!$course_data) return null;
+
+        $prefix      = $course_data['course']['settings_prefix'];
+        $url_edition = isset($_GET['edition']) ? intval($_GET['edition']) : 0;
+
+        if ($url_edition > 0) {
+            $next_enabled = get_option($prefix . 'next_enabled', 'no');
+            $next_edition = intval(get_option($prefix . 'next_edition', 0));
+            return ($next_enabled === 'yes' && $next_edition === $url_edition) ? 'next' : 'current';
+        }
+        return 'current';
+    }
+
+    /**
+     * Get the parent course slug for a product ID.
+     */
+    private static function get_product_course_slug($product_id) {
+        $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        foreach ($categories as $cat_slug) {
+            $course_data = PMCM_Core::get_course_for_category($cat_slug);
+            if ($course_data) return $course_data['parent_slug'];
+        }
+        return null;
+    }
+
+    /**
+     * Suppress or return the sale price based on which edition is being viewed.
+     * Only acts on single product pages; cart/checkout is handled by PMCM_Cart.
+     */
+    public static function edition_aware_sale_price($sale_price, $product) {
+        if (!is_product() || empty($sale_price)) return $sale_price;
+
+        $slot = self::get_viewed_edition_slot($product->get_id());
+        if ($slot === null) return $sale_price;
+
+        $course_slug = self::get_product_course_slug($product->get_id());
+        if (!$course_slug) return $sale_price;
+
+        $current_eb = PMCM_Core::is_course_early_bird_active($course_slug);
+        $next_eb    = PMCM_Core::is_next_edition_early_bird_active($course_slug);
+
+        if ($slot === 'current' && !$current_eb) return '';
+        if ($slot === 'next'    && !$next_eb)    return '';
+        return $sale_price;
+    }
+
+    /**
+     * When sale price is suppressed for the viewed edition, fix the active price
+     * so the displayed price is the regular price, not the sale price.
+     */
+    public static function edition_aware_price($price, $product) {
+        if (!is_product()) return $price;
+
+        $sale_price    = $product->get_sale_price('edit'); // raw, unfiltered
+        $regular_price = $product->get_regular_price();
+        if (empty($sale_price)) return $price;
+
+        $slot = self::get_viewed_edition_slot($product->get_id());
+        if ($slot === null) return $price;
+
+        $course_slug = self::get_product_course_slug($product->get_id());
+        if (!$course_slug) return $price;
+
+        $current_eb = PMCM_Core::is_course_early_bird_active($course_slug);
+        $next_eb    = PMCM_Core::is_next_edition_early_bird_active($course_slug);
+
+        if ($slot === 'current' && !$current_eb) return $regular_price;
+        if ($slot === 'next'    && !$next_eb)    return $regular_price;
+        return $price;
     }
 }

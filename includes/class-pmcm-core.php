@@ -247,6 +247,31 @@ class PMCM_Core {
     }
 
     /**
+     * Check if a specific course has next edition early bird active
+     */
+    public static function is_next_edition_early_bird_active($course_slug) {
+        $courses = self::get_courses();
+        if (!isset($courses[$course_slug])) return false;
+
+        $course = $courses[$course_slug];
+        $prefix = $course['settings_prefix'];
+
+        if (get_option($prefix . 'next_enabled', 'no') !== 'yes') return false;
+
+        $eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no');
+        $eb_start   = get_option($prefix . 'next_early_bird_start', '');
+        $eb_end     = get_option($prefix . 'next_early_bird_end', '');
+        $today      = current_time('Y-m-d');
+
+        if ($eb_enabled === 'yes' && !empty($eb_end)) {
+            $start_ok = empty($eb_start) || strtotime($today) >= strtotime($eb_start);
+            $end_ok   = strtotime($today) <= strtotime($eb_end);
+            return $start_ok && $end_ok;
+        }
+        return false;
+    }
+
+    /**
      * Get the ASiT course config for a product
      * Returns the parent course's ASiT settings
      * Supports per-course product-level filtering
