@@ -953,6 +953,19 @@ class PMCM_Shortcodes {
                             }, 50);
                         }
                     });
+
+                    // Auto-initialize on page load so product links already have ?edition=
+                    // without waiting for the user to click a toggle button
+                    (function(btn) {
+                        var edition = btn.dataset.pmcmEdition;
+                        if (!edition) return;
+                        setTimeout(function() {
+                            var container = findProductContainer(btn);
+                            if (container) {
+                                updateProductLinks(container, edition);
+                            }
+                        }, 100);
+                    }(button));
                 });
             }
 
