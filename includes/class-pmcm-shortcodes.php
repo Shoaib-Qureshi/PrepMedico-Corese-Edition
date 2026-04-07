@@ -1299,6 +1299,37 @@ class PMCM_Shortcodes {
                         updateProductLinks(container, edition);
                     }
                 });
+
+                // Apply early bird price classes to product containers and edition sections.
+                // window.pmcmEditionEB is output by PHP (PMCM_Frontend::output_dynamic_enrol_css).
+                // Adds .pmcm-eb-active or .pmcm-eb-inactive so CSS can suppress sale price display.
+                if (window.pmcmEditionEB) {
+                    document.querySelectorAll('.pmcm-edition-marker').forEach(function(marker) {
+                        const course = marker.getAttribute('data-course');
+                        const slot   = marker.getAttribute('data-slot');
+                        if (!course || !slot) return;
+
+                        const ebConfig = window.pmcmEditionEB[course];
+                        if (!ebConfig) return;
+
+                        const ebActive = slot === 'current' ? ebConfig.current : ebConfig.next;
+                        const cls      = ebActive ? 'pmcm-eb-active' : 'pmcm-eb-inactive';
+
+                        // Apply to the products container (toggle-container or .products grid)
+                        const container = findProductsContainer(marker);
+                        if (container) {
+                            container.classList.remove('pmcm-eb-active', 'pmcm-eb-inactive');
+                            container.classList.add(cls);
+                        }
+
+                        // Also apply to the .pmcm-edition-section wrapper as a broader fallback
+                        const section = marker.closest('.pmcm-edition-section');
+                        if (section) {
+                            section.classList.remove('pmcm-eb-active', 'pmcm-eb-inactive');
+                            section.classList.add(cls);
+                        }
+                    });
+                }
             }
 
             // Initialize when DOM is ready

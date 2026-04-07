@@ -374,32 +374,21 @@ class PMCM_Frontend {
             echo '</style>';
         }
 
-        // Output edition-aware sale price suppression CSS for Elementor product widgets.
-        // Add class pmcm-products-{slug}-current / pmcm-products-{slug}-next to the
-        // Elementor WooCommerce Products widget for each edition section.
-        // When that slot has no early bird active, WC sale price display is suppressed.
-        $price_css = [];
+        // Output per-course early bird status as a JS variable.
+        // The edition_products_script JS reads this and adds .pmcm-eb-inactive/.pmcm-eb-active
+        // to each products container so CSS can suppress the sale price display.
+        $eb_config = [];
         foreach ($courses as $slug => $course) {
             if (!isset($course['edition_management']) || !$course['edition_management']) {
                 continue;
             }
-
-            $current_eb = PMCM_Core::is_course_early_bird_active($slug);
-            $next_eb    = PMCM_Core::is_next_edition_early_bird_active($slug);
-            $s          = esc_attr($slug);
-
-            if (!$current_eb) {
-                $price_css[] = '.pmcm-products-' . $s . '-current .price del { text-decoration: none !important; color: inherit !important; }';
-                $price_css[] = '.pmcm-products-' . $s . '-current .price ins { display: none !important; }';
-            }
-            if (!$next_eb) {
-                $price_css[] = '.pmcm-products-' . $s . '-next .price del { text-decoration: none !important; color: inherit !important; }';
-                $price_css[] = '.pmcm-products-' . $s . '-next .price ins { display: none !important; }';
-            }
+            $eb_config[$slug] = [
+                'current' => (bool) PMCM_Core::is_course_early_bird_active($slug),
+                'next'    => (bool) PMCM_Core::is_next_edition_early_bird_active($slug),
+            ];
         }
-
-        if (!empty($price_css)) {
-            echo '<style id="pmcm-edition-price-css">' . implode("\n", $price_css) . '</style>';
+        if (!empty($eb_config)) {
+            echo '<script>window.pmcmEditionEB = ' . wp_json_encode($eb_config) . ';</script>';
         }
     }
 

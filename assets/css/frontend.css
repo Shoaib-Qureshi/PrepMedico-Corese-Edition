@@ -191,6 +191,22 @@
     white-space: nowrap;
 }
 
+/* Edition-aware sale price suppression (JS adds .pmcm-eb-inactive when slot has no early bird) */
+.pmcm-eb-inactive .price del,
+.pmcm-eb-inactive .price > del {
+    display: none !important;
+}
+.pmcm-eb-inactive .price ins,
+.pmcm-eb-inactive .price > ins {
+    text-decoration: none !important;
+    font-weight: inherit;
+    font-size: inherit;
+}
+/* Ensure the ins price inside an inactive section looks like a normal price */
+.pmcm-eb-inactive .price ins .woocommerce-Price-amount {
+    color: inherit;
+}
+
 /* Edition Button States */
 .pmcm-edition-btn.pmcm-dates-tba,
 .pmcm-edition-btn.pmcm-closed {
