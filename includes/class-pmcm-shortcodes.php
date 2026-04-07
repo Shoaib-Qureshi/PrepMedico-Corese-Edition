@@ -657,23 +657,41 @@ class PMCM_Shortcodes {
             $enabled = get_option($prefix . 'next_enabled', 'no');
             if ($enabled === 'yes') {
                 $start = get_option($prefix . 'next_start', '');
-                $end = get_option($prefix . 'next_end', '');
+                $end   = get_option($prefix . 'next_end', '');
+                $eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no');
+                $eb_start   = get_option($prefix . 'next_early_bird_start', '');
+                $eb_end     = get_option($prefix . 'next_early_bird_end', '');
             } else {
                 $start = '';
-                $end = '';
+                $end   = '';
+                $eb_enabled = 'no';
+                $eb_start   = '';
+                $eb_end     = '';
             }
-            // If dates not set (either not enabled or dates empty), return dates-tba status
+            // If dates not set, return dates-tba
             if (empty($start) || empty($end)) {
                 return $output === 'class' ? 'pmcm-dates-tba' : 'dates-tba';
             }
         } else {
-            $start = get_option($prefix . 'edition_start', '');
-            $end = get_option($prefix . 'edition_end', '');
+            $start      = get_option($prefix . 'edition_start', '');
+            $end        = get_option($prefix . 'edition_end', '');
+            $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
+            $eb_start   = get_option($prefix . 'early_bird_start', '');
+            $eb_end     = get_option($prefix . 'early_bird_end', '');
         }
 
         // Check status: closed (end date passed)
         if (!empty($end) && $today_timestamp > strtotime($end)) {
             return $output === 'class' ? 'pmcm-closed' : 'closed';
+        }
+
+        // Check early bird
+        if ($eb_enabled === 'yes' && !empty($eb_end)) {
+            $eb_start_ok = empty($eb_start) || $today_timestamp >= strtotime($eb_start);
+            $eb_end_ok   = $today_timestamp < strtotime($eb_end);
+            if ($eb_start_ok && $eb_end_ok) {
+                return $output === 'class' ? 'pmcm-early-bird' : 'early_bird';
+            }
         }
 
         // Check status: upcoming (before start date)
@@ -1184,6 +1202,13 @@ class PMCM_Shortcodes {
              * Find the products container that should be updated
              */
             function findProductsContainer(clickedElement) {
+                // Strategy 0: If inside a pmcm-edition-section, find its .toggle-container
+                const editionSection = clickedElement.closest('.pmcm-edition-section');
+                if (editionSection) {
+                    const container = editionSection.querySelector('.toggle-container');
+                    if (container) return container;
+                }
+
                 // Strategy 1: Look for products class in same parent structure
                 let parent = clickedElement.closest('.e-con, .elementor-widget-container, [data-element_type="container"]');
 
@@ -1214,10 +1239,9 @@ class PMCM_Shortcodes {
                     if (container) return container;
                 }
 
-                // Strategy 3: Find any products container on the page after this element
-                const allContainers = document.querySelectorAll('.<?php echo $products_class; ?>, .products.columns-3, .products.columns-4');
+                // Strategy 3: Find any products container after this element (any column count)
+                const allContainers = document.querySelectorAll('.<?php echo $products_class; ?>, .toggle-container, .products');
                 for (let container of allContainers) {
-                    // Check if this container comes after the clicked element in DOM order
                     if (clickedElement.compareDocumentPosition(container) & Node.DOCUMENT_POSITION_FOLLOWING) {
                         return container;
                     }
@@ -1272,22 +1296,14 @@ class PMCM_Shortcodes {
                     }
                 }, true);
 
-                // Also watch for markers that become visible (for pre-loaded content)
-                const markers = document.querySelectorAll('.pmcm-edition-marker');
-                markers.forEach(function(marker) {
+                // Pre-apply edition to all product containers on load (current and next)
+                document.querySelectorAll('.pmcm-edition-marker').forEach(function(marker) {
                     const edition = marker.getAttribute('data-edition');
-                    const slot = marker.getAttribute('data-slot');
+                    if (!edition) return;
 
-                    // If this is a "current" slot marker and it's the first one visible,
-                    // pre-apply the edition to any visible products
-                    if (slot === 'current' && edition) {
-                        const container = findProductsContainer(marker);
-                        if (container && !containerEditions.has(container)) {
-                            // Check if container is visible
-                            if (container.offsetParent !== null) {
-                                updateProductLinks(container, edition);
-                            }
-                        }
+                    const container = findProductsContainer(marker);
+                    if (container && !containerEditions.has(container)) {
+                        updateProductLinks(container, edition);
                     }
                 });
             }
