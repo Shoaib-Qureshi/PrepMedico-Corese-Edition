@@ -1095,8 +1095,8 @@ class PMCM_Shortcodes {
             $edition = intval(get_option($prefix . 'current_edition', 1));
         }
 
-        // Output hidden marker with edition number
-        return '<span class="pmcm-edition-marker" data-edition="' . esc_attr($edition) . '" data-slot="' . esc_attr($slot) . '" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;"></span>';
+        // Output hidden marker with edition number and course slug (data-course used by price CSS)
+        return '<span class="pmcm-edition-marker" data-edition="' . esc_attr($edition) . '" data-slot="' . esc_attr($slot) . '" data-course="' . esc_attr($course_slug) . '" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;"></span>';
     }
 
     /**

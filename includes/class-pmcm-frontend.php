@@ -44,9 +44,7 @@ class PMCM_Frontend {
      * Enqueue frontend scripts and styles
      */
     public static function enqueue_scripts() {
-        if (is_product() || is_cart() || is_checkout()) {
-            wp_enqueue_style('pmcm-frontend', PMCM_PLUGIN_URL . 'assets/css/frontend.css', [], PMCM_VERSION);
-        }
+        wp_enqueue_style('pmcm-frontend', PMCM_PLUGIN_URL . 'assets/css/frontend.css', [], PMCM_VERSION);
     }
 
     /**
@@ -364,19 +362,45 @@ class PMCM_Frontend {
             }
         }
 
-        if (empty($disabled_courses)) {
-            return;
+        if (!empty($disabled_courses)) {
+            echo '<style id="pmcm-enrol-btn-css">';
+            foreach ($disabled_courses as $slug) {
+                echo '.pmcm-next-' . esc_attr($slug) . ' .enrol_btn_course,';
+                echo '.enrol_btn_course.pmcm-next-' . esc_attr($slug) . ',';
+            }
+            echo '.pmcm-dates-tba .enrol_btn_course,';
+            echo '.enrol_btn_course.pmcm-dates-tba';
+            echo '{ pointer-events: none !important; opacity: 0.5 !important; cursor: not-allowed !important; }';
+            echo '</style>';
         }
 
-        echo '<style id="pmcm-enrol-btn-css">';
-        foreach ($disabled_courses as $slug) {
-            echo '.pmcm-next-' . esc_attr($slug) . ' .enrol_btn_course,';
-            echo '.enrol_btn_course.pmcm-next-' . esc_attr($slug) . ',';
+        // Output edition-aware sale price suppression CSS for Elementor product widgets.
+        // When a .pmcm-edition-section contains a marker for a slot without early bird active,
+        // the WooCommerce sale price (del/ins) is suppressed so only the regular price shows.
+        $price_css = [];
+        foreach ($courses as $slug => $course) {
+            if (!isset($course['edition_management']) || !$course['edition_management']) {
+                continue;
+            }
+
+            $current_eb = PMCM_Core::is_course_early_bird_active($slug);
+            $next_eb    = PMCM_Core::is_next_edition_early_bird_active($slug);
+
+            if (!$current_eb) {
+                $sel = '.pmcm-edition-section:has(.pmcm-edition-marker[data-slot="current"][data-course="' . esc_attr($slug) . '"])';
+                $price_css[] = $sel . ' .price del { text-decoration: none; color: inherit; }';
+                $price_css[] = $sel . ' .price ins { display: none !important; }';
+            }
+            if (!$next_eb) {
+                $sel = '.pmcm-edition-section:has(.pmcm-edition-marker[data-slot="next"][data-course="' . esc_attr($slug) . '"])';
+                $price_css[] = $sel . ' .price del { text-decoration: none; color: inherit; }';
+                $price_css[] = $sel . ' .price ins { display: none !important; }';
+            }
         }
-        echo '.pmcm-dates-tba .enrol_btn_course,';
-        echo '.enrol_btn_course.pmcm-dates-tba';
-        echo '{ pointer-events: none !important; opacity: 0.5 !important; cursor: not-allowed !important; }';
-        echo '</style>';
+
+        if (!empty($price_css)) {
+            echo '<style id="pmcm-edition-price-css">' . implode("\n", $price_css) . '</style>';
+        }
     }
 
     /**
