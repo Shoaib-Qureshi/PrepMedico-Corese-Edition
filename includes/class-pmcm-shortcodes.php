@@ -926,46 +926,58 @@ class PMCM_Shortcodes {
             }
 
             function initEditionLinks() {
-                // Find all buttons with edition data
-                const buttons = document.querySelectorAll('<?php echo $button_selector; ?>');
+                // Primary approach: .pmcm-edition-section wrapper contains
+                // a .pmcm-edition-marker[data-edition] and a .toggle-container.
+                // In Elementor, add class "pmcm-edition-section" to the outer
+                // container wrapping each edition row.
+                document.querySelectorAll('.pmcm-edition-section').forEach(function(section) {
+                    const marker = section.querySelector('.pmcm-edition-marker[data-edition]');
+                    if (!marker) return;
 
+                    const edition = marker.getAttribute('data-edition');
+                    if (!edition) return;
+
+                    const productsContainer = section.querySelector('.toggle-container');
+                    if (!productsContainer) return;
+
+                    // Stamp links immediately on page load
+                    updateProductLinks(productsContainer, edition);
+
+                    // Re-stamp on toggle button click (container may animate open after click)
+                    const toggleBtn = section.querySelector('.toggle-btn');
+                    if (toggleBtn && !toggleBtn.dataset.pmcmInitialized) {
+                        toggleBtn.dataset.pmcmInitialized = 'true';
+                        toggleBtn.addEventListener('click', function() {
+                            setTimeout(function() {
+                                updateProductLinks(productsContainer, edition);
+                            }, 100);
+                        });
+                    }
+                });
+
+                // Legacy approach: [data-pmcm-edition] attribute on toggle buttons
+                const buttons = document.querySelectorAll('<?php echo $button_selector; ?>');
                 buttons.forEach(function(button) {
-                    // Skip if already initialized
                     if (button.dataset.pmcmInitialized === 'true') return;
                     button.dataset.pmcmInitialized = 'true';
 
+                    var legacyEdition = button.dataset.pmcmEdition;
+                    if (!legacyEdition) return;
+
                     button.addEventListener('click', function(e) {
-                        const edition = this.dataset.pmcmEdition;
-                        if (!edition) return;
-
-                        // Find the products container
                         const container = findProductContainer(this);
-                        if (!container) {
-                            console.warn('PMCM: Could not find products container for button', this);
-                            return;
-                        }
-
-                        // Update links if not already updated with this edition
-                        if (updatedContainers.get(container) !== edition) {
-                            // Small delay to allow container to become visible
+                        if (!container) return;
+                        if (updatedContainers.get(container) !== legacyEdition) {
                             setTimeout(function() {
-                                updateProductLinks(container, edition);
+                                updateProductLinks(container, legacyEdition);
                             }, 50);
                         }
                     });
 
-                    // Auto-initialize on page load so product links already have ?edition=
-                    // without waiting for the user to click a toggle button
-                    (function(btn) {
-                        var edition = btn.dataset.pmcmEdition;
-                        if (!edition) return;
-                        setTimeout(function() {
-                            var container = findProductContainer(btn);
-                            if (container) {
-                                updateProductLinks(container, edition);
-                            }
-                        }, 100);
-                    }(button));
+                    setTimeout(function() {
+                        var container = findProductContainer(button);
+                        if (container) updateProductLinks(container, legacyEdition);
+                    }, 100);
                 });
             }
 
