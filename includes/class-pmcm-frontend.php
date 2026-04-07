@@ -374,22 +374,6 @@ class PMCM_Frontend {
             echo '</style>';
         }
 
-        // Output per-course early bird status as a JS variable.
-        // The edition_products_script JS reads this and adds .pmcm-eb-inactive/.pmcm-eb-active
-        // to each products container so CSS can suppress the sale price display.
-        $eb_config = [];
-        foreach ($courses as $slug => $course) {
-            if (!isset($course['edition_management']) || !$course['edition_management']) {
-                continue;
-            }
-            $eb_config[$slug] = [
-                'current' => (bool) PMCM_Core::is_course_early_bird_active($slug),
-                'next'    => (bool) PMCM_Core::is_next_edition_early_bird_active($slug),
-            ];
-        }
-        if (!empty($eb_config)) {
-            echo '<script>window.pmcmEditionEB = ' . wp_json_encode($eb_config) . ';</script>';
-        }
     }
 
     /**

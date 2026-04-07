@@ -482,13 +482,27 @@ class PMCM_Shortcodes {
      * @return string Ordinal edition number
      */
     public static function edition_ordinal($atts) {
+        // Support boolean-style attribute: [pmcm_edition_ordinal course="frcs" early_bird]
+        // WordPress passes valueless attributes as the key name itself in the $atts array.
+        if (is_array($atts)) {
+            foreach ($atts as $k => $v) {
+                if ($v === 'early_bird' || $k === 'early_bird') {
+                    $atts['early_bird'] = '1';
+                    if (is_int($k)) unset($atts[$k]);
+                    break;
+                }
+            }
+        }
+
         $atts = shortcode_atts([
-            'course' => '',
-            'slot' => 'current'
+            'course'     => '',
+            'slot'       => 'current',
+            'early_bird' => '0', // set to '1' to show chip when early bird is active
         ], $atts, 'pmcm_edition_ordinal');
 
-        $course_slug = sanitize_text_field($atts['course']);
-        $slot = sanitize_text_field($atts['slot']);
+        $course_slug  = sanitize_text_field($atts['course']);
+        $slot         = sanitize_text_field($atts['slot']);
+        $show_chip    = ($atts['early_bird'] === '1');
 
         if (empty($course_slug)) {
             return '';
@@ -551,7 +565,7 @@ class PMCM_Shortcodes {
             }
         }
 
-        if ($early_bird_active) {
+        if ($early_bird_active && $show_chip) {
             return $ordinal . ' <span class="pmcm-early-bird-chip">' . __('Early Bird Registration', 'prepmedico-course-management') . '</span>';
         }
 
@@ -1300,36 +1314,23 @@ class PMCM_Shortcodes {
                     }
                 });
 
-                // Apply early bird price classes to product containers and edition sections.
-                // window.pmcmEditionEB is output by PHP (PMCM_Frontend::output_dynamic_enrol_css).
-                // Adds .pmcm-eb-active or .pmcm-eb-inactive so CSS can suppress sale price display.
-                if (window.pmcmEditionEB) {
-                    document.querySelectorAll('.pmcm-edition-marker').forEach(function(marker) {
-                        const course = marker.getAttribute('data-course');
-                        const slot   = marker.getAttribute('data-slot');
-                        if (!course || !slot) return;
+                // Apply early bird price classes based on chip presence.
+                // If [pmcm_edition_ordinal early_bird="1"] rendered a .pmcm-early-bird-chip
+                // inside a .pmcm-edition-section, that section gets .pmcm-eb-active (show sale price).
+                // Sections without the chip get .pmcm-eb-inactive (regular price only).
+                document.querySelectorAll('.pmcm-edition-section').forEach(function(section) {
+                    const hasChip = !!section.querySelector('.pmcm-early-bird-chip');
+                    const cls     = hasChip ? 'pmcm-eb-active' : 'pmcm-eb-inactive';
+                    section.classList.remove('pmcm-eb-active', 'pmcm-eb-inactive');
+                    section.classList.add(cls);
 
-                        const ebConfig = window.pmcmEditionEB[course];
-                        if (!ebConfig) return;
-
-                        const ebActive = slot === 'current' ? ebConfig.current : ebConfig.next;
-                        const cls      = ebActive ? 'pmcm-eb-active' : 'pmcm-eb-inactive';
-
-                        // Apply to the products container (toggle-container or .products grid)
-                        const container = findProductsContainer(marker);
-                        if (container) {
-                            container.classList.remove('pmcm-eb-active', 'pmcm-eb-inactive');
-                            container.classList.add(cls);
-                        }
-
-                        // Also apply to the .pmcm-edition-section wrapper as a broader fallback
-                        const section = marker.closest('.pmcm-edition-section');
-                        if (section) {
-                            section.classList.remove('pmcm-eb-active', 'pmcm-eb-inactive');
-                            section.classList.add(cls);
-                        }
-                    });
-                }
+                    // Also stamp the inner toggle-container / products grid directly
+                    const inner = section.querySelector('.toggle-container, .products');
+                    if (inner) {
+                        inner.classList.remove('pmcm-eb-active', 'pmcm-eb-inactive');
+                        inner.classList.add(cls);
+                    }
+                });
             }
 
             // Initialize when DOM is ready
