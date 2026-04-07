@@ -375,8 +375,9 @@ class PMCM_Frontend {
         }
 
         // Output edition-aware sale price suppression CSS for Elementor product widgets.
-        // When a .pmcm-edition-section contains a marker for a slot without early bird active,
-        // the WooCommerce sale price (del/ins) is suppressed so only the regular price shows.
+        // Add class pmcm-products-{slug}-current / pmcm-products-{slug}-next to the
+        // Elementor WooCommerce Products widget for each edition section.
+        // When that slot has no early bird active, WC sale price display is suppressed.
         $price_css = [];
         foreach ($courses as $slug => $course) {
             if (!isset($course['edition_management']) || !$course['edition_management']) {
@@ -385,16 +386,15 @@ class PMCM_Frontend {
 
             $current_eb = PMCM_Core::is_course_early_bird_active($slug);
             $next_eb    = PMCM_Core::is_next_edition_early_bird_active($slug);
+            $s          = esc_attr($slug);
 
             if (!$current_eb) {
-                $sel = '.pmcm-edition-section:has(.pmcm-edition-marker[data-slot="current"][data-course="' . esc_attr($slug) . '"])';
-                $price_css[] = $sel . ' .price del { text-decoration: none; color: inherit; }';
-                $price_css[] = $sel . ' .price ins { display: none !important; }';
+                $price_css[] = '.pmcm-products-' . $s . '-current .price del { text-decoration: none !important; color: inherit !important; }';
+                $price_css[] = '.pmcm-products-' . $s . '-current .price ins { display: none !important; }';
             }
             if (!$next_eb) {
-                $sel = '.pmcm-edition-section:has(.pmcm-edition-marker[data-slot="next"][data-course="' . esc_attr($slug) . '"])';
-                $price_css[] = $sel . ' .price del { text-decoration: none; color: inherit; }';
-                $price_css[] = $sel . ' .price ins { display: none !important; }';
+                $price_css[] = '.pmcm-products-' . $s . '-next .price del { text-decoration: none !important; color: inherit !important; }';
+                $price_css[] = '.pmcm-products-' . $s . '-next .price ins { display: none !important; }';
             }
         }
 

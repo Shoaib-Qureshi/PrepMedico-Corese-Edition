@@ -524,10 +524,8 @@ class PMCM_Shortcodes {
                     $today = strtotime(current_time('Y-m-d'));
                     $eb_start_ok = empty($eb_start) || $today >= strtotime($eb_start);
                     $eb_end_ok = $today <= strtotime($eb_end);
-                    // Must also be before course start date
-                    $before_course = empty($course_start) || $today < strtotime($course_start);
 
-                    if ($eb_start_ok && $eb_end_ok && $before_course) {
+                    if ($eb_start_ok && $eb_end_ok) {
                         $early_bird_active = true;
                     }
                 }
@@ -538,21 +536,16 @@ class PMCM_Shortcodes {
         } else {
             $edition = intval(get_option($prefix . 'current_edition', 1));
             $ordinal = PMCM_Core::get_ordinal($edition);
-            // Check current edition early bird
-            // Early bird is only valid BEFORE the course starts
             $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
             $eb_start = get_option($prefix . 'early_bird_start', '');
             $eb_end = get_option($prefix . 'early_bird_end', '');
-            $course_start = get_option($prefix . 'edition_start', '');
 
             if ($eb_enabled === 'yes' && !empty($eb_end)) {
                 $today = strtotime(current_time('Y-m-d'));
                 $eb_start_ok = empty($eb_start) || $today >= strtotime($eb_start);
                 $eb_end_ok = $today <= strtotime($eb_end);
-                // Must also be before course start date
-                $before_course = empty($course_start) || $today < strtotime($course_start);
 
-                if ($eb_start_ok && $eb_end_ok && $before_course) {
+                if ($eb_start_ok && $eb_end_ok) {
                     $early_bird_active = true;
                 }
             }
