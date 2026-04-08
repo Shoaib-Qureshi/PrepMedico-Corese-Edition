@@ -20,8 +20,11 @@ class PMCM_ASiT {
         add_action('woocommerce_checkout_process', [__CLASS__, 'validate_membership_field']);
         add_action('woocommerce_checkout_update_order_review', [__CLASS__, 'apply_coupon_on_checkout']);
         add_action('woocommerce_checkout_create_order', [__CLASS__, 'save_membership_to_order'], 10, 2);
-        add_filter('woocommerce_coupon_is_valid', [__CLASS__, 'asit_coupon_is_valid'], 10, 2);
-        add_filter('woocommerce_coupon_get_discount_amount', [__CLASS__, 'dynamic_coupon_discount'], 10, 5);
+        // Override ALL three WooCommerce coupon validation touchpoints
+        add_filter('woocommerce_coupon_is_valid',              [__CLASS__, 'asit_coupon_is_valid'],              10, 2);
+        add_filter('woocommerce_coupon_is_valid_for_product',  [__CLASS__, 'asit_coupon_is_valid_for_product'],  10, 4);
+        add_filter('woocommerce_coupon_is_valid_for_cart',     [__CLASS__, 'asit_coupon_is_valid_for_cart'],     10, 2);
+        add_filter('woocommerce_coupon_get_discount_amount',   [__CLASS__, 'dynamic_coupon_discount'],           10, 5);
         add_action('wp_footer', [__CLASS__, 'checkout_scripts']);
         add_action('wp_head', [__CLASS__, 'checkout_styles']);
     }
@@ -119,7 +122,6 @@ class PMCM_ASiT {
     private static function get_edition_slot_for_cart_item($cart_item_key) {
         if (WC()->session) {
             $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
-            error_log("PMCM ASiT Debug: cart_item_key={$cart_item_key}, edition_data=" . json_encode($edition_data));
             if ($edition_data && isset($edition_data['edition_slot'])) {
                 return $edition_data['edition_slot'];
             }
@@ -284,14 +286,40 @@ class PMCM_ASiT {
     }
 
     /**
-     * Bypass WooCommerce's coupon validation entirely for the ASIT coupon.
-     * WooCommerce rejects the coupon with "not applicable to selected products"
-     * before our discount filter runs. We short-circuit that here and let
-     * dynamic_coupon_discount() return 0 for ineligible products instead.
+     * Check if $coupon is the ASIT coupon
      */
+    private static function is_asit_coupon($coupon) {
+        $code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
+        return strtolower($coupon->get_code()) === $code;
+    }
+
+    /**
+     * WooCommerce validates coupons at three points. We must override all three
+     * for the ASIT coupon, otherwise WC rejects it with "not applicable to selected
+     * products" before our dynamic_coupon_discount() filter ever runs.
+     * dynamic_coupon_discount() returns 0 for non-eligible products, so products
+     * that shouldn't get a discount simply get £0 off — correct behaviour.
+     */
+
+    // 1. Top-level validity (called by WC_Cart::apply_coupon)
     public static function asit_coupon_is_valid($valid, $coupon) {
-        $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
-        if (strtolower($coupon->get_code()) === $asit_coupon_code) {
+        if (self::is_asit_coupon($coupon)) {
+            return true;
+        }
+        return $valid;
+    }
+
+    // 2. Per-product validity (called inside WC_Discounts when calculating amounts)
+    public static function asit_coupon_is_valid_for_product($valid, $product, $coupon, $cart_item) {
+        if (self::is_asit_coupon($coupon)) {
+            return true;
+        }
+        return $valid;
+    }
+
+    // 3. Cart-level validity (called in some WC versions before applying discounts)
+    public static function asit_coupon_is_valid_for_cart($valid, $coupon) {
+        if (self::is_asit_coupon($coupon)) {
             return true;
         }
         return $valid;

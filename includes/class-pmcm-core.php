@@ -211,8 +211,6 @@ class PMCM_Core {
             $next_eb = self::is_next_edition_early_bird_active($course_slug);
             $current_eb = self::is_course_early_bird_active($course_slug);
 
-            error_log("PMCM ASiT Debug [{$course_slug}]: scope={$scope}, edition_slot={$edition_slot}, next_eb=" . ($next_eb ? 'true' : 'false') . ", current_eb=" . ($current_eb ? 'true' : 'false'));
-
             if ($scope === 'current') {
                 $is_early_bird = ($edition_slot === 'current') && $current_eb;
             } elseif ($scope === 'next') {
