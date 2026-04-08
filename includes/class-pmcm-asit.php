@@ -98,9 +98,10 @@ class PMCM_ASiT {
             return false;
         }
 
-        foreach (WC()->cart->get_cart() as $cart_item) {
+        foreach (WC()->cart->get_cart() as $key => $cart_item) {
             $product_id = $cart_item['product_id'];
-            $config = PMCM_Core::get_asit_config_for_product($product_id);
+            $edition_slot = self::get_edition_slot_for_cart_item($key);
+            $config = PMCM_Core::get_asit_config_for_product($product_id, $edition_slot);
 
             // Has discount if eligible and discount > 0
             if ($config['is_eligible'] && $config['discount'] > 0) {
@@ -109,6 +110,19 @@ class PMCM_ASiT {
         }
 
         return false;
+    }
+
+    /**
+     * Get the edition slot for a cart item from WC session
+     */
+    private static function get_edition_slot_for_cart_item($cart_item_key) {
+        if (WC()->session) {
+            $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
+            if ($edition_data && isset($edition_data['edition_slot'])) {
+                return $edition_data['edition_slot'];
+            }
+        }
+        return 'current';
     }
 
     /**
@@ -122,9 +136,10 @@ class PMCM_ASiT {
         $messages = [];
         $checked_courses = [];
 
-        foreach (WC()->cart->get_cart() as $cart_item) {
+        foreach (WC()->cart->get_cart() as $key => $cart_item) {
             $product_id = $cart_item['product_id'];
-            $config = PMCM_Core::get_asit_config_for_product($product_id);
+            $edition_slot = self::get_edition_slot_for_cart_item($key);
+            $config = PMCM_Core::get_asit_config_for_product($product_id, $edition_slot);
 
             if (!$config['show_field']) {
                 continue;
@@ -290,12 +305,15 @@ class PMCM_ASiT {
         }
 
         // Get edition slot for this cart item from session
+        // The coupon discount filter doesn't include the cart item key, so match via cart contents
         $edition_slot = 'current';
-        $cart_item_key = isset($cart_item['key']) ? $cart_item['key'] : '';
-        if ($cart_item_key && WC()->session) {
-            $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
-            if ($edition_data && isset($edition_data['edition_slot'])) {
-                $edition_slot = $edition_data['edition_slot'];
+        if (WC()->cart) {
+            $variation_id = isset($cart_item['variation_id']) ? $cart_item['variation_id'] : 0;
+            foreach (WC()->cart->get_cart() as $key => $item) {
+                if ($item['product_id'] === $product_id && $item['variation_id'] === $variation_id) {
+                    $edition_slot = self::get_edition_slot_for_cart_item($key);
+                    break;
+                }
             }
         }
 
