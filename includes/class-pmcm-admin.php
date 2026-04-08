@@ -981,6 +981,9 @@ class PMCM_Admin
                             $is_eb_active = PMCM_Core::is_course_early_bird_active($slug);
                             $edition_scope = isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : 'current';
                             $is_next_eb_active = PMCM_Core::is_next_edition_early_bird_active($slug);
+                            $prefix = isset($course['settings_prefix']) ? $course['settings_prefix'] : '';
+                            $current_eb_end = $prefix ? get_option($prefix . 'early_bird_end', '') : '';
+                            $next_eb_end    = $prefix ? get_option($prefix . 'next_early_bird_end', '') : '';
 
                             // Determine status badge
                             $status_class = 'inactive';
@@ -1160,12 +1163,12 @@ class PMCM_Admin
                                             <?php if ($is_next_eb_active): ?>
                                                 <span class="wcem-asit-footer-status active">
                                                     <span class="material-icons-round">check_circle</span>
-                                                    <?php _e('Next EB Active', 'prepmedico-course-management'); ?>
+                                                    <?php echo !empty($next_eb_end) ? sprintf(__('Next EB: Ends %s', 'prepmedico-course-management'), date_i18n('M j', strtotime($next_eb_end))) : __('Next EB Active', 'prepmedico-course-management'); ?>
                                                 </span>
                                             <?php else: ?>
                                                 <span class="wcem-asit-footer-status expired">
                                                     <span class="material-icons-round">schedule</span>
-                                                    <?php _e('Next EB Inactive', 'prepmedico-course-management'); ?>
+                                                    <?php echo !empty($next_eb_end) ? sprintf(__('Next EB: Ended %s', 'prepmedico-course-management'), date_i18n('M j', strtotime($next_eb_end))) : __('Next EB Not Set', 'prepmedico-course-management'); ?>
                                                 </span>
                                             <?php endif; ?>
                                         <?php endif; ?>
@@ -1173,12 +1176,12 @@ class PMCM_Admin
                                             <?php if ($is_eb_active): ?>
                                                 <span class="wcem-asit-footer-status active">
                                                     <span class="material-icons-round">check_circle</span>
-                                                    <?php _e('Early Bird Active', 'prepmedico-course-management'); ?>
+                                                    <?php echo !empty($current_eb_end) ? sprintf(__('Current EB: Ends %s', 'prepmedico-course-management'), date_i18n('M j', strtotime($current_eb_end))) : __('Early Bird Active', 'prepmedico-course-management'); ?>
                                                 </span>
                                             <?php else: ?>
                                                 <span class="wcem-asit-footer-status expired">
                                                     <span class="material-icons-round">schedule</span>
-                                                    <?php _e('Early Bird Inactive', 'prepmedico-course-management'); ?>
+                                                    <?php echo !empty($current_eb_end) ? sprintf(__('Current EB: Ended %s', 'prepmedico-course-management'), date_i18n('M j', strtotime($current_eb_end))) : __('Current EB Not Set', 'prepmedico-course-management'); ?>
                                                 </span>
                                             <?php endif; ?>
                                         <?php endif; ?>

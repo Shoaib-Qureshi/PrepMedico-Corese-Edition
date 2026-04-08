@@ -20,7 +20,7 @@ class PMCM_ASiT {
         add_action('woocommerce_checkout_process', [__CLASS__, 'validate_membership_field']);
         add_action('woocommerce_checkout_update_order_review', [__CLASS__, 'apply_coupon_on_checkout']);
         add_action('woocommerce_checkout_create_order', [__CLASS__, 'save_membership_to_order'], 10, 2);
-        add_filter('woocommerce_coupon_is_valid_for_product', [__CLASS__, 'asit_coupon_valid_for_product'], 10, 4);
+        add_filter('woocommerce_coupon_is_valid', [__CLASS__, 'asit_coupon_is_valid'], 10, 2);
         add_filter('woocommerce_coupon_get_discount_amount', [__CLASS__, 'dynamic_coupon_discount'], 10, 5);
         add_action('wp_footer', [__CLASS__, 'checkout_scripts']);
         add_action('wp_head', [__CLASS__, 'checkout_styles']);
@@ -284,42 +284,16 @@ class PMCM_ASiT {
     }
 
     /**
-     * Tell WooCommerce the ASIT coupon is valid for products in ASIT-eligible courses.
-     * Without this WooCommerce rejects the coupon before our discount filter runs.
+     * Bypass WooCommerce's coupon validation entirely for the ASIT coupon.
+     * WooCommerce rejects the coupon with "not applicable to selected products"
+     * before our discount filter runs. We short-circuit that here and let
+     * dynamic_coupon_discount() return 0 for ineligible products instead.
      */
-    public static function asit_coupon_valid_for_product($valid, $product, $coupon, $cart_item) {
+    public static function asit_coupon_is_valid($valid, $coupon) {
         $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
-        if (strtolower($coupon->get_code()) !== $asit_coupon_code) {
-            return $valid;
+        if (strtolower($coupon->get_code()) === $asit_coupon_code) {
+            return true;
         }
-
-        // Use the parent product ID from the cart item — $product->get_id() returns the
-        // variation ID for variable products, which has no product_cat terms assigned.
-        $product_id = isset($cart_item['product_id']) ? intval($cart_item['product_id']) : $product->get_id();
-
-        // Check if this product belongs to any ASIT-configured course (mode != 'none').
-        // We bypass product-level filtering here — that only affects the discount AMOUNT,
-        // not whether the coupon is applicable. dynamic_coupon_discount handles that.
-        $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
-        $child_map  = PMCM_Core::get_child_to_parent_map();
-        $courses    = PMCM_Core::get_courses();
-
-        foreach ($categories as $cat_slug) {
-            $course_slug = null;
-            if (isset($courses[$cat_slug])) {
-                $course_slug = $cat_slug;
-            } elseif (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
-                $course_slug = $child_map[$cat_slug];
-            }
-
-            if ($course_slug) {
-                $mode = isset($courses[$course_slug]['asit_discount_mode']) ? $courses[$course_slug]['asit_discount_mode'] : 'none';
-                if ($mode !== 'none') {
-                    return true;
-                }
-            }
-        }
-
         return $valid;
     }
 
