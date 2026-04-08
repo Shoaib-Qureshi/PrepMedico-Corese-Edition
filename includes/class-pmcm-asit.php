@@ -20,6 +20,7 @@ class PMCM_ASiT {
         add_action('woocommerce_checkout_process', [__CLASS__, 'validate_membership_field']);
         add_action('woocommerce_checkout_update_order_review', [__CLASS__, 'apply_coupon_on_checkout']);
         add_action('woocommerce_checkout_create_order', [__CLASS__, 'save_membership_to_order'], 10, 2);
+        add_filter('woocommerce_coupon_is_valid_for_product', [__CLASS__, 'asit_coupon_valid_for_product'], 10, 4);
         add_filter('woocommerce_coupon_get_discount_amount', [__CLASS__, 'dynamic_coupon_discount'], 10, 5);
         add_action('wp_footer', [__CLASS__, 'checkout_scripts']);
         add_action('wp_head', [__CLASS__, 'checkout_styles']);
@@ -280,6 +281,28 @@ class PMCM_ASiT {
                 $order->update_meta_data('_asit_membership_number', $asit_number);
             }
         }
+    }
+
+    /**
+     * Tell WooCommerce the ASIT coupon is valid for products in ASIT-eligible courses.
+     * Without this WooCommerce rejects the coupon before our discount filter runs.
+     */
+    public static function asit_coupon_valid_for_product($valid, $product, $coupon, $cart_item) {
+        $asit_coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
+        if (strtolower($coupon->get_code()) !== $asit_coupon_code) {
+            return $valid;
+        }
+
+        $product_id = $product->get_id();
+        $config = PMCM_Core::get_asit_config_for_product($product_id);
+
+        // If this product's course has the ASIT field enabled, mark as valid.
+        // The actual discount amount (0 or EB%) is handled in dynamic_coupon_discount.
+        if ($config['show_field']) {
+            return true;
+        }
+
+        return $valid;
     }
 
     /**
