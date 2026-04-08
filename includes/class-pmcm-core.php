@@ -70,6 +70,7 @@ class PMCM_Core {
             'edition_management' => true,
             'asit_eligible' => true,
             'asit_discount_mode' => 'early_bird_only',
+            'asit_edition_scope' => 'both',
             'asit_early_bird_discount' => 5,
             'asit_normal_discount' => 0,
             'asit_show_field' => true,
@@ -84,6 +85,7 @@ class PMCM_Core {
             'edition_management' => true,
             'asit_eligible' => true,
             'asit_discount_mode' => 'early_bird_only',
+            'asit_edition_scope' => 'both',
             'asit_early_bird_discount' => 5,
             'asit_normal_discount' => 0,
             'asit_show_field' => true,
@@ -207,7 +209,10 @@ class PMCM_Core {
         }
 
         if ($mode === 'early_bird_only') {
-            $scope = isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : 'current';
+            $scope = self::normalize_asit_edition_scope(
+                isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : '',
+                $mode
+            );
             $next_eb = self::is_next_edition_early_bird_active($course_slug);
             $current_eb = self::is_course_early_bird_active($course_slug);
 
@@ -227,6 +232,18 @@ class PMCM_Core {
         }
 
         return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => $mode];
+    }
+
+    /**
+     * Normalize the ASiT edition scope.
+     * Legacy installs had no scope field, so early bird discounts should apply to both slots by default.
+     */
+    public static function normalize_asit_edition_scope($scope, $mode = self::ASIT_MODE_NONE) {
+        if ($mode !== self::ASIT_MODE_EARLY_BIRD_ONLY) {
+            return 'both';
+        }
+
+        return in_array($scope, ['current', 'next', 'both'], true) ? $scope : 'both';
     }
 
     /**
@@ -610,6 +627,10 @@ class PMCM_Core {
         if (!isset($course_data['asit_show_field'])) {
             $course_data['asit_show_field'] = false;
         }
+        $course_data['asit_edition_scope'] = self::normalize_asit_edition_scope(
+            isset($course_data['asit_edition_scope']) ? $course_data['asit_edition_scope'] : '',
+            $course_data['asit_discount_mode']
+        );
 
         // Set asit_eligible based on mode for backward compatibility
         $course_data['asit_eligible'] = ($course_data['asit_discount_mode'] !== 'none');
@@ -698,6 +719,16 @@ class PMCM_Core {
                     $course['asit_normal_discount'] = 0;
                     $course['asit_show_field'] = false;
                 }
+                $updated = true;
+            }
+
+            $normalized_scope = self::normalize_asit_edition_scope(
+                isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : '',
+                isset($course['asit_discount_mode']) ? $course['asit_discount_mode'] : self::ASIT_MODE_NONE
+            );
+
+            if (!isset($course['asit_edition_scope']) || $course['asit_edition_scope'] !== $normalized_scope) {
+                $course['asit_edition_scope'] = $normalized_scope;
                 $updated = true;
             }
         }

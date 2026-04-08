@@ -331,7 +331,7 @@ class PMCM_Admin
                 $product_filter = isset($config['product_filter']) && $config['product_filter'] == '1';
                 $include_children = true; // Always include children as per UI change
                 $selected_products = isset($config['selected_products']) ? array_map('absint', (array) $config['selected_products']) : [];
-                $edition_scope = isset($config['edition_scope']) ? sanitize_text_field($config['edition_scope']) : 'current';
+                $edition_scope = isset($config['edition_scope']) ? sanitize_text_field($config['edition_scope']) : '';
 
                 // Validate mode
                 if (!in_array($mode, ['none', 'early_bird_only', 'always'])) {
@@ -339,9 +339,7 @@ class PMCM_Admin
                 }
 
                 // Validate edition scope
-                if (!in_array($edition_scope, ['current', 'next', 'both'])) {
-                    $edition_scope = 'current';
-                }
+                $edition_scope = PMCM_Core::normalize_asit_edition_scope($edition_scope, $mode);
 
                 // Update course configuration
                 $courses[$course_slug]['asit_discount_mode'] = $mode;
@@ -979,7 +977,10 @@ class PMCM_Admin
                             $product_filter = isset($course['asit_product_filter']) ? (bool) $course['asit_product_filter'] : false;
                             $selected_products = isset($course['asit_selected_products']) ? (array) $course['asit_selected_products'] : [];
                             $is_eb_active = PMCM_Core::is_course_early_bird_active($slug);
-                            $edition_scope = isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : 'current';
+                            $edition_scope = PMCM_Core::normalize_asit_edition_scope(
+                                isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : '',
+                                $mode
+                            );
                             $is_next_eb_active = PMCM_Core::is_next_edition_early_bird_active($slug);
                             $prefix = isset($course['settings_prefix']) ? $course['settings_prefix'] : '';
                             $current_eb_end = $prefix ? get_option($prefix . 'early_bird_end', '') : '';

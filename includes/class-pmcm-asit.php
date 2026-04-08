@@ -61,9 +61,10 @@ class PMCM_ASiT {
 
         // Get the max discount from cart products
         $max_discount = 0;
-        foreach (WC()->cart->get_cart() as $cart_item) {
+        foreach (WC()->cart->get_cart() as $key => $cart_item) {
             $product_id = $cart_item['product_id'];
-            $config = PMCM_Core::get_asit_config_for_product($product_id);
+            $edition_slot = self::get_edition_slot_for_cart_item($key);
+            $config = PMCM_Core::get_asit_config_for_product($product_id, $edition_slot);
             if ($config['discount'] > $max_discount) {
                 $max_discount = $config['discount'];
             }
@@ -81,9 +82,10 @@ class PMCM_ASiT {
             return false;
         }
 
-        foreach (WC()->cart->get_cart() as $cart_item) {
+        foreach (WC()->cart->get_cart() as $key => $cart_item) {
             $product_id = $cart_item['product_id'];
-            $config = PMCM_Core::get_asit_config_for_product($product_id);
+            $edition_slot = self::get_edition_slot_for_cart_item($key);
+            $config = PMCM_Core::get_asit_config_for_product($product_id, $edition_slot);
 
             // Show field if configured to show
             if ($config['show_field']) {
@@ -261,10 +263,15 @@ class PMCM_ASiT {
         $coupon_code = strtolower(get_option('pmcm_asit_coupon_code', 'ASIT'));
 
         if (!empty($asit_number) && preg_match('/^[0-9]{6,8}$/', $asit_number)) {
-            if (!WC()->cart->has_discount($coupon_code)) {
-                WC()->cart->apply_coupon($coupon_code);
-            }
             WC()->session->set('asit_membership_number', $asit_number);
+
+            if (self::cart_has_discount_eligible_products()) {
+                if (!WC()->cart->has_discount($coupon_code)) {
+                    WC()->cart->apply_coupon($coupon_code);
+                }
+            } elseif (WC()->cart->has_discount($coupon_code)) {
+                WC()->cart->remove_coupon($coupon_code);
+            }
         } else {
             if (WC()->cart->has_discount($coupon_code)) {
                 WC()->cart->remove_coupon($coupon_code);
