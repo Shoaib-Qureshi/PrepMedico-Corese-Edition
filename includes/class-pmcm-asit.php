@@ -293,13 +293,31 @@ class PMCM_ASiT {
             return $valid;
         }
 
-        $product_id = $product->get_id();
-        $config = PMCM_Core::get_asit_config_for_product($product_id);
+        // Use the parent product ID from the cart item — $product->get_id() returns the
+        // variation ID for variable products, which has no product_cat terms assigned.
+        $product_id = isset($cart_item['product_id']) ? intval($cart_item['product_id']) : $product->get_id();
 
-        // If this product's course has the ASIT field enabled, mark as valid.
-        // The actual discount amount (0 or EB%) is handled in dynamic_coupon_discount.
-        if ($config['show_field']) {
-            return true;
+        // Check if this product belongs to any ASIT-configured course (mode != 'none').
+        // We bypass product-level filtering here — that only affects the discount AMOUNT,
+        // not whether the coupon is applicable. dynamic_coupon_discount handles that.
+        $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        $child_map  = PMCM_Core::get_child_to_parent_map();
+        $courses    = PMCM_Core::get_courses();
+
+        foreach ($categories as $cat_slug) {
+            $course_slug = null;
+            if (isset($courses[$cat_slug])) {
+                $course_slug = $cat_slug;
+            } elseif (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
+                $course_slug = $child_map[$cat_slug];
+            }
+
+            if ($course_slug) {
+                $mode = isset($courses[$course_slug]['asit_discount_mode']) ? $courses[$course_slug]['asit_discount_mode'] : 'none';
+                if ($mode !== 'none') {
+                    return true;
+                }
+            }
         }
 
         return $valid;
