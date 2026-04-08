@@ -30,6 +30,7 @@ class PMCM_ASiT {
         add_filter('woocommerce_coupon_get_excluded_product_ids', [__CLASS__, 'bypass_coupon_excluded_product_ids'], 10, 2);
         add_filter('woocommerce_coupon_get_excluded_product_categories', [__CLASS__, 'bypass_coupon_excluded_product_categories'], 10, 2);
         add_filter('woocommerce_coupon_get_exclude_sale_items', [__CLASS__, 'bypass_coupon_exclude_sale_items'], 10, 2);
+        add_filter('woocommerce_coupon_error', [__CLASS__, 'maybe_suppress_empty_coupon_notice'], 10, 3);
         add_action('wp_footer', [__CLASS__, 'checkout_scripts']);
         add_action('wp_head', [__CLASS__, 'checkout_styles']);
     }
@@ -223,7 +224,7 @@ class PMCM_ASiT {
         ), $checkout->get_value('asit_membership_number'));
 
         echo '<p class="form-row form-row-last asit-button-wrapper">
-                <button type="button" id="apply_asit_membership" class="button asit-apply-button">Apply</button>
+                <button type="button" id="apply_asit_membership" class="asit-apply-button">Apply</button>
               </p>';
         echo '</div>';
 
@@ -375,6 +376,37 @@ class PMCM_ASiT {
     }
 
     /**
+     * Suppress the generic empty coupon notice when it is noise from the ASiT flow.
+     */
+    public static function maybe_suppress_empty_coupon_notice($error_message, $error_code, $coupon) {
+        if ((int) $error_code !== WC_Coupon::E_WC_COUPON_PLEASE_ENTER) {
+            return $error_message;
+        }
+
+        if (!function_exists('is_checkout') || !is_checkout()) {
+            return $error_message;
+        }
+
+        $asit_number = '';
+
+        if (isset($_POST['post_data'])) {
+            $posted_data = [];
+            parse_str(wp_unslash($_POST['post_data']), $posted_data);
+            $asit_number = isset($posted_data['asit_membership_number']) ? sanitize_text_field($posted_data['asit_membership_number']) : '';
+        } elseif (isset($_POST['asit_membership_number'])) {
+            $asit_number = sanitize_text_field(wp_unslash($_POST['asit_membership_number']));
+        } elseif (WC()->session) {
+            $asit_number = (string) WC()->session->get('asit_membership_number', '');
+        }
+
+        if (!empty($asit_number)) {
+            return '';
+        }
+
+        return $error_message;
+    }
+
+    /**
      * Dynamically adjust ASiT coupon discount based on per-product settings
      * Each product gets its own discount percentage based on course configuration
      */
@@ -464,6 +496,7 @@ class PMCM_ASiT {
         jQuery(document).ready(function($) {
             var $asitInput = $('#asit_membership_number');
             var $applyButton = $('#apply_asit_membership');
+            var isApplyingAsit = false;
 
             if ($asitInput.length === 0) return;
 
@@ -484,9 +517,43 @@ class PMCM_ASiT {
                 validateAsitInput();
             });
 
+            $asitInput.on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (validateAsitInput()) {
+                        $applyButton.trigger('click');
+                    }
+                }
+            });
+
+            $(document).on('click', 'form.checkout_coupon button[name="apply_coupon"]', function(e) {
+                var $couponInput = $(this).closest('form.checkout_coupon').find('input[name="coupon_code"]');
+                if ($couponInput.length && $.trim($couponInput.val()) === '') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
+
+            $(document).on('submit', 'form.checkout_coupon', function(e) {
+                var $couponInput = $(this).find('input[name="coupon_code"]');
+                if ($couponInput.length && $.trim($couponInput.val()) === '') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
+
             $applyButton.on('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                if (isApplyingAsit) {
+                    return false;
+                }
                 if (validateAsitInput()) {
+                    isApplyingAsit = true;
                     $applyButton.text('Applying...').prop('disabled', true);
                     $('body').trigger('update_checkout');
                     setTimeout(function() {
@@ -494,15 +561,21 @@ class PMCM_ASiT {
                         setTimeout(function() {
                             $applyButton.text('Apply');
                             validateAsitInput();
+                            isApplyingAsit = false;
                         }, 2000);
                     }, 1000);
                 }
+                return false;
             });
 
             $asitInput.on('input', function() {
                 if ($(this).val().length === 0) {
                     $('body').trigger('update_checkout');
                 }
+            });
+
+            $(document.body).on('updated_checkout', function() {
+                isApplyingAsit = false;
             });
         });
         </script>
