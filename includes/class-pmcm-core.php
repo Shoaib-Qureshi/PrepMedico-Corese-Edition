@@ -426,6 +426,50 @@ class PMCM_Core {
     }
 
     /**
+     * Resolve the requested edition number from POST, GET, or referrer.
+     * This keeps edition context stable even when themes rebuild the add-to-cart form.
+     */
+    public static function get_requested_edition_number() {
+        $candidates = [];
+
+        if (isset($_POST['pmcm_edition_number'])) {
+            $candidates[] = wp_unslash($_POST['pmcm_edition_number']);
+        }
+
+        if (isset($_REQUEST['edition'])) {
+            $candidates[] = wp_unslash($_REQUEST['edition']);
+        }
+
+        foreach ($candidates as $candidate) {
+            $edition = absint($candidate);
+            if ($edition > 0) {
+                return $edition;
+            }
+        }
+
+        $referer = function_exists('wp_get_raw_referer') ? wp_get_raw_referer() : '';
+        if (empty($referer) && function_exists('wp_get_referer')) {
+            $referer = wp_get_referer();
+        }
+
+        if (!empty($referer)) {
+            $query = wp_parse_url($referer, PHP_URL_QUERY);
+            if (!empty($query)) {
+                $params = [];
+                parse_str($query, $params);
+                if (!empty($params['edition'])) {
+                    $edition = absint($params['edition']);
+                    if ($edition > 0) {
+                        return $edition;
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    /**
      * Get course config for a category (works for both parent and child categories)
      */
     public static function get_course_for_category($category_slug) {

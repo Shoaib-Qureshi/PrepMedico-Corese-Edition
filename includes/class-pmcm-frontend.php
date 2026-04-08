@@ -34,6 +34,8 @@ class PMCM_Frontend {
 
         // Dynamic CSS for disabling enrol buttons when dates unavailable
         add_action('wp_head', [__CLASS__, 'output_dynamic_enrol_css']);
+        add_filter('woocommerce_add_to_cart_form_action', [__CLASS__, 'preserve_edition_in_form_action']);
+        add_action('wp_footer', [__CLASS__, 'product_form_scripts']);
 
         // Edition-aware early bird price display on product pages
         add_filter('woocommerce_product_get_sale_price', [__CLASS__, 'edition_aware_sale_price'], 20, 2);
@@ -98,7 +100,7 @@ class PMCM_Frontend {
                 $prefix = $course['settings_prefix'];
 
                 // Check if edition is passed via URL parameter
-                $url_edition = isset($_GET['edition']) ? intval($_GET['edition']) : 0;
+                $url_edition = PMCM_Core::get_requested_edition_number();
 
                 if ($url_edition > 0) {
                     // Edition specified in URL - determine which slot it belongs to
@@ -107,8 +109,6 @@ class PMCM_Frontend {
                     $next_edition = intval(get_option($prefix . 'next_edition', 0));
 
                     $selected_slot = 'current';
-                    $selected_edition_number = $url_edition;
-
                     // Check if URL edition matches next slot
                     if ($next_enabled === 'yes' && $next_edition === $url_edition) {
                         $selected_slot = 'next';
@@ -242,7 +242,7 @@ class PMCM_Frontend {
                     $prefix = $course['settings_prefix'];
 
                     // Check for URL parameter first (when customer selected edition from table)
-                    $url_edition = isset($_GET['edition']) ? intval($_GET['edition']) : 0;
+                    $url_edition = PMCM_Core::get_requested_edition_number();
 
                     if ($url_edition > 0) {
                         $edition = $url_edition;
@@ -391,7 +391,7 @@ class PMCM_Frontend {
         if (!$course_data) return null;
 
         $prefix      = $course_data['course']['settings_prefix'];
-        $url_edition = isset($_GET['edition']) ? intval($_GET['edition']) : 0;
+        $url_edition = PMCM_Core::get_requested_edition_number();
 
         if ($url_edition > 0) {
             $next_enabled = get_option($prefix . 'next_enabled', 'no');
@@ -399,6 +399,25 @@ class PMCM_Frontend {
             return ($next_enabled === 'yes' && $next_edition === $url_edition) ? 'next' : 'current';
         }
         return 'current';
+    }
+
+    /**
+     * Preserve the selected edition in the add-to-cart form action URL.
+     */
+    public static function preserve_edition_in_form_action($action) {
+        if (!is_product()) {
+            return $action;
+        }
+
+        $edition = PMCM_Core::get_requested_edition_number();
+        if ($edition <= 0) {
+            return $action;
+        }
+
+        $base_action = !empty($action) ? $action : get_permalink();
+        $base_action = remove_query_arg('edition', $base_action);
+
+        return add_query_arg('edition', $edition, $base_action);
     }
 
     /**
@@ -411,6 +430,86 @@ class PMCM_Frontend {
             if ($course_data) return $course_data['parent_slug'];
         }
         return null;
+    }
+
+    /**
+     * Re-stamp the single product add-to-cart form with the selected edition.
+     */
+    public static function product_form_scripts() {
+        if (!is_product()) {
+            return;
+        }
+
+        global $product;
+        if (!$product) {
+            return;
+        }
+
+        $edition = PMCM_Core::get_requested_edition_number();
+        if ($edition <= 0) {
+            return;
+        }
+
+        $slot = self::get_viewed_edition_slot($product->get_id());
+        $course_slug = self::get_product_course_slug($product->get_id());
+
+        if (!$course_slug) {
+            return;
+        }
+        ?>
+        <script type="text/javascript">
+        (function() {
+            var edition = <?php echo (int) $edition; ?>;
+            var slot = <?php echo wp_json_encode($slot ?: 'current'); ?>;
+            var courseSlug = <?php echo wp_json_encode($course_slug); ?>;
+
+            function upsertHidden(form, name, value) {
+                var input = form.querySelector('input[name="' + name + '"]');
+                if (!input) {
+                    input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    form.appendChild(input);
+                }
+                input.value = value;
+            }
+
+            function stampForm(form) {
+                if (!form) return;
+
+                var action = form.getAttribute('action') || window.location.href;
+
+                try {
+                    var url = new URL(action, window.location.origin);
+                    url.searchParams.set('edition', edition);
+                    form.setAttribute('action', url.toString());
+                } catch (e) {
+                    // Leave action unchanged if the URL cannot be parsed.
+                }
+
+                upsertHidden(form, 'pmcm_selected_edition', slot);
+                upsertHidden(form, 'pmcm_selected_course', courseSlug);
+                upsertHidden(form, 'pmcm_edition_number', edition);
+            }
+
+            function stampAllForms() {
+                document.querySelectorAll('form.cart').forEach(stampForm);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', stampAllForms);
+            } else {
+                stampAllForms();
+            }
+
+            document.addEventListener('submit', function(e) {
+                if (e.target && e.target.matches('form.cart')) {
+                    stampForm(e.target);
+                }
+            }, true);
+        })();
+        </script>
+        <?php
     }
 
     /**

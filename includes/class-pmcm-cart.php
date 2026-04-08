@@ -39,7 +39,7 @@ class PMCM_Cart {
         $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
 
         // Check for explicit edition number (from URL parameter via hidden field)
-        $explicit_edition = isset($_POST['pmcm_edition_number']) ? intval($_POST['pmcm_edition_number']) : 0;
+        $explicit_edition = isset($_POST['pmcm_edition_number']) ? intval($_POST['pmcm_edition_number']) : PMCM_Core::get_requested_edition_number();
 
         // Check for slot selection (current/next)
         $selected_slot = isset($_POST['pmcm_selected_edition']) ? sanitize_text_field($_POST['pmcm_selected_edition']) : 'current';

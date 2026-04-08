@@ -221,13 +221,16 @@ class PMCM_Product_Expiration {
                 if ($course_data) {
                     $parent_slug = $course_data['parent_slug'];
 
-                    // Check which edition user selected (from frontend selector)
+                    // Check which edition user selected (from frontend selector or preserved request URL)
                     $selected_slot = isset($_POST['pmcm_selected_edition']) ? sanitize_text_field($_POST['pmcm_selected_edition']) : 'current';
                     $selected_course = isset($_POST['pmcm_selected_course']) ? sanitize_text_field($_POST['pmcm_selected_course']) : '';
+                    $requested_edition = PMCM_Core::get_requested_edition_number();
 
                     // Get the edition number for selected slot
                     $prefix = $course_data['course']['settings_prefix'];
-                    if ($selected_slot === 'next' && $selected_course === $parent_slug) {
+                    if ($requested_edition > 0) {
+                        $selected_edition = $requested_edition;
+                    } elseif ($selected_slot === 'next' && $selected_course === $parent_slug) {
                         $selected_edition = intval(get_option($prefix . 'next_edition', 0));
                     } else {
                         $selected_edition = intval(get_option($prefix . 'current_edition', 1));
