@@ -25,6 +25,11 @@ class PMCM_ASiT {
         add_filter('woocommerce_coupon_is_valid_for_product',  [__CLASS__, 'asit_coupon_is_valid_for_product'],  10, 4);
         add_filter('woocommerce_coupon_is_valid_for_cart',     [__CLASS__, 'asit_coupon_is_valid_for_cart'],     10, 2);
         add_filter('woocommerce_coupon_get_discount_amount',   [__CLASS__, 'dynamic_coupon_discount'],           10, 5);
+        add_filter('woocommerce_coupon_get_product_ids', [__CLASS__, 'bypass_coupon_product_ids'], 10, 2);
+        add_filter('woocommerce_coupon_get_product_categories', [__CLASS__, 'bypass_coupon_product_categories'], 10, 2);
+        add_filter('woocommerce_coupon_get_excluded_product_ids', [__CLASS__, 'bypass_coupon_excluded_product_ids'], 10, 2);
+        add_filter('woocommerce_coupon_get_excluded_product_categories', [__CLASS__, 'bypass_coupon_excluded_product_categories'], 10, 2);
+        add_filter('woocommerce_coupon_get_exclude_sale_items', [__CLASS__, 'bypass_coupon_exclude_sale_items'], 10, 2);
         add_action('wp_footer', [__CLASS__, 'checkout_scripts']);
         add_action('wp_head', [__CLASS__, 'checkout_styles']);
     }
@@ -330,6 +335,43 @@ class PMCM_ASiT {
             return true;
         }
         return $valid;
+    }
+
+    /**
+     * WooCommerce validates coupon product/category restrictions before
+     * woocommerce_coupon_is_valid_for_product runs. For the ASiT coupon,
+     * the plugin's own course/product logic should be the source of truth.
+     */
+    public static function bypass_coupon_product_ids($product_ids, $coupon) {
+        return self::is_asit_coupon($coupon) ? [] : $product_ids;
+    }
+
+    /**
+     * Remove built-in allowed category restrictions from the ASiT coupon.
+     */
+    public static function bypass_coupon_product_categories($category_ids, $coupon) {
+        return self::is_asit_coupon($coupon) ? [] : $category_ids;
+    }
+
+    /**
+     * Remove built-in excluded product restrictions from the ASiT coupon.
+     */
+    public static function bypass_coupon_excluded_product_ids($product_ids, $coupon) {
+        return self::is_asit_coupon($coupon) ? [] : $product_ids;
+    }
+
+    /**
+     * Remove built-in excluded category restrictions from the ASiT coupon.
+     */
+    public static function bypass_coupon_excluded_product_categories($category_ids, $coupon) {
+        return self::is_asit_coupon($coupon) ? [] : $category_ids;
+    }
+
+    /**
+     * ASiT discount is meant to stack on the edition-aware early bird sale price.
+     */
+    public static function bypass_coupon_exclude_sale_items($exclude_sale_items, $coupon) {
+        return self::is_asit_coupon($coupon) ? false : $exclude_sale_items;
     }
 
     /**
