@@ -118,6 +118,7 @@ class PMCM_ASiT {
     private static function get_edition_slot_for_cart_item($cart_item_key) {
         if (WC()->session) {
             $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
+            error_log("PMCM ASiT Debug: cart_item_key={$cart_item_key}, edition_data=" . json_encode($edition_data));
             if ($edition_data && isset($edition_data['edition_slot'])) {
                 return $edition_data['edition_slot'];
             }

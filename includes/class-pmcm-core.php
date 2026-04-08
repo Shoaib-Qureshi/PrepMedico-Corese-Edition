@@ -208,17 +208,17 @@ class PMCM_Core {
 
         if ($mode === 'early_bird_only') {
             $scope = isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : 'current';
+            $next_eb = self::is_next_edition_early_bird_active($course_slug);
+            $current_eb = self::is_course_early_bird_active($course_slug);
+
+            error_log("PMCM ASiT Debug [{$course_slug}]: scope={$scope}, edition_slot={$edition_slot}, next_eb=" . ($next_eb ? 'true' : 'false') . ", current_eb=" . ($current_eb ? 'true' : 'false'));
 
             if ($scope === 'current') {
-                $is_early_bird = ($edition_slot === 'current') && self::is_course_early_bird_active($course_slug);
+                $is_early_bird = ($edition_slot === 'current') && $current_eb;
             } elseif ($scope === 'next') {
-                $is_early_bird = ($edition_slot === 'next') && self::is_next_edition_early_bird_active($course_slug);
+                $is_early_bird = ($edition_slot === 'next') && $next_eb;
             } else { // 'both'
-                if ($edition_slot === 'next') {
-                    $is_early_bird = self::is_next_edition_early_bird_active($course_slug);
-                } else {
-                    $is_early_bird = self::is_course_early_bird_active($course_slug);
-                }
+                $is_early_bird = ($edition_slot === 'next') ? $next_eb : $current_eb;
             }
 
             if ($is_early_bird) {
