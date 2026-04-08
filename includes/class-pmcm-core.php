@@ -184,7 +184,7 @@ class PMCM_Core {
      * Get ASiT discount settings for a specific course
      * Returns discount percentage based on early bird status
      */
-    public static function get_asit_discount_for_course($course_slug) {
+    public static function get_asit_discount_for_course($course_slug, $edition_slot = 'current') {
         $courses = self::get_courses();
         $course = isset($courses[$course_slug]) ? $courses[$course_slug] : null;
 
@@ -207,8 +207,20 @@ class PMCM_Core {
         }
 
         if ($mode === 'early_bird_only') {
-            // Only give discount during early bird
-            $is_early_bird = self::is_course_early_bird_active($course_slug);
+            $scope = isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : 'current';
+
+            if ($scope === 'current') {
+                $is_early_bird = ($edition_slot === 'current') && self::is_course_early_bird_active($course_slug);
+            } elseif ($scope === 'next') {
+                $is_early_bird = ($edition_slot === 'next') && self::is_next_edition_early_bird_active($course_slug);
+            } else { // 'both'
+                if ($edition_slot === 'next') {
+                    $is_early_bird = self::is_next_edition_early_bird_active($course_slug);
+                } else {
+                    $is_early_bird = self::is_course_early_bird_active($course_slug);
+                }
+            }
+
             if ($is_early_bird) {
                 return ['discount' => $eb_discount, 'is_eligible' => true, 'show_field' => $show_field, 'mode' => $mode];
             }
@@ -276,7 +288,7 @@ class PMCM_Core {
      * Returns the parent course's ASiT settings
      * Supports per-course product-level filtering
      */
-    public static function get_asit_config_for_product($product_id) {
+    public static function get_asit_config_for_product($product_id, $edition_slot = 'current') {
         $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
         $child_map = self::get_child_to_parent_map();
         $courses = self::get_courses();
@@ -284,13 +296,13 @@ class PMCM_Core {
         foreach ($categories as $cat_slug) {
             // Check if it's a parent course
             if (isset($courses[$cat_slug])) {
-                return self::check_course_product_eligibility($cat_slug, $product_id, $courses[$cat_slug], false);
+                return self::check_course_product_eligibility($cat_slug, $product_id, $courses[$cat_slug], false, $edition_slot);
             }
             // Check if it's a child category
             if (isset($child_map[$cat_slug])) {
                 $parent_slug = $child_map[$cat_slug];
                 if (isset($courses[$parent_slug])) {
-                    return self::check_course_product_eligibility($parent_slug, $product_id, $courses[$parent_slug], true);
+                    return self::check_course_product_eligibility($parent_slug, $product_id, $courses[$parent_slug], true, $edition_slot);
                 }
             }
         }
@@ -302,7 +314,7 @@ class PMCM_Core {
      * Check if a product is eligible for ASiT discount based on course settings
      * Handles per-course product-level filtering
      */
-    private static function check_course_product_eligibility($course_slug, $product_id, $course, $is_child_category) {
+    private static function check_course_product_eligibility($course_slug, $product_id, $course, $is_child_category, $edition_slot = 'current') {
         $mode = isset($course['asit_discount_mode']) ? $course['asit_discount_mode'] : 'none';
 
         // If mode is none, no discount
@@ -328,7 +340,7 @@ class PMCM_Core {
         }
 
         // Product is eligible, return the discount config
-        return self::get_asit_discount_for_course($course_slug);
+        return self::get_asit_discount_for_course($course_slug, $edition_slot);
     }
 
     /**

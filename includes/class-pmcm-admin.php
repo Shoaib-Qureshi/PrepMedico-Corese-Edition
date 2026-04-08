@@ -331,10 +331,16 @@ class PMCM_Admin
                 $product_filter = isset($config['product_filter']) && $config['product_filter'] == '1';
                 $include_children = true; // Always include children as per UI change
                 $selected_products = isset($config['selected_products']) ? array_map('absint', (array) $config['selected_products']) : [];
+                $edition_scope = isset($config['edition_scope']) ? sanitize_text_field($config['edition_scope']) : 'current';
 
                 // Validate mode
                 if (!in_array($mode, ['none', 'early_bird_only', 'always'])) {
                     $mode = 'none';
+                }
+
+                // Validate edition scope
+                if (!in_array($edition_scope, ['current', 'next', 'both'])) {
+                    $edition_scope = 'current';
                 }
 
                 // Update course configuration
@@ -345,6 +351,7 @@ class PMCM_Admin
                 $courses[$course_slug]['asit_product_filter'] = $product_filter;
                 $courses[$course_slug]['asit_include_children'] = $include_children;
                 $courses[$course_slug]['asit_selected_products'] = array_values(array_unique(array_filter($selected_products)));
+                $courses[$course_slug]['asit_edition_scope'] = $edition_scope;
 
                 // Update legacy asit_eligible field for backward compatibility
                 $courses[$course_slug]['asit_eligible'] = ($mode !== 'none');
@@ -682,9 +689,9 @@ class PMCM_Admin
                                                             <input type="date" id="<?php echo esc_attr($prefix); ?>next_early_bird_end" name="<?php echo esc_attr($prefix); ?>next_early_bird_end" value="<?php echo esc_attr($next_eb_end); ?>">
                                                         </div>
                                                     </div>
-                                                    <div class="wcem-validation-info" style="margin-top:10px;">
-                                                        <span class="material-icons-round">rule</span>
-                                                        <span><?php _e('Early Bird end must be before Next Edition Start date.', 'prepmedico-course-management'); ?></span>
+                                                    <div class="wcem-validation-info" style="margin-top:10px; color:#666; font-size:12px;">
+                                                        <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">info</span>
+                                                        <span><?php _e('Tip: Early Bird end should be before Next Edition Start date. Leave Early Bird Start empty to begin immediately.', 'prepmedico-course-management'); ?></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -972,6 +979,8 @@ class PMCM_Admin
                             $product_filter = isset($course['asit_product_filter']) ? (bool) $course['asit_product_filter'] : false;
                             $selected_products = isset($course['asit_selected_products']) ? (array) $course['asit_selected_products'] : [];
                             $is_eb_active = PMCM_Core::is_course_early_bird_active($slug);
+                            $edition_scope = isset($course['asit_edition_scope']) ? $course['asit_edition_scope'] : 'current';
+                            $is_next_eb_active = PMCM_Core::is_next_edition_early_bird_active($slug);
 
                             // Determine status badge
                             $status_class = 'inactive';
@@ -1033,6 +1042,23 @@ class PMCM_Admin
                                             </button>
                                         </div>
                                         <input type="hidden" name="asit_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($mode); ?>" class="wcem-asit-mode-input" data-course="<?php echo esc_attr($slug); ?>">
+                                    </div>
+
+                                    <!-- Edition Scope (only for Early Bird mode) -->
+                                    <div class="wcem-asit-edition-scope-section" data-course="<?php echo esc_attr($slug); ?>" style="<?php echo ($mode !== 'early_bird_only') ? 'display:none;' : ''; ?>">
+                                        <label class="wcem-asit-mode-label"><?php _e('Apply To Edition', 'prepmedico-course-management'); ?></label>
+                                        <div class="wcem-asit-edition-scope-toggle" data-course="<?php echo esc_attr($slug); ?>">
+                                            <button type="button" class="wcem-asit-scope-btn <?php echo ($edition_scope === 'current') ? 'active' : ''; ?>" data-scope="current">
+                                                <?php _e('Current', 'prepmedico-course-management'); ?>
+                                            </button>
+                                            <button type="button" class="wcem-asit-scope-btn <?php echo ($edition_scope === 'next') ? 'active' : ''; ?>" data-scope="next">
+                                                <?php _e('Next', 'prepmedico-course-management'); ?>
+                                            </button>
+                                            <button type="button" class="wcem-asit-scope-btn <?php echo ($edition_scope === 'both') ? 'active' : ''; ?>" data-scope="both">
+                                                <?php _e('Both', 'prepmedico-course-management'); ?>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" name="asit_config[<?php echo esc_attr($slug); ?>][edition_scope]" value="<?php echo esc_attr($edition_scope); ?>" class="wcem-asit-scope-input" data-course="<?php echo esc_attr($slug); ?>">
                                     </div>
 
                                     <!-- Discount Percentage -->
@@ -1130,16 +1156,31 @@ class PMCM_Admin
 
                                 <div class="wcem-asit-card-footer">
                                     <?php if ($mode === 'early_bird_only'): ?>
-                                        <?php if ($is_eb_active): ?>
-                                            <span class="wcem-asit-footer-status active">
-                                                <span class="material-icons-round">check_circle</span>
-                                                <?php _e('Early Bird Active', 'prepmedico-course-management'); ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="wcem-asit-footer-status expired">
-                                                <span class="material-icons-round">schedule</span>
-                                                <?php _e('Ends Nov 15th', 'prepmedico-course-management'); ?>
-                                            </span>
+                                        <?php if ($edition_scope === 'next' || $edition_scope === 'both'): ?>
+                                            <?php if ($is_next_eb_active): ?>
+                                                <span class="wcem-asit-footer-status active">
+                                                    <span class="material-icons-round">check_circle</span>
+                                                    <?php _e('Next EB Active', 'prepmedico-course-management'); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="wcem-asit-footer-status expired">
+                                                    <span class="material-icons-round">schedule</span>
+                                                    <?php _e('Next EB Inactive', 'prepmedico-course-management'); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                        <?php if ($edition_scope === 'current' || $edition_scope === 'both'): ?>
+                                            <?php if ($is_eb_active): ?>
+                                                <span class="wcem-asit-footer-status active">
+                                                    <span class="material-icons-round">check_circle</span>
+                                                    <?php _e('Early Bird Active', 'prepmedico-course-management'); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="wcem-asit-footer-status expired">
+                                                    <span class="material-icons-round">schedule</span>
+                                                    <?php _e('Early Bird Inactive', 'prepmedico-course-management'); ?>
+                                                </span>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     <?php elseif ($mode === 'none'): ?>
                                         <span class="wcem-asit-footer-status disabled">
@@ -1238,6 +1279,14 @@ class PMCM_Admin
                         $discountSection.slideDown(150);
                     }
 
+                    // Show/hide edition scope section (only for early_bird_only)
+                    var $scopeSection = $card.find('.wcem-asit-edition-scope-section');
+                    if (mode === 'early_bird_only') {
+                        $scopeSection.slideDown(150);
+                    } else {
+                        $scopeSection.slideUp(150);
+                    }
+
                     // Update status badge
                     var $badge = $card.find('.wcem-asit-status-badge');
                     $badge.removeClass('active early-bird inactive');
@@ -1250,6 +1299,19 @@ class PMCM_Admin
                     }
 
                     $card.attr('data-status', mode === 'always' ? 'active' : (mode === 'early_bird_only' ? 'early-bird' : 'inactive'));
+                });
+
+                // Edition scope toggle buttons
+                $('.wcem-asit-edition-scope-toggle').on('click', '.wcem-asit-scope-btn', function() {
+                    var $btn = $(this);
+                    var $toggle = $btn.closest('.wcem-asit-edition-scope-toggle');
+                    var course = $toggle.data('course');
+                    var scope = $btn.data('scope');
+
+                    $toggle.find('.wcem-asit-scope-btn').removeClass('active');
+                    $btn.addClass('active');
+
+                    $('.wcem-asit-scope-input[data-course="' + course + '"]').val(scope);
                 });
 
                 // Product filter toggle

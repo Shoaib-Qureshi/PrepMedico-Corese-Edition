@@ -3513,6 +3513,51 @@
     box-shadow: 0 2px 4px rgba(141, 32, 99, 0.2) !important;
 }
 
+/* Edition Scope Section */
+.wcem-asit-modern .wcem-asit-edition-scope-section {
+    margin-bottom: 16px;
+    padding-top: 12px;
+}
+
+.wcem-asit-modern .wcem-asit-edition-scope-toggle {
+    display: flex !important;
+    background: #f1f5f9 !important;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.wcem-asit-modern button.wcem-asit-scope-btn {
+    flex: 1 !important;
+    padding: 8px 12px !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    cursor: pointer;
+    transition: all 150ms ease;
+    white-space: nowrap;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    text-transform: none !important;
+}
+
+.wcem-asit-modern button.wcem-asit-scope-btn:hover {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    transform: none !important;
+}
+
+.wcem-asit-modern button.wcem-asit-scope-btn.active {
+    background: #8d2063 !important;
+    color: #fff !important;
+    box-shadow: 0 2px 4px rgba(141, 32, 99, 0.2) !important;
+}
+
 /* Discount Section */
 .wcem-asit-modern .wcem-asit-discount-section {
     padding-top: 16px;

@@ -289,8 +289,18 @@ class PMCM_ASiT {
             return $discount;
         }
 
+        // Get edition slot for this cart item from session
+        $edition_slot = 'current';
+        $cart_item_key = isset($cart_item['key']) ? $cart_item['key'] : '';
+        if ($cart_item_key && WC()->session) {
+            $edition_data = WC()->session->get('wcem_edition_' . $cart_item_key);
+            if ($edition_data && isset($edition_data['edition_slot'])) {
+                $edition_slot = $edition_data['edition_slot'];
+            }
+        }
+
         // Get per-product ASiT discount configuration
-        $config = PMCM_Core::get_asit_config_for_product($product_id);
+        $config = PMCM_Core::get_asit_config_for_product($product_id, $edition_slot);
 
         // If product is not eligible for ASiT discount, return 0
         if (!$config['is_eligible'] || $config['discount'] <= 0) {
