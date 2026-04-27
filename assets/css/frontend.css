@@ -167,11 +167,7 @@
     margin-bottom: 0;
 }
 
-/* Edition Number Standalone */
-.wcem-edition-number {
-    font-weight: 700;
-    color: #007cba;
-}
+
 
 /* Early Bird Registration Chip (shown next to edition ordinal) */
 .pmcm-early-bird-chip {
