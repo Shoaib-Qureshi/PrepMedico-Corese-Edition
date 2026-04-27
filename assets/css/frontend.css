@@ -90,7 +90,7 @@
     gap: 6px;
 }
 
-.wcem-status-live {
+/* .wcem-status-live {
     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
     color: #155724;
     border: 1px solid #28a745;
@@ -112,7 +112,7 @@
     background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
     color: #0c5460;
     border: 1px solid #17a2b8;
-}
+} */
 
 /* Early Bird Message */
 .wcem-early-bird-message {
