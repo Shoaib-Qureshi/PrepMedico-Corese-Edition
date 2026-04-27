@@ -380,6 +380,37 @@ class PMCM_Core {
     }
 
     /**
+     * Get the array of category slugs marked closed for a course's current edition.
+     */
+    public static function get_closed_categories_current($course_slug) {
+        $courses = self::get_courses();
+        if (!isset($courses[$course_slug])) return [];
+        $prefix = $courses[$course_slug]['settings_prefix'];
+        $list = json_decode((string) get_option($prefix . 'closed_categories_current', '[]'), true);
+        return is_array($list) ? $list : [];
+    }
+
+    /**
+     * Check whether a product belongs to a closed category for a given course's current edition.
+     */
+    public static function is_product_in_closed_category_current($product_id, $course_slug) {
+        $closed = self::get_closed_categories_current($course_slug);
+        if (empty($closed)) return false;
+        $cats = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        if (is_wp_error($cats) || empty($cats)) return false;
+        return (bool) array_intersect($cats, $closed);
+    }
+
+    /**
+     * Resolve a product slug to a product ID (used by Elementor shortcodes that pass slugs).
+     */
+    public static function get_product_id_by_slug($product_slug) {
+        if (empty($product_slug)) return 0;
+        $post = get_page_by_path($product_slug, OBJECT, 'product');
+        return $post ? (int) $post->ID : 0;
+    }
+
+    /**
      * Resolve a category slug to its parent course slug
      */
     public static function resolve_category_to_parent($category_slug) {

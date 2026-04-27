@@ -293,6 +293,10 @@ class PMCM_Admin
 
             $sd_key = $prefix . 'shortcode_display_next';
             update_option($sd_key, isset($_POST[$sd_key]) ? 'yes' : 'no');
+
+            $cc_key = $prefix . 'closed_categories_current';
+            $closed = isset($_POST[$cc_key]) && is_array($_POST[$cc_key]) ? array_map('sanitize_text_field', $_POST[$cc_key]) : [];
+            update_option($cc_key, wp_json_encode(array_values($closed)));
         }
     }
 
@@ -555,6 +559,9 @@ class PMCM_Admin
                             $next_eb_start = get_option($prefix . 'next_early_bird_start', '');
                             $next_eb_end = get_option($prefix . 'next_early_bird_end', '');
                             $shortcode_display_next = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
+                            $closed_cats_current = json_decode((string) get_option($prefix . 'closed_categories_current', '[]'), true);
+                            if (!is_array($closed_cats_current)) { $closed_cats_current = []; }
+                            $all_cats_for_course = array_merge([$course['category_slug']], !empty($course['children']) ? $course['children'] : []);
                             $status_info = self::get_course_status_info($course);
                         ?>
                             <div class="wcem-course-settings-panel wcem-card" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo $is_first ? '' : 'display:none;'; ?>">
@@ -708,6 +715,28 @@ class PMCM_Admin
                                                         <input type="checkbox" name="<?php echo esc_attr($prefix); ?>shortcode_display_next" value="yes" <?php checked($shortcode_display_next, true); ?>>
                                                         <span class="wcem-toggle-slider"></span>
                                                     </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="wcem-next-eb-subsection" style="margin-top:12px;">
+                                                <div class="wcem-subsection-header">
+                                                    <div>
+                                                        <span><?php _e('Close Categories (Current Edition)', 'prepmedico-course-management'); ?></span>
+                                                        <p class="description" style="margin-top:4px;font-size:12px;"><?php _e('Check any category to close it for the current edition. Closed categories block add-to-cart and show a "Closed" state in Elementor table buttons/status. Unchecked categories remain open.', 'prepmedico-course-management'); ?></p>
+                                                    </div>
+                                                </div>
+                                                <div class="wcem-fields-grid wcem-fields-2col" style="margin-top:8px;">
+                                                    <?php foreach ($all_cats_for_course as $cat_slug):
+                                                        $is_parent = ($cat_slug === $course['category_slug']);
+                                                        $term = get_term_by('slug', $cat_slug, 'product_cat');
+                                                        $label = $term ? $term->name : $cat_slug;
+                                                        $checked = in_array($cat_slug, $closed_cats_current, true);
+                                                    ?>
+                                                        <label class="wcem-field" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                            <input type="checkbox" name="<?php echo esc_attr($prefix); ?>closed_categories_current[]" value="<?php echo esc_attr($cat_slug); ?>" <?php checked($checked, true); ?>>
+                                                            <span><?php echo esc_html($label); ?><?php if ($is_parent) echo ' <em style="color:#8d2063;">(' . esc_html__('Parent', 'prepmedico-course-management') . ')</em>'; ?></span>
+                                                        </label>
+                                                    <?php endforeach; ?>
                                                 </div>
                                             </div>
                                         </div>

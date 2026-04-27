@@ -673,12 +673,14 @@ class PMCM_Shortcodes {
         $atts = shortcode_atts([
             'course' => '',
             'slot' => 'current',
-            'output' => 'text' // text or class
+            'output' => 'text', // text or class
+            'product' => ''
         ], $atts, 'pmcm_edition_status');
 
         $course_slug = sanitize_text_field($atts['course']);
         $slot = sanitize_text_field($atts['slot']);
         $output = sanitize_text_field($atts['output']);
+        $product_slug = sanitize_text_field($atts['product']);
 
         if (empty($course_slug)) {
             return '';
@@ -692,6 +694,14 @@ class PMCM_Shortcodes {
         $prefix = $course['settings_prefix'];
         $today = current_time('Y-m-d');
         $today_timestamp = strtotime($today);
+
+        // Force closed if product is in a closed category (current slot only)
+        if ($slot === 'current' && !empty($product_slug)) {
+            $product_id = PMCM_Core::get_product_id_by_slug($product_slug);
+            if ($product_id && PMCM_Core::is_product_in_closed_category_current($product_id, $course_slug)) {
+                return $output === 'class' ? 'pmcm-closed' : 'closed';
+            }
+        }
 
         if ($slot === 'next') {
             $enabled = get_option($prefix . 'next_enabled', 'no');
@@ -805,9 +815,18 @@ class PMCM_Shortcodes {
         // Build URL
         $url = home_url('/product/' . $product_slug . '/?edition=' . $edition);
 
+        // Force closed if product is in a closed category (current slot only)
+        $forced_closed = false;
+        if ($slot === 'current' && !empty($product_slug)) {
+            $product_id = PMCM_Core::get_product_id_by_slug($product_slug);
+            if ($product_id && PMCM_Core::is_product_in_closed_category_current($product_id, $course_slug)) {
+                $forced_closed = true;
+            }
+        }
+
         // Determine button state
-        $is_closed = !empty($end) && $today_timestamp > strtotime($end);
-        $is_upcoming = !empty($start) && $today_timestamp < strtotime($start);
+        $is_closed = $forced_closed || (!empty($end) && $today_timestamp > strtotime($end));
+        $is_upcoming = !$forced_closed && !empty($start) && $today_timestamp < strtotime($start);
 
         // Build button classes
         $classes = ['pmcm-edition-btn'];

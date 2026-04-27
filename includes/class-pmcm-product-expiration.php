@@ -192,6 +192,22 @@ class PMCM_Product_Expiration {
             return $passed;
         }
 
+        // Check closed categories (current edition only)
+        $selected_slot = isset($_POST['pmcm_selected_edition']) ? sanitize_text_field($_POST['pmcm_selected_edition']) : 'current';
+        if ($selected_slot === 'current') {
+            $cats = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+            if (!is_wp_error($cats) && !empty($cats)) {
+                foreach ($cats as $cat_slug) {
+                    $course_data = PMCM_Core::get_course_for_category($cat_slug);
+                    if (!$course_data) continue;
+                    if (PMCM_Core::is_product_in_closed_category_current($product_id, $course_data['parent_slug'])) {
+                        wc_add_notice(__('Registration is closed for the current edition of this category.', 'prepmedico-course-management'), 'error');
+                        return false;
+                    }
+                }
+            }
+        }
+
         // Check expiration date
         $expiration_date = get_post_meta($product_id, '_expiration_date', true);
         if (!empty($expiration_date)) {
@@ -304,6 +320,22 @@ class PMCM_Product_Expiration {
                         date_i18n(get_option('date_format'), $expiration_timestamp)
                     )
                 ];
+            }
+        }
+
+        // Closed-category notice (current edition)
+        $cats = wp_get_post_terms($post->ID, 'product_cat', ['fields' => 'slugs']);
+        if (!is_wp_error($cats) && !empty($cats)) {
+            foreach ($cats as $cat_slug) {
+                $course_data = PMCM_Core::get_course_for_category($cat_slug);
+                if (!$course_data) continue;
+                if (PMCM_Core::is_product_in_closed_category_current($post->ID, $course_data['parent_slug'])) {
+                    $notices[] = [
+                        'type' => 'expired',
+                        'message' => __('Registration Closed for Current Edition', 'prepmedico-course-management')
+                    ];
+                    break;
+                }
             }
         }
 
