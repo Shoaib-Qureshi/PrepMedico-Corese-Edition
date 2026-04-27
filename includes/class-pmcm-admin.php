@@ -290,6 +290,9 @@ class PMCM_Admin
                 }
                 update_option($key, $value);
             }
+
+            $sd_key = $prefix . 'shortcode_display_next';
+            update_option($sd_key, isset($_POST[$sd_key]) ? 'yes' : 'no');
         }
     }
 
@@ -551,6 +554,7 @@ class PMCM_Admin
                             $next_eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no') === 'yes';
                             $next_eb_start = get_option($prefix . 'next_early_bird_start', '');
                             $next_eb_end = get_option($prefix . 'next_early_bird_end', '');
+                            $shortcode_display_next = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
                             $status_info = self::get_course_status_info($course);
                         ?>
                             <div class="wcem-course-settings-panel wcem-card" data-course="<?php echo esc_attr($category_slug); ?>" style="<?php echo $is_first ? '' : 'display:none;'; ?>">
@@ -691,6 +695,19 @@ class PMCM_Admin
                                                         <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">info</span>
                                                         <span><?php _e('Tip: Early Bird end should be before Next Edition Start date. Leave Early Bird Start empty to begin immediately.', 'prepmedico-course-management'); ?></span>
                                                     </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="wcem-next-eb-subsection" style="margin-top:12px;">
+                                                <div class="wcem-subsection-header">
+                                                    <div>
+                                                        <span><?php _e('Frontend Shortcode Display', 'prepmedico-course-management'); ?></span>
+                                                        <p class="description" style="margin-top:4px;font-size:12px;"><?php _e('When ON, shortcodes like [current_edition], registration status, dates and early bird will all display the next edition\'s data on the frontend.', 'prepmedico-course-management'); ?></p>
+                                                    </div>
+                                                    <label class="wcem-toggle wcem-toggle-small">
+                                                        <input type="checkbox" name="<?php echo esc_attr($prefix); ?>shortcode_display_next" value="yes" <?php checked($shortcode_display_next, true); ?>>
+                                                        <span class="wcem-toggle-slider"></span>
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>

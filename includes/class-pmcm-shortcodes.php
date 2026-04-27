@@ -38,6 +38,35 @@ class PMCM_Shortcodes {
     }
 
     /**
+     * Returns the effective option keys for a course prefix.
+     * When next_enabled and shortcode_display_next are both 'yes', returns next-slot keys.
+     */
+    private static function get_slot_keys($prefix) {
+        $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
+        $show_next    = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
+
+        if ($next_enabled && $show_next) {
+            return [
+                'edition'    => $prefix . 'next_edition',
+                'start'      => $prefix . 'next_start',
+                'end'        => $prefix . 'next_end',
+                'eb_enabled' => $prefix . 'next_early_bird_enabled',
+                'eb_start'   => $prefix . 'next_early_bird_start',
+                'eb_end'     => $prefix . 'next_early_bird_end',
+            ];
+        }
+
+        return [
+            'edition'    => $prefix . 'current_edition',
+            'start'      => $prefix . 'edition_start',
+            'end'        => $prefix . 'edition_end',
+            'eb_enabled' => $prefix . 'early_bird_enabled',
+            'eb_start'   => $prefix . 'early_bird_start',
+            'eb_end'     => $prefix . 'early_bird_end',
+        ];
+    }
+
+    /**
      * Shortcode: Display current edition
      * Format: "12th - Current Edition"
      * Usage: [current_edition course="frcs"]
@@ -50,9 +79,10 @@ class PMCM_Shortcodes {
             return '';
         }
 
-        $course = PMCM_Core::get_courses()[$course_slug];
-        $prefix = $course['settings_prefix'];
-        $edition = get_option($prefix . 'current_edition', 1);
+        $course  = PMCM_Core::get_courses()[$course_slug];
+        $prefix  = $course['settings_prefix'];
+        $keys    = self::get_slot_keys($prefix);
+        $edition = get_option($keys['edition'], 1);
 
         $display_text = PMCM_Core::get_ordinal($edition) . ' - ' . __('Current Edition', 'prepmedico-course-management');
 
@@ -72,12 +102,12 @@ class PMCM_Shortcodes {
             return '';
         }
 
-        $course = PMCM_Core::get_courses()[$course_slug];
-        $prefix = $course['settings_prefix'];
-
-        $edition = get_option($prefix . 'current_edition', 1);
-        $start = get_option($prefix . 'edition_start', '');
-        $end = get_option($prefix . 'edition_end', '');
+        $course  = PMCM_Core::get_courses()[$course_slug];
+        $prefix  = $course['settings_prefix'];
+        $keys    = self::get_slot_keys($prefix);
+        $edition = get_option($keys['edition'], 1);
+        $start   = get_option($keys['start'], '');
+        $end     = get_option($keys['end'], '');
 
         $output = '<div class="wcem-edition-info">';
         $output .= '<p class="wcem-edition-title"><strong>' . esc_html(PMCM_Core::get_ordinal($edition) . ' - ' . __('Current Edition', 'prepmedico-course-management')) . '</strong></p>';
@@ -102,9 +132,10 @@ class PMCM_Shortcodes {
             return '';
         }
 
-        $course = PMCM_Core::get_courses()[$course_slug];
-        $prefix = $course['settings_prefix'];
-        $edition = get_option($prefix . 'current_edition', 1);
+        $course  = PMCM_Core::get_courses()[$course_slug];
+        $prefix  = $course['settings_prefix'];
+        $keys    = self::get_slot_keys($prefix);
+        $edition = get_option($keys['edition'], 1);
 
         return '<span class="wcem-edition-number">' . esc_html(PMCM_Core::get_ordinal($edition)) . '</span>';
     }
@@ -138,12 +169,13 @@ class PMCM_Shortcodes {
             return '';
         }
 
-        $course = PMCM_Core::get_courses()[$course_slug];
-        $prefix = $course['settings_prefix'];
+        $course  = PMCM_Core::get_courses()[$course_slug];
+        $prefix  = $course['settings_prefix'];
+        $keys    = self::get_slot_keys($prefix);
 
-        $early_bird_enabled = get_option($prefix . 'early_bird_enabled', 'no');
-        $early_bird_start = get_option($prefix . 'early_bird_start', '');
-        $early_bird_end = get_option($prefix . 'early_bird_end', '');
+        $early_bird_enabled = get_option($keys['eb_enabled'], 'no');
+        $early_bird_start   = get_option($keys['eb_start'], '');
+        $early_bird_end     = get_option($keys['eb_end'], '');
 
         if ($early_bird_enabled !== 'yes' || empty($early_bird_end)) {
             return '';
@@ -177,12 +209,12 @@ class PMCM_Shortcodes {
             return '';
         }
 
-        $course = PMCM_Core::get_courses()[$course_slug];
-        $prefix = $course['settings_prefix'];
-
-        $edition = get_option($prefix . 'current_edition', 1);
-        $start = get_option($prefix . 'edition_start', '');
-        $end = get_option($prefix . 'edition_end', '');
+        $course  = PMCM_Core::get_courses()[$course_slug];
+        $prefix  = $course['settings_prefix'];
+        $keys    = self::get_slot_keys($prefix);
+        $edition = get_option($keys['edition'], 1);
+        $start   = get_option($keys['start'], '');
+        $end     = get_option($keys['end'], '');
 
         $status_data = self::get_registration_status($course_slug);
 
@@ -316,17 +348,18 @@ class PMCM_Shortcodes {
             return null;
         }
 
-        $course = PMCM_Core::get_courses()[$course_slug];
-        $prefix = $course['settings_prefix'];
+        $course  = PMCM_Core::get_courses()[$course_slug];
+        $prefix  = $course['settings_prefix'];
+        $keys    = self::get_slot_keys($prefix);
 
-        $today = current_time('Y-m-d');
+        $today           = current_time('Y-m-d');
         $today_timestamp = strtotime($today);
 
-        $start = get_option($prefix . 'edition_start', '');
-        $end = get_option($prefix . 'edition_end', '');
-        $early_bird_enabled = get_option($prefix . 'early_bird_enabled', 'no');
-        $early_bird_start = get_option($prefix . 'early_bird_start', '');
-        $early_bird_end = get_option($prefix . 'early_bird_end', '');
+        $start              = get_option($keys['start'], '');
+        $end                = get_option($keys['end'], '');
+        $early_bird_enabled = get_option($keys['eb_enabled'], 'no');
+        $early_bird_start   = get_option($keys['eb_start'], '');
+        $early_bird_end     = get_option($keys['eb_end'], '');
 
         $start_timestamp = !empty($start) ? strtotime($start) : null;
         $end_timestamp = !empty($end) ? strtotime($end) : null;

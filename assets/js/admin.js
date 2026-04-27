@@ -95,10 +95,10 @@
                 ebEnd: $ebEndField.val()
             });
 
-            // Validate course end > start
-            if (courseStart && courseEnd && courseEnd <= courseStart) {
-                console.log('Error: Course end must be after start');
-                markFieldError($endField, 'End date must be after start date');
+            // Validate course end >= start
+            if (courseStart && courseEnd && courseEnd < courseStart) {
+                console.log('Error: Course end must be on or after start');
+                markFieldError($endField, 'End date must be on or after start date');
                 isValid = false;
             }
 
@@ -144,10 +144,10 @@
                     nextEbEnd: $nextEbEndField.val()
                 });
 
-                // Next edition end > start (only if both have values)
-                if ($nextStartField.val() && $nextEndField.val() && nextStart && nextEnd && nextEnd <= nextStart) {
-                    console.log('Error: Next edition end must be after start');
-                    markFieldError($nextEndField, 'End date must be after start date');
+                // Next edition end >= start (only if both have values)
+                if ($nextStartField.val() && $nextEndField.val() && nextStart && nextEnd && nextEnd < nextStart) {
+                    console.log('Error: Next edition end must be on or after start');
+                    markFieldError($nextEndField, 'End date must be on or after start date');
                     isValid = false;
                 }
 
@@ -226,9 +226,9 @@
             var ebStart = $ebStartField.val() ? new Date($ebStartField.val() + 'T00:00:00') : null;
             var ebEnd = $ebEndField.val() ? new Date($ebEndField.val() + 'T00:00:00') : null;
 
-            // Check edition end > start
-            if (fieldName && fieldName.indexOf('edition_end') !== -1 && courseStart && courseEnd && courseEnd <= courseStart) {
-                markFieldError($endField, 'End date must be after start date');
+            // Check edition end >= start
+            if (fieldName && fieldName.indexOf('edition_end') !== -1 && courseStart && courseEnd && courseEnd < courseStart) {
+                markFieldError($endField, 'End date must be on or after start date');
             }
 
             // Check early bird end > start
@@ -255,9 +255,9 @@
             var nextEbStart = $nextEbStartField.val() ? new Date($nextEbStartField.val() + 'T00:00:00') : null;
             var nextEbEnd = $nextEbEndField.val() ? new Date($nextEbEndField.val() + 'T00:00:00') : null;
 
-            // Check next end > start
-            if (fieldName && fieldName.indexOf('next_end') !== -1 && nextStart && nextEnd && nextEnd <= nextStart) {
-                markFieldError($nextEndField, 'End date must be after start date');
+            // Check next end >= start
+            if (fieldName && fieldName.indexOf('next_end') !== -1 && nextStart && nextEnd && nextEnd < nextStart) {
+                markFieldError($nextEndField, 'End date must be on or after start date');
             }
 
             // Check next start > current end
