@@ -1154,8 +1154,23 @@ class PMCM_Shortcodes {
             $edition = intval(get_option($prefix . 'current_edition', 1));
         }
 
+        // Detect closed state: only meaningful for the 'current' slot.
+        // The marker is closed when this course's parent category slug is in the closed list.
+        $is_closed = false;
+        if ($slot === 'current') {
+            $closed_cats = PMCM_Core::get_closed_categories_current($course_slug);
+            if (in_array($course['category_slug'], $closed_cats, true)) {
+                $is_closed = true;
+            }
+        }
+
         // Output hidden marker with edition number and course slug (data-course used by price CSS)
-        return '<span class="pmcm-edition-marker" data-edition="' . esc_attr($edition) . '" data-slot="' . esc_attr($slot) . '" data-course="' . esc_attr($course_slug) . '" style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;"></span>';
+        return '<span class="pmcm-edition-marker"'
+            . ' data-edition="' . esc_attr($edition) . '"'
+            . ' data-slot="' . esc_attr($slot) . '"'
+            . ' data-course="' . esc_attr($course_slug) . '"'
+            . ($is_closed ? ' data-closed="1"' : '')
+            . ' style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;"></span>';
     }
 
     /**
@@ -1343,11 +1358,66 @@ class PMCM_Shortcodes {
             }
 
             /**
+             * Find the toggle button that contains/owns a marker.
+             * Walks up from the marker to the nearest clickable ancestor.
+             */
+            function findToggleForMarker(marker) {
+                const TOGGLE_SEL = 'a, button, .elementor-button, .e-button, [role="button"], .toggle-btn, .accordion-toggle';
+                let el = marker.parentElement;
+                while (el) {
+                    if (el.matches && el.matches(TOGGLE_SEL)) return el;
+                    el = el.parentElement;
+                }
+                return null;
+            }
+
+            /**
+             * Disable a toggle button that points at a closed slot.
+             */
+            function disableClosedToggle(toggle) {
+                if (!toggle || toggle.dataset.pmcmClosedApplied === '1') return;
+                toggle.dataset.pmcmClosedApplied = '1';
+                toggle.classList.add('pmcm-toggle-closed');
+                toggle.setAttribute('aria-disabled', 'true');
+                if (toggle.tagName === 'A') {
+                    toggle.dataset.pmcmHref = toggle.getAttribute('href') || '';
+                    toggle.removeAttribute('href');
+                }
+                toggle.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    ev.stopImmediatePropagation();
+                }, true);
+                // Replace inner label text with "Closed" while preserving icon SVGs
+                const labelSpan = toggle.querySelector('span:not(.pmcm-edition-marker)');
+                if (labelSpan && !labelSpan.dataset.pmcmOriginalLabel) {
+                    labelSpan.dataset.pmcmOriginalLabel = labelSpan.textContent;
+                    labelSpan.textContent = 'Registration Closed';
+                }
+            }
+
+            function applyClosedMarkers() {
+                document.querySelectorAll('.pmcm-edition-marker[data-closed="1"]').forEach(function(marker) {
+                    const toggle = findToggleForMarker(marker);
+                    if (toggle) disableClosedToggle(toggle);
+                });
+            }
+
+            /**
              * Initialize - attach click handlers
              */
             function init() {
+                // Disable any toggle buttons whose marker is closed
+                applyClosedMarkers();
+
                 // Listen for clicks on common toggle button selectors
                 document.addEventListener('click', function(e) {
+                    // If the click is inside a closed toggle, swallow it
+                    const closedToggle = e.target.closest('.pmcm-toggle-closed');
+                    if (closedToggle) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        return;
+                    }
                     // Check if clicked element or its ancestors might be a toggle button
                     const target = e.target.closest('a, button, .elementor-button, .e-button, [role="button"], .toggle-btn, .accordion-toggle');
                     if (target) {

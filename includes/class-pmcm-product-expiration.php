@@ -193,17 +193,27 @@ class PMCM_Product_Expiration {
         }
 
         // Check closed categories (current edition only)
-        $selected_slot = isset($_POST['pmcm_selected_edition']) ? sanitize_text_field($_POST['pmcm_selected_edition']) : 'current';
-        if ($selected_slot === 'current') {
-            $cats = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
-            if (!is_wp_error($cats) && !empty($cats)) {
-                foreach ($cats as $cat_slug) {
-                    $course_data = PMCM_Core::get_course_for_category($cat_slug);
-                    if (!$course_data) continue;
-                    if (PMCM_Core::is_product_in_closed_category_current($product_id, $course_data['parent_slug'])) {
-                        wc_add_notice(__('Registration is closed for the current edition of this category.', 'prepmedico-course-management'), 'error');
-                        return false;
-                    }
+        $cats = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        if (!is_wp_error($cats) && !empty($cats)) {
+            $requested_edition = PMCM_Core::get_requested_edition_number();
+            foreach ($cats as $cat_slug) {
+                $course_data = PMCM_Core::get_course_for_category($cat_slug);
+                if (!$course_data) continue;
+                if (!PMCM_Core::is_product_in_closed_category_current($product_id, $course_data['parent_slug'])) continue;
+
+                $prefix = $course_data['course']['settings_prefix'];
+                $current_edition = intval(get_option($prefix . 'current_edition', 1));
+                $next_edition = intval(get_option($prefix . 'next_edition', 0));
+                $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
+
+                $is_buying_current = ($requested_edition === 0)
+                    || ($requested_edition === $current_edition)
+                    || (!$next_enabled)
+                    || ($next_enabled && $next_edition > 0 && $requested_edition !== $next_edition);
+
+                if ($is_buying_current) {
+                    wc_add_notice(__('Registration is closed for the current edition of this category.', 'prepmedico-course-management'), 'error');
+                    return false;
                 }
             }
         }

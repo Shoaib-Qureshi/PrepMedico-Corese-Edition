@@ -2,6 +2,18 @@
  * WooCommerce Edition Management - Frontend Styles
  */
 
+/* Toggle button disabled when its slot's parent category is closed */
+.pmcm-toggle-closed {
+    opacity: 0.55;
+    pointer-events: none;
+    cursor: not-allowed !important;
+    filter: grayscale(0.3);
+    position: relative;
+}
+.pmcm-toggle-closed * {
+    pointer-events: none;
+}
+
 /* Edition Info Box */
 .wcem-edition-info {
     margin: 20px 0;
