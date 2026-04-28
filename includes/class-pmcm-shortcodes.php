@@ -1154,14 +1154,12 @@ class PMCM_Shortcodes {
             $edition = intval(get_option($prefix . 'current_edition', 1));
         }
 
-        // Detect closed state: only meaningful for the 'current' slot.
+        // Detect closed state: applies to both slots.
         // The marker is closed when this course's parent category slug is in the closed list.
         $is_closed = false;
-        if ($slot === 'current') {
-            $closed_cats = PMCM_Core::get_closed_categories_current($course_slug);
-            if (in_array($course['category_slug'], $closed_cats, true)) {
-                $is_closed = true;
-            }
+        $closed_cats = PMCM_Core::get_closed_categories_current($course_slug);
+        if (in_array($course['category_slug'], $closed_cats, true)) {
+            $is_closed = true;
         }
 
         // Output hidden marker with edition number and course slug (data-course used by price CSS)
@@ -1358,15 +1356,31 @@ class PMCM_Shortcodes {
             }
 
             /**
-             * Find the toggle button that contains/owns a marker.
-             * Walks up from the marker to the nearest clickable ancestor.
+             * Find the toggle button associated with a marker.
+             * Walks up the DOM looking for an ancestor that IS or CONTAINS a toggle button.
              */
             function findToggleForMarker(marker) {
-                const TOGGLE_SEL = 'a, button, .elementor-button, .e-button, [role="button"], .toggle-btn, .accordion-toggle';
+                const SPECIFIC = '.toggle-btn, [data-toggle-target]';
+                const GENERIC = SPECIFIC + ', a.elementor-button, button.elementor-button, .e-button, [role="button"], .accordion-toggle';
+
                 let el = marker.parentElement;
-                while (el) {
-                    if (el.matches && el.matches(TOGGLE_SEL)) return el;
+                let depth = 0;
+                while (el && el !== document.body && depth < 12) {
+                    // Marker is literally inside the toggle button
+                    if (el.matches && el.matches(SPECIFIC)) return el;
+                    // Toggle is a descendant of this ancestor (prefer specific)
+                    let inner = el.querySelector(SPECIFIC);
+                    if (inner) return inner;
+                    // Generic fallback (e.g. plain <a> Enrol button)
+                    if (el.matches && el.matches(GENERIC) && el.textContent.trim().length > 0) return el;
+                    inner = el.querySelector(GENERIC);
+                    if (inner && inner !== marker && !inner.contains(marker.parentElement)) {
+                        // Make sure we don't grab a wholly unrelated button further down
+                        // by limiting to elements that share a near common ancestor
+                        if (inner.textContent && inner.textContent.trim().length > 0) return inner;
+                    }
                     el = el.parentElement;
+                    depth++;
                 }
                 return null;
             }
