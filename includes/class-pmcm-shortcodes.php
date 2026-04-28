@@ -1154,12 +1154,14 @@ class PMCM_Shortcodes {
             $edition = intval(get_option($prefix . 'current_edition', 1));
         }
 
-        // Detect closed state: applies to both slots.
+        // Detect closed state: only the 'current' slot is affected by closed_categories_current.
         // The marker is closed when this course's parent category slug is in the closed list.
         $is_closed = false;
-        $closed_cats = PMCM_Core::get_closed_categories_current($course_slug);
-        if (in_array($course['category_slug'], $closed_cats, true)) {
-            $is_closed = true;
+        if ($slot === 'current') {
+            $closed_cats = PMCM_Core::get_closed_categories_current($course_slug);
+            if (in_array($course['category_slug'], $closed_cats, true)) {
+                $is_closed = true;
+            }
         }
 
         // Output hidden marker with edition number and course slug (data-course used by price CSS)

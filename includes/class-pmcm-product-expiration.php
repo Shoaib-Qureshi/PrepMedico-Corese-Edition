@@ -192,13 +192,25 @@ class PMCM_Product_Expiration {
             return $passed;
         }
 
-        // Check closed categories — block any add-to-cart for products in a closed category
+        // Check closed categories — block add-to-cart only when purchasing the CURRENT edition.
+        // Next-edition purchases (when ?edition=NEXT_NUMBER) pass through.
         $cats = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
         if (!is_wp_error($cats) && !empty($cats)) {
+            $requested_edition = PMCM_Core::get_requested_edition_number();
             foreach ($cats as $cat_slug) {
                 $course_data = PMCM_Core::get_course_for_category($cat_slug);
                 if (!$course_data) continue;
-                if (PMCM_Core::is_product_in_closed_category_current($product_id, $course_data['parent_slug'])) {
+                if (!PMCM_Core::is_product_in_closed_category_current($product_id, $course_data['parent_slug'])) continue;
+
+                $prefix = $course_data['course']['settings_prefix'];
+                $current_edition = intval(get_option($prefix . 'current_edition', 1));
+                $next_edition = intval(get_option($prefix . 'next_edition', 0));
+                $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
+
+                // Treat as buying current unless an explicit next-edition request is made
+                $is_buying_next = ($next_enabled && $next_edition > 0 && $requested_edition === $next_edition);
+
+                if (!$is_buying_next) {
                     wc_add_notice(__('Registration is closed for this current edition.', 'prepmedico-course-management'), 'error');
                     return false;
                 }
