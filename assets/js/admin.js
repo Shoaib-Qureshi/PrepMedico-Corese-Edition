@@ -309,6 +309,10 @@
             }
         });
 
+        $(document).on('change', '.pmcm-close-cat-item input[type="checkbox"]', function() {
+            $(this).closest('.pmcm-close-cat-item').toggleClass('is-checked', this.checked);
+        });
+
         // ============================================
         // AJAX HANDLERS
         // ============================================

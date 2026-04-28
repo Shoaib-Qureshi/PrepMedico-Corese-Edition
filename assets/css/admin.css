@@ -2417,6 +2417,65 @@
     font-weight: 600;
 }
 
+/* Close Categories checkbox grid */
+.pmcm-close-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.pmcm-close-cat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--pmcm-border);
+    border-radius: var(--pmcm-radius);
+    background: var(--pmcm-surface-secondary);
+    cursor: pointer;
+    transition: all var(--pmcm-transition);
+    font-size: 14px;
+    color: var(--pmcm-text-primary);
+}
+
+.pmcm-close-cat-item:hover {
+    border-color: var(--pmcm-primary);
+    background: var(--pmcm-surface);
+}
+
+.pmcm-close-cat-item.is-checked {
+    border-color: var(--pmcm-primary);
+    background: rgba(141, 32, 99, 0.06);
+}
+
+.pmcm-close-cat-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    accent-color: var(--pmcm-primary);
+    cursor: pointer;
+}
+
+.pmcm-close-cat-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
+}
+
+.pmcm-close-cat-tag {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(141, 32, 99, 0.12);
+    color: var(--pmcm-primary);
+}
+
 /* Field Validation Errors */
 .wcem-field input.wcem-field-error {
     border-color: var(--pmcm-error);

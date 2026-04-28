@@ -607,6 +607,37 @@ class PMCM_Admin
                                         </div>
                                     </section>
 
+                                    <!-- Close Categories (Current Edition) -->
+                                    <section class="wcem-section">
+                                        <div class="wcem-section-header">
+                                            <div class="wcem-icon-box wcem-icon-rose" style="background:#fce7f3;color:#be185d;">
+                                                <span class="material-icons-round">block</span>
+                                            </div>
+                                            <div>
+                                                <h4><?php _e('Close Categories (Current Edition)', 'prepmedico-course-management'); ?></h4>
+                                                <p class="description"><?php _e('Check any category to close it for the current edition. Closed categories block add-to-cart and show a "Closed" state in Elementor table buttons/status. Unchecked categories remain open.', 'prepmedico-course-management'); ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="pmcm-close-cat-grid">
+                                            <?php foreach ($all_cats_for_course as $cat_slug):
+                                                $is_parent = ($cat_slug === $course['category_slug']);
+                                                $term = get_term_by('slug', $cat_slug, 'product_cat');
+                                                $label = $term ? $term->name : $cat_slug;
+                                                $is_checked = in_array($cat_slug, $closed_cats_current, true);
+                                            ?>
+                                                <label class="pmcm-close-cat-item<?php echo $is_checked ? ' is-checked' : ''; ?>">
+                                                    <input type="checkbox" name="<?php echo esc_attr($prefix); ?>closed_categories_current[]" value="<?php echo esc_attr($cat_slug); ?>" <?php checked($is_checked, true); ?>>
+                                                    <span class="pmcm-close-cat-label">
+                                                        <?php echo esc_html($label); ?>
+                                                        <?php if ($is_parent): ?>
+                                                            <em class="pmcm-close-cat-tag"><?php esc_html_e('Parent', 'prepmedico-course-management'); ?></em>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </section>
+
                                     <!-- Early Bird -->
                                     <section class="wcem-section wcem-early-bird-section">
                                         <div class="wcem-section-header wcem-section-header-toggle">
@@ -718,27 +749,6 @@ class PMCM_Admin
                                                 </div>
                                             </div>
 
-                                            <div class="wcem-next-eb-subsection" style="margin-top:12px;">
-                                                <div class="wcem-subsection-header">
-                                                    <div>
-                                                        <span><?php _e('Close Categories (Current Edition)', 'prepmedico-course-management'); ?></span>
-                                                        <p class="description" style="margin-top:4px;font-size:12px;"><?php _e('Check any category to close it for the current edition. Closed categories block add-to-cart and show a "Closed" state in Elementor table buttons/status. Unchecked categories remain open.', 'prepmedico-course-management'); ?></p>
-                                                    </div>
-                                                </div>
-                                                <div class="wcem-fields-grid wcem-fields-2col" style="margin-top:8px;">
-                                                    <?php foreach ($all_cats_for_course as $cat_slug):
-                                                        $is_parent = ($cat_slug === $course['category_slug']);
-                                                        $term = get_term_by('slug', $cat_slug, 'product_cat');
-                                                        $label = $term ? $term->name : $cat_slug;
-                                                        $checked = in_array($cat_slug, $closed_cats_current, true);
-                                                    ?>
-                                                        <label class="wcem-field" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                            <input type="checkbox" name="<?php echo esc_attr($prefix); ?>closed_categories_current[]" value="<?php echo esc_attr($cat_slug); ?>" <?php checked($checked, true); ?>>
-                                                            <span><?php echo esc_html($label); ?><?php if ($is_parent) echo ' <em style="color:#8d2063;">(' . esc_html__('Parent', 'prepmedico-course-management') . ')</em>'; ?></span>
-                                                        </label>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            </div>
                                         </div>
                                     </section>
 
