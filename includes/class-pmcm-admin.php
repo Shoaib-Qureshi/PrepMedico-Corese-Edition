@@ -1552,6 +1552,9 @@ class PMCM_Admin
         update_option($prefix . 'early_bird_start', '');
         update_option($prefix . 'early_bird_end', '');
 
+        // Clear closed categories — the new edition starts fresh
+        update_option($prefix . 'closed_categories_current', '[]');
+
         PMCM_Core::log_activity('Manual increment ' . $course['name'] . ': Edition ' . $old_edition . ' → ' . $new_edition, 'success');
 
         wp_send_json_success(['message' => $course['name'] . ' incremented from Edition ' . $old_edition . ' to Edition ' . $new_edition . '. Please set new dates.']);

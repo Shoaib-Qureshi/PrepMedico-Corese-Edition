@@ -102,6 +102,9 @@ class PMCM_Cron {
                         update_option($prefix . 'next_early_bird_start', '');
                         update_option($prefix . 'next_early_bird_end', '');
 
+                        // Clear closed categories — the new current edition starts fresh
+                        update_option($prefix . 'closed_categories_current', '[]');
+
                         $promoted[] = ['course' => $course['name'], 'from' => $old_edition, 'to' => $next_edition];
                         PMCM_Core::log_activity('Promoted Next Edition for ' . $course['name'] . ': Edition ' . $old_edition . ' → ' . $next_edition . ' (Next slot promoted to Current)', 'success');
                         continue;
@@ -122,6 +125,9 @@ class PMCM_Cron {
                 update_option($prefix . 'early_bird_enabled', 'no');
                 update_option($prefix . 'early_bird_start', '');
                 update_option($prefix . 'early_bird_end', '');
+
+                // Clear closed categories — the new edition starts fresh
+                update_option($prefix . 'closed_categories_current', '[]');
 
                 $switched[] = ['course' => $course['name'], 'from' => $old_edition, 'to' => $new_edition];
                 PMCM_Core::log_activity('Auto-incremented ' . $course['name'] . ': Edition ' . $old_edition . ' → ' . $new_edition . ' (End Date passed)', 'success');
