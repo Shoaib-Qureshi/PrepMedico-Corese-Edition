@@ -22,6 +22,7 @@ class PMCM_Shortcodes {
         add_shortcode('registration_status', [__CLASS__, 'registration_status']);
         add_shortcode('early_bird_message', [__CLASS__, 'early_bird_message']);
         add_shortcode('course_registration_info', [__CLASS__, 'course_registration_info']);
+        add_shortcode('edition_dates', [__CLASS__, 'edition_dates_frontend']);
 
         // Elementor table shortcodes for custom edition tables
         add_shortcode('pmcm_edition_url', [__CLASS__, 'edition_url']);
@@ -39,21 +40,34 @@ class PMCM_Shortcodes {
 
     /**
      * Returns the effective option keys for a course prefix.
-     * When next_enabled and shortcode_display_next are both 'yes', returns next-slot keys.
+     * Priority order:
+     * 1. next_enabled + shortcode_display_next both 'yes' → next-slot keys (admin-toggled)
+     * 2. next_enabled 'yes' + current edition end date has passed → next-slot keys (auto-fallback)
+     * 3. Otherwise → current-slot keys
      */
     private static function get_slot_keys($prefix) {
         $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
         $show_next    = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
 
+        $next_keys = [
+            'edition'    => $prefix . 'next_edition',
+            'start'      => $prefix . 'next_start',
+            'end'        => $prefix . 'next_end',
+            'eb_enabled' => $prefix . 'next_early_bird_enabled',
+            'eb_start'   => $prefix . 'next_early_bird_start',
+            'eb_end'     => $prefix . 'next_early_bird_end',
+        ];
+
         if ($next_enabled && $show_next) {
-            return [
-                'edition'    => $prefix . 'next_edition',
-                'start'      => $prefix . 'next_start',
-                'end'        => $prefix . 'next_end',
-                'eb_enabled' => $prefix . 'next_early_bird_enabled',
-                'eb_start'   => $prefix . 'next_early_bird_start',
-                'eb_end'     => $prefix . 'next_early_bird_end',
-            ];
+            return $next_keys;
+        }
+
+        // Auto-fallback: current edition has ended and next is ready — show next data
+        if ($next_enabled) {
+            $curr_end = get_option($prefix . 'edition_end', '');
+            if (!empty($curr_end) && strtotime(current_time('Y-m-d')) > strtotime($curr_end)) {
+                return $next_keys;
+            }
         }
 
         return [
@@ -138,6 +152,37 @@ class PMCM_Shortcodes {
         $edition = get_option($keys['edition'], 1);
 
         return '<span class="wcem-edition-number">' . esc_html(PMCM_Core::get_ordinal($edition)) . '</span>';
+    }
+
+    /**
+     * Shortcode: Display enrollment dates (respects Frontend Shortcode Display toggle)
+     * Usage: [edition_dates course="frcs" format="range|start|end"]
+     */
+    public static function edition_dates_frontend($atts) {
+        $atts = shortcode_atts(['course' => '', 'format' => 'range'], $atts, 'edition_dates');
+        $course_slug = sanitize_text_field($atts['course']);
+        $format      = sanitize_text_field($atts['format']);
+
+        if (!isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $course = PMCM_Core::get_courses()[$course_slug];
+        $prefix = $course['settings_prefix'];
+        $keys   = self::get_slot_keys($prefix);
+        $start  = get_option($keys['start'], '');
+        $end    = get_option($keys['end'], '');
+
+        if ($format === 'start') {
+            return $start ? '<span class="wcem-edition-date">' . date_i18n('F j, Y', strtotime($start)) . '</span>' : '<span class="wcem-edition-date">' . __('TBA', 'prepmedico-course-management') . '</span>';
+        } elseif ($format === 'end') {
+            return $end ? '<span class="wcem-edition-date">' . date_i18n('F j, Y', strtotime($end)) . '</span>' : '<span class="wcem-edition-date">' . __('TBA', 'prepmedico-course-management') . '</span>';
+        } else {
+            if (empty($start) || empty($end)) {
+                return '<span class="wcem-edition-date">' . __('TBA', 'prepmedico-course-management') . '</span>';
+            }
+            return '<span class="wcem-edition-date">' . date_i18n('j M Y', strtotime($start)) . ' – ' . date_i18n('j M Y', strtotime($end)) . '</span>';
+        }
     }
 
     /**
