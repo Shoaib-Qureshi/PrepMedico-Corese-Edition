@@ -477,7 +477,7 @@ class PMCM_Shortcodes {
         // Early bird check
         if ($eb_enabled === 'yes' && $eb_end_ts) {
             $eb_start_ok = !$eb_start_ts || $today_ts >= $eb_start_ts;
-            $eb_end_ok   = $today_ts < $eb_end_ts;
+            $eb_end_ok   = $today_ts <= $eb_end_ts; // inclusive: early bird is active ON the end date
 
             if ($eb_start_ok && $eb_end_ok) {
                 return ['status' => 'early_bird', 'label' => __('Early Bird Registration Open', 'prepmedico-course-management'), 'early_bird_end' => $eb_end, 'class' => 'wcem-status-early-bird'];
