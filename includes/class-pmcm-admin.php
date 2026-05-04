@@ -297,6 +297,9 @@ class PMCM_Admin
             $cc_key = $prefix . 'closed_categories_current';
             $closed = isset($_POST[$cc_key]) && is_array($_POST[$cc_key]) ? array_map('sanitize_text_field', $_POST[$cc_key]) : [];
             update_option($cc_key, wp_json_encode(array_values($closed)));
+
+            $fro_key = $prefix . 'force_registration_open';
+            update_option($fro_key, isset($_POST[$fro_key]) ? 'yes' : 'no');
         }
     }
 
@@ -548,6 +551,7 @@ class PMCM_Admin
                             $current = get_option($prefix . 'current_edition', 1);
                             $start = get_option($prefix . 'edition_start', '');
                             $end = get_option($prefix . 'edition_end', '');
+                            $force_reg_open = get_option($prefix . 'force_registration_open', 'no') === 'yes';
                             $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no') === 'yes';
                             $eb_start = get_option($prefix . 'early_bird_start', '');
                             $eb_end = get_option($prefix . 'early_bird_end', '');
@@ -604,6 +608,23 @@ class PMCM_Admin
                                                 <label for="<?php echo esc_attr($prefix); ?>edition_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
                                                 <input type="date" id="<?php echo esc_attr($prefix); ?>edition_end" name="<?php echo esc_attr($prefix); ?>edition_end" value="<?php echo esc_attr($end); ?>">
                                             </div>
+                                        </div>
+
+                                        <!-- Force Open Registration -->
+                                        <div class="wcem-section-header wcem-section-header-toggle" style="margin-top:16px;padding:14px 16px;background:<?php echo $force_reg_open ? 'rgba(34,197,94,0.08)' : '#f8fafc'; ?>;border-radius:10px;border:1px solid <?php echo $force_reg_open ? '#86efac' : '#e2e8f0'; ?>;">
+                                            <div class="wcem-section-title-group">
+                                                <div class="wcem-icon-box" style="background:<?php echo $force_reg_open ? '#dcfce7' : '#f1f5f9'; ?>;color:<?php echo $force_reg_open ? '#16a34a' : '#64748b'; ?>;">
+                                                    <span class="material-icons-round">lock_open</span>
+                                                </div>
+                                                <div>
+                                                    <span style="font-size:13px;font-weight:600;color:#1e293b;"><?php _e('Force Open Registration', 'prepmedico-course-management'); ?></span>
+                                                    <p class="description" style="margin-top:3px;font-size:12px;"><?php _e('Override date-based status. When ON, registration shows as Live regardless of start/end dates — useful when dates are set ahead but enrollment should open now.', 'prepmedico-course-management'); ?></p>
+                                                </div>
+                                            </div>
+                                            <label class="wcem-toggle">
+                                                <input type="checkbox" name="<?php echo esc_attr($prefix); ?>force_registration_open" value="yes" <?php checked($force_reg_open, true); ?>>
+                                                <span class="wcem-toggle-slider"></span>
+                                            </label>
                                         </div>
                                     </section>
 

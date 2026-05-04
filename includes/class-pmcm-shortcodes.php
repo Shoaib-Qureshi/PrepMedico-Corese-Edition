@@ -245,6 +245,10 @@ class PMCM_Shortcodes {
             $eb_start   = get_option($prefix . 'next_early_bird_start', '');
             $eb_end     = get_option($prefix . 'next_early_bird_end', '');
         } else {
+            // Force Open Registration override (current slot only)
+            if (get_option($prefix . 'force_registration_open', 'no') === 'yes') {
+                return self::render_registration_status_html(['status' => 'live', 'label' => __('Registration is Live', 'prepmedico-course-management'), 'class' => 'wcem-status-live'], $course_slug, 'span');
+            }
             $start      = get_option($prefix . 'edition_start', '');
             $end        = get_option($prefix . 'edition_end', '');
             $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
@@ -777,6 +781,11 @@ class PMCM_Shortcodes {
             }
         }
 
+        // Force Open Registration override (current slot only)
+        if ($slot === 'current' && get_option($prefix . 'force_registration_open', 'no') === 'yes') {
+            return $output === 'class' ? 'pmcm-open' : 'open';
+        }
+
         if ($slot === 'next') {
             $enabled = get_option($prefix . 'next_enabled', 'no');
             if ($enabled === 'yes') {
@@ -898,9 +907,12 @@ class PMCM_Shortcodes {
             }
         }
 
+        // Force Open Registration override (current slot only)
+        $force_open = $slot === 'current' && get_option($prefix . 'force_registration_open', 'no') === 'yes';
+
         // Determine button state
-        $is_closed = $forced_closed || (!empty($end) && $today_timestamp > strtotime($end));
-        $is_upcoming = !$forced_closed && !empty($start) && $today_timestamp < strtotime($start);
+        $is_closed = !$force_open && ($forced_closed || (!empty($end) && $today_timestamp > strtotime($end)));
+        $is_upcoming = !$force_open && !$forced_closed && !empty($start) && $today_timestamp < strtotime($start);
 
         // Build button classes
         $classes = ['pmcm-edition-btn'];
