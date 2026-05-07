@@ -258,7 +258,7 @@ class PMCM_Admin
             $prefix = $course['settings_prefix'];
 
             // Current edition slot fields
-            $current_fields = ['current_edition', 'edition_start', 'edition_end', 'early_bird_enabled', 'early_bird_start', 'early_bird_end'];
+            $current_fields = ['current_edition', 'edition_start', 'edition_end', 'early_bird_enabled', 'early_bird_start', 'early_bird_end', 'exam_dates'];
             foreach ($current_fields as $field) {
                 $key = $prefix . $field;
                 if ($field === 'early_bird_enabled') {
@@ -279,7 +279,7 @@ class PMCM_Admin
             $next_enabled = isset($_POST[$next_enabled_key]) ? 'yes' : 'no';
             update_option($next_enabled_key, $next_enabled);
 
-            $next_fields = ['next_edition', 'next_start', 'next_end', 'next_early_bird_enabled', 'next_early_bird_start', 'next_early_bird_end'];
+            $next_fields = ['next_edition', 'next_start', 'next_end', 'next_early_bird_enabled', 'next_early_bird_start', 'next_early_bird_end', 'next_exam_dates'];
             foreach ($next_fields as $field) {
                 $key = $prefix . $field;
                 if ($field === 'next_early_bird_enabled') {
