@@ -36,6 +36,9 @@ class PMCM_Shortcodes {
         // New simplified approach - no data attributes needed
         add_shortcode('pmcm_edition_marker', [__CLASS__, 'edition_marker']);
         add_shortcode('pmcm_edition_products_script', [__CLASS__, 'edition_products_script']);
+
+        // Exam dates shortcode
+        add_shortcode('pmcm_exam_dates', [__CLASS__, 'exam_dates']);
     }
 
     /**
@@ -1600,5 +1603,35 @@ class PMCM_Shortcodes {
         </script>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Get exam dates text for a course slot
+     * Usage: [pmcm_exam_dates course="frcs" slot="current|next"]
+     * Output: the free-text exam dates string set in admin, or "TBA" if empty
+     */
+    public static function exam_dates($atts) {
+        $atts = shortcode_atts([
+            'course' => '',
+            'slot'   => 'current',
+        ], $atts, 'pmcm_exam_dates');
+
+        $course_slug = sanitize_text_field($atts['course']);
+        $slot        = sanitize_text_field($atts['slot']);
+
+        if (empty($course_slug) || !isset(PMCM_Core::get_courses()[$course_slug])) {
+            return '';
+        }
+
+        $prefix = PMCM_Core::get_courses()[$course_slug]['settings_prefix'];
+        $text   = $slot === 'next'
+            ? get_option($prefix . 'next_exam_dates', '')
+            : get_option($prefix . 'exam_dates', '');
+
+        if (empty($text)) {
+            return '<span class="pmcm-exam-dates">' . __('TBA', 'prepmedico-course-management') . '</span>';
+        }
+
+        return '<span class="pmcm-exam-dates">' . esc_html($text) . '</span>';
     }
 }

@@ -108,6 +108,10 @@ class PMCM_Admin
             register_setting('wcem_settings', $prefix . 'next_early_bird_enabled', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_early_bird_start', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_early_bird_end', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
+
+            // Exam dates (free-text, per slot)
+            register_setting('wcem_settings', $prefix . 'exam_dates', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
+            register_setting('wcem_settings', $prefix . 'next_exam_dates', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
         }
 
         register_setting('pmcm_asit_settings', 'pmcm_asit_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
@@ -563,6 +567,8 @@ class PMCM_Admin
                             $next_eb_start = get_option($prefix . 'next_early_bird_start', '');
                             $next_eb_end = get_option($prefix . 'next_early_bird_end', '');
                             $shortcode_display_next = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
+                            $exam_dates = get_option($prefix . 'exam_dates', '');
+                            $next_exam_dates = get_option($prefix . 'next_exam_dates', '');
                             $closed_cats_current = json_decode((string) get_option($prefix . 'closed_categories_current', '[]'), true);
                             if (!is_array($closed_cats_current)) { $closed_cats_current = []; }
                             $all_cats_for_course = array_merge([$course['category_slug']], !empty($course['children']) ? $course['children'] : []);
@@ -625,6 +631,29 @@ class PMCM_Admin
                                                 <input type="checkbox" name="<?php echo esc_attr($prefix); ?>force_registration_open" value="yes" <?php checked($force_reg_open, true); ?>>
                                                 <span class="wcem-toggle-slider"></span>
                                             </label>
+                                        </div>
+                                    </section>
+
+                                    <!-- Exam Dates -->
+                                    <section class="wcem-section">
+                                        <div class="wcem-section-header">
+                                            <div class="wcem-icon-box" style="background:#fef3c7;color:#d97706;">
+                                                <span class="material-icons-round">school</span>
+                                            </div>
+                                            <div>
+                                                <h4><?php _e('Exam Dates', 'prepmedico-course-management'); ?></h4>
+                                                <p class="description"><?php _e('Enter the exam dates shown on the frontend table. Free text — type exactly what should be displayed (e.g. "May 11-15 Birmingham AND June 22-23 KL, Malaysia").', 'prepmedico-course-management'); ?></p>
+                                            </div>
+                                        </div>
+                                        <div class="wcem-fields-grid wcem-fields-2col">
+                                            <div class="wcem-field">
+                                                <label for="<?php echo esc_attr($prefix); ?>exam_dates"><?php _e('Current Edition Exam Dates', 'prepmedico-course-management'); ?></label>
+                                                <input type="text" id="<?php echo esc_attr($prefix); ?>exam_dates" name="<?php echo esc_attr($prefix); ?>exam_dates" value="<?php echo esc_attr($exam_dates); ?>" placeholder="e.g. May 11-15 Birmingham AND June 22-23 KL, Malaysia" style="width:100%;">
+                                            </div>
+                                            <div class="wcem-field">
+                                                <label for="<?php echo esc_attr($prefix); ?>next_exam_dates"><?php _e('Next Edition Exam Dates', 'prepmedico-course-management'); ?></label>
+                                                <input type="text" id="<?php echo esc_attr($prefix); ?>next_exam_dates" name="<?php echo esc_attr($prefix); ?>next_exam_dates" value="<?php echo esc_attr($next_exam_dates); ?>" placeholder="e.g. TBA" style="width:100%;">
+                                            </div>
                                         </div>
                                     </section>
 
