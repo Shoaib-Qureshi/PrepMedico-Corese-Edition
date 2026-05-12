@@ -41,6 +41,15 @@ class PMCM_Shortcodes {
         add_shortcode('pmcm_exam_dates', [__CLASS__, 'exam_dates']);
     }
 
+    private static function get_registration_override(string $prefix): string
+    {
+        $val = get_option($prefix . 'registration_override', '');
+        if (in_array($val, ['auto', 'force_open', 'force_closed'], true)) {
+            return $val;
+        }
+        return get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
+    }
+
     /**
      * Returns the effective option keys for a course prefix.
      * Priority order:
@@ -248,9 +257,13 @@ class PMCM_Shortcodes {
             $eb_start   = get_option($prefix . 'next_early_bird_start', '');
             $eb_end     = get_option($prefix . 'next_early_bird_end', '');
         } else {
-            // Force Open Registration override (current slot only)
-            if (get_option($prefix . 'force_registration_open', 'no') === 'yes') {
+            // Registration override (current slot only)
+            $override = self::get_registration_override($prefix);
+            if ($override === 'force_open') {
                 return self::render_registration_status_html(['status' => 'live', 'label' => __('Registration is Live', 'prepmedico-course-management'), 'class' => 'wcem-status-live'], $course_slug, 'span');
+            }
+            if ($override === 'force_closed') {
+                return self::render_registration_status_html(['status' => 'opening_soon', 'label' => __('Coming Soon', 'prepmedico-course-management'), 'class' => 'wcem-status-upcoming'], $course_slug, 'span');
             }
             $start      = get_option($prefix . 'edition_start', '');
             $end        = get_option($prefix . 'edition_end', '');
@@ -784,9 +797,15 @@ class PMCM_Shortcodes {
             }
         }
 
-        // Force Open Registration override (current slot only)
-        if ($slot === 'current' && get_option($prefix . 'force_registration_open', 'no') === 'yes') {
-            return $output === 'class' ? 'pmcm-open' : 'open';
+        // Registration override (current slot only)
+        if ($slot === 'current') {
+            $override = self::get_registration_override($prefix);
+            if ($override === 'force_open') {
+                return $output === 'class' ? 'pmcm-open' : 'open';
+            }
+            if ($override === 'force_closed') {
+                return $output === 'class' ? 'pmcm-upcoming' : 'upcoming';
+            }
         }
 
         if ($slot === 'next') {
@@ -910,12 +929,20 @@ class PMCM_Shortcodes {
             }
         }
 
-        // Force Open Registration override (current slot only)
-        $force_open = $slot === 'current' && get_option($prefix . 'force_registration_open', 'no') === 'yes';
+        // Registration override (current slot only)
+        $override     = $slot === 'current' ? self::get_registration_override($prefix) : 'auto';
+        $force_open   = $override === 'force_open';
+        $force_closed = $override === 'force_closed';
 
         // Determine button state
-        $is_closed = !$force_open && ($forced_closed || (!empty($end) && $today_timestamp > strtotime($end)));
-        $is_upcoming = !$force_open && !$forced_closed && !empty($start) && $today_timestamp < strtotime($start);
+        $is_closed   = !$force_open && !$force_closed && ($forced_closed || (!empty($end) && $today_timestamp > strtotime($end)));
+        $is_upcoming = !$force_open && !$force_closed && !$forced_closed && !empty($start) && $today_timestamp < strtotime($start);
+
+        // Force Closed: show "Opening Soon" regardless of dates
+        if ($force_closed) {
+            $is_upcoming = true;
+            $text        = __('Opening Soon', 'prepmedico-course-management');
+        }
 
         // Build button classes
         $classes = ['pmcm-edition-btn'];
@@ -929,14 +956,17 @@ class PMCM_Shortcodes {
             $classes[] = 'pmcm-closed';
         } elseif ($is_upcoming) {
             $classes[] = 'pmcm-upcoming';
+            if ($force_closed) {
+                $classes[] = 'pmcm-force-closed';
+            }
         } else {
             $classes[] = 'pmcm-open';
         }
 
         // Build inline styles for disabled state
         $style = '';
-        if ($is_closed || $dates_unavailable) {
-            $style = 'pointer-events: none; opacity: 0.5; cursor: not-allowed;';
+        if ($is_closed || $dates_unavailable || $force_closed) {
+            $style = 'pointer-events: none; opacity: 0.6; cursor: not-allowed;';
         }
 
         // Generate button HTML
@@ -1253,12 +1283,20 @@ class PMCM_Shortcodes {
             }
         }
 
+        // Detect force-closed override (shows "Opening Soon" instead of "Registration Closed")
+        $is_opening_soon = false;
+        if ($slot === 'current' && self::get_registration_override($prefix) === 'force_closed') {
+            $is_opening_soon = true;
+            $is_closed = false; // don't also add data-closed
+        }
+
         // Output hidden marker with edition number and course slug (data-course used by price CSS)
         return '<span class="pmcm-edition-marker"'
             . ' data-edition="' . esc_attr($edition) . '"'
             . ' data-slot="' . esc_attr($slot) . '"'
             . ' data-course="' . esc_attr($course_slug) . '"'
             . ($is_closed ? ' data-closed="1"' : '')
+            . ($is_opening_soon ? ' data-opening-soon="1"' : '')
             . ' style="display:none !important; visibility:hidden; position:absolute; pointer-events:none;"></span>';
     }
 
@@ -1478,11 +1516,15 @@ class PMCM_Shortcodes {
 
             /**
              * Disable a toggle button that points at a closed slot.
+             * labelText: the string to replace the button label with.
+             * cssClass: the class to apply (pmcm-toggle-closed or pmcm-toggle-opening-soon).
              */
-            function disableClosedToggle(toggle) {
+            function disableClosedToggle(toggle, labelText, cssClass) {
+                labelText = labelText || 'Registration Closed';
+                cssClass  = cssClass  || 'pmcm-toggle-closed';
                 if (!toggle || toggle.dataset.pmcmClosedApplied === '1') return;
                 toggle.dataset.pmcmClosedApplied = '1';
-                toggle.classList.add('pmcm-toggle-closed');
+                toggle.classList.add(cssClass);
                 toggle.setAttribute('aria-disabled', 'true');
                 if (toggle.tagName === 'A') {
                     toggle.dataset.pmcmHref = toggle.getAttribute('href') || '';
@@ -1492,18 +1534,22 @@ class PMCM_Shortcodes {
                     ev.preventDefault();
                     ev.stopImmediatePropagation();
                 }, true);
-                // Replace inner label text with "Closed" while preserving icon SVGs
+                // Replace inner label text while preserving icon SVGs
                 const labelSpan = toggle.querySelector('span:not(.pmcm-edition-marker)');
                 if (labelSpan && !labelSpan.dataset.pmcmOriginalLabel) {
                     labelSpan.dataset.pmcmOriginalLabel = labelSpan.textContent;
-                    labelSpan.textContent = 'Registration Closed';
+                    labelSpan.textContent = labelText;
                 }
             }
 
             function applyClosedMarkers() {
                 document.querySelectorAll('.pmcm-edition-marker[data-closed="1"]').forEach(function(marker) {
                     const toggle = findToggleForMarker(marker);
-                    if (toggle) disableClosedToggle(toggle);
+                    if (toggle) disableClosedToggle(toggle, 'Registration Closed', 'pmcm-toggle-closed');
+                });
+                document.querySelectorAll('.pmcm-edition-marker[data-opening-soon="1"]').forEach(function(marker) {
+                    const toggle = findToggleForMarker(marker);
+                    if (toggle) disableClosedToggle(toggle, 'Opening Soon', 'pmcm-toggle-opening-soon');
                 });
             }
 
@@ -1516,8 +1562,8 @@ class PMCM_Shortcodes {
 
                 // Listen for clicks on common toggle button selectors
                 document.addEventListener('click', function(e) {
-                    // If the click is inside a closed toggle, swallow it
-                    const closedToggle = e.target.closest('.pmcm-toggle-closed');
+                    // If the click is inside a disabled toggle, swallow it
+                    const closedToggle = e.target.closest('.pmcm-toggle-closed, .pmcm-toggle-opening-soon');
                     if (closedToggle) {
                         e.preventDefault();
                         e.stopImmediatePropagation();

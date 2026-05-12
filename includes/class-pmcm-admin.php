@@ -249,6 +249,16 @@ class PMCM_Admin
         }
     }
 
+    private static function get_registration_override(string $prefix): string
+    {
+        $val = get_option($prefix . 'registration_override', '');
+        if (in_array($val, ['auto', 'force_open', 'force_closed'], true)) {
+            return $val;
+        }
+        // Migrate from old binary toggle
+        return get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
+    }
+
     /**
      * Save edition settings
      */
@@ -302,8 +312,12 @@ class PMCM_Admin
             $closed = isset($_POST[$cc_key]) && is_array($_POST[$cc_key]) ? array_map('sanitize_text_field', $_POST[$cc_key]) : [];
             update_option($cc_key, wp_json_encode(array_values($closed)));
 
-            $fro_key = $prefix . 'force_registration_open';
-            update_option($fro_key, isset($_POST[$fro_key]) ? 'yes' : 'no');
+            $ro_key = $prefix . 'registration_override';
+            $ro_val = isset($_POST[$ro_key]) ? sanitize_text_field($_POST[$ro_key]) : 'auto';
+            if (!in_array($ro_val, ['auto', 'force_open', 'force_closed'], true)) {
+                $ro_val = 'auto';
+            }
+            update_option($ro_key, $ro_val);
         }
     }
 
@@ -555,7 +569,7 @@ class PMCM_Admin
                             $current = get_option($prefix . 'current_edition', 1);
                             $start = get_option($prefix . 'edition_start', '');
                             $end = get_option($prefix . 'edition_end', '');
-                            $force_reg_open = get_option($prefix . 'force_registration_open', 'no') === 'yes';
+                            $reg_override = self::get_registration_override($prefix);
                             $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no') === 'yes';
                             $eb_start = get_option($prefix . 'early_bird_start', '');
                             $eb_end = get_option($prefix . 'early_bird_end', '');
@@ -616,21 +630,34 @@ class PMCM_Admin
                                             </div>
                                         </div>
 
-                                        <!-- Force Open Registration -->
-                                        <div class="wcem-section-header wcem-section-header-toggle" style="margin-top:16px;padding:14px 16px;background:<?php echo $force_reg_open ? 'rgba(34,197,94,0.08)' : '#f8fafc'; ?>;border-radius:10px;border:1px solid <?php echo $force_reg_open ? '#86efac' : '#e2e8f0'; ?>;">
-                                            <div class="wcem-section-title-group">
-                                                <div class="wcem-icon-box" style="background:<?php echo $force_reg_open ? '#dcfce7' : '#f1f5f9'; ?>;color:<?php echo $force_reg_open ? '#16a34a' : '#64748b'; ?>;">
-                                                    <span class="material-icons-round">lock_open</span>
+                                        <!-- Registration Override (3-state) -->
+                                        <div style="margin-top:16px;">
+                                            <div class="wcem-section-header" style="padding:0 0 10px 0;border:none;background:none;">
+                                                <div class="wcem-icon-box" style="background:#ede9fe;color:#7c3aed;">
+                                                    <span class="material-icons-round">toggle_on</span>
                                                 </div>
                                                 <div>
-                                                    <span style="font-size:13px;font-weight:600;color:#1e293b;"><?php _e('Force Open Registration', 'prepmedico-course-management'); ?></span>
-                                                    <p class="description" style="margin-top:3px;font-size:12px;"><?php _e('Override date-based status. When ON, registration shows as Live regardless of start/end dates — useful when dates are set ahead but enrollment should open now.', 'prepmedico-course-management'); ?></p>
+                                                    <span style="font-size:13px;font-weight:600;color:#1e293b;"><?php _e('Registration Override', 'prepmedico-course-management'); ?></span>
+                                                    <p class="description" style="margin-top:3px;font-size:12px;"><?php _e('Override date-based registration status for the current edition.', 'prepmedico-course-management'); ?></p>
                                                 </div>
                                             </div>
-                                            <label class="wcem-toggle">
-                                                <input type="checkbox" name="<?php echo esc_attr($prefix); ?>force_registration_open" value="yes" <?php checked($force_reg_open, true); ?>>
-                                                <span class="wcem-toggle-slider"></span>
-                                            </label>
+                                            <div style="display:flex;gap:10px;">
+                                                <label style="flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1.5px solid <?php echo $reg_override === 'force_open' ? '#86efac' : '#e2e8f0'; ?>;border-radius:10px;cursor:pointer;background:<?php echo $reg_override === 'force_open' ? 'rgba(34,197,94,0.08)' : '#f8fafc'; ?>;">
+                                                    <input type="radio" name="<?php echo esc_attr($prefix); ?>registration_override" value="force_open" <?php checked($reg_override, 'force_open'); ?>>
+                                                    <span style="font-size:12px;font-weight:700;color:#16a34a;"><?php _e('Force Open', 'prepmedico-course-management'); ?></span>
+                                                    <span style="font-size:11px;color:#64748b;line-height:1.4;"><?php _e('Shows Enroll button — ignores start/end dates.', 'prepmedico-course-management'); ?></span>
+                                                </label>
+                                                <label style="flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1.5px solid <?php echo $reg_override === 'auto' ? '#93c5fd' : '#e2e8f0'; ?>;border-radius:10px;cursor:pointer;background:<?php echo $reg_override === 'auto' ? 'rgba(59,130,246,0.07)' : '#f8fafc'; ?>;">
+                                                    <input type="radio" name="<?php echo esc_attr($prefix); ?>registration_override" value="auto" <?php checked($reg_override, 'auto'); ?>>
+                                                    <span style="font-size:12px;font-weight:700;color:#2563eb;"><?php _e('Auto (Use Dates)', 'prepmedico-course-management'); ?></span>
+                                                    <span style="font-size:11px;color:#64748b;line-height:1.4;"><?php _e('Status determined by start/end dates.', 'prepmedico-course-management'); ?></span>
+                                                </label>
+                                                <label style="flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1.5px solid <?php echo $reg_override === 'force_closed' ? '#fca5a5' : '#e2e8f0'; ?>;border-radius:10px;cursor:pointer;background:<?php echo $reg_override === 'force_closed' ? 'rgba(239,68,68,0.07)' : '#f8fafc'; ?>;">
+                                                    <input type="radio" name="<?php echo esc_attr($prefix); ?>registration_override" value="force_closed" <?php checked($reg_override, 'force_closed'); ?>>
+                                                    <span style="font-size:12px;font-weight:700;color:#dc2626;"><?php _e('Force Closed', 'prepmedico-course-management'); ?></span>
+                                                    <span style="font-size:11px;color:#64748b;line-height:1.4;"><?php _e('Shows "Opening Soon" — blocks enrollment regardless of dates.', 'prepmedico-course-management'); ?></span>
+                                                </label>
+                                            </div>
                                         </div>
                                     </section>
 
