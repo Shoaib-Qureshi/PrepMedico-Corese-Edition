@@ -259,6 +259,51 @@ class PMCM_Admin
         return get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
     }
 
+    public static function get_notification_recipients(): array
+    {
+        $admin      = get_option('admin_email');
+        $extra_raw  = get_option('pmcm_notification_emails', '');
+        $extra      = array_filter(array_map('trim', explode(',', $extra_raw)));
+        $all        = array_unique(array_merge([$admin], $extra));
+        return array_values(array_filter($all, 'is_email'));
+    }
+
+    private static function maybe_send_registration_notification(array $course, string $old_val, string $new_val, string $trigger): void
+    {
+        $triggers = json_decode((string) get_option('pmcm_notification_triggers', '[]'), true);
+        if (!is_array($triggers) || !in_array($trigger, $triggers, true)) {
+            return;
+        }
+        $recipients = self::get_notification_recipients();
+        if (empty($recipients)) {
+            return;
+        }
+        $labels = [
+            'force_open'   => 'Force Open (Enroll button shown)',
+            'force_closed' => 'Force Closed (Opening Soon)',
+            'auto'         => 'Auto — date-based',
+        ];
+        $subject = sprintf('[PrepMedico] %s — Registration Override Changed', $course['name']);
+        $message  = "Registration override for {$course['name']} has been updated.\n\n";
+        $message .= 'Previous: ' . ($labels[$old_val] ?? $old_val) . "\n";
+        $message .= 'New: '      . ($labels[$new_val] ?? $new_val) . "\n\n";
+        $message .= 'Changed by: ' . (wp_get_current_user()->user_email ?: 'system') . "\n";
+        $message .= 'Manage editions: ' . admin_url('admin.php?page=prepmedico-management');
+        wp_mail($recipients, $subject, $message);
+    }
+
+    private static function save_notification_settings(): void
+    {
+        $emails_raw = isset($_POST['pmcm_notification_emails']) ? sanitize_text_field($_POST['pmcm_notification_emails']) : '';
+        update_option('pmcm_notification_emails', $emails_raw);
+
+        $allowed    = ['reg_force_open', 'reg_force_closed', 'reg_auto', 'edition_switch'];
+        $raw        = isset($_POST['pmcm_notification_triggers']) && is_array($_POST['pmcm_notification_triggers'])
+                        ? $_POST['pmcm_notification_triggers'] : [];
+        $triggers   = array_values(array_intersect(array_map('sanitize_text_field', $raw), $allowed));
+        update_option('pmcm_notification_triggers', wp_json_encode($triggers));
+    }
+
     /**
      * Save edition settings
      */
@@ -313,11 +358,20 @@ class PMCM_Admin
             update_option($cc_key, wp_json_encode(array_values($closed)));
 
             $ro_key = $prefix . 'registration_override';
+            $ro_old = self::get_registration_override($prefix);
             $ro_val = isset($_POST[$ro_key]) ? sanitize_text_field($_POST[$ro_key]) : 'auto';
             if (!in_array($ro_val, ['auto', 'force_open', 'force_closed'], true)) {
                 $ro_val = 'auto';
             }
             update_option($ro_key, $ro_val);
+
+            if ($ro_val !== $ro_old) {
+                $trigger_map = ['force_open' => 'reg_force_open', 'force_closed' => 'reg_force_closed', 'auto' => 'reg_auto'];
+                $trigger = $trigger_map[$ro_val] ?? '';
+                if ($trigger) {
+                    self::maybe_send_registration_notification($course, $ro_old, $ro_val, $trigger);
+                }
+            }
         }
     }
 
@@ -510,6 +564,11 @@ class PMCM_Admin
             self::save_settings();
             PMCM_Cron::check_and_update_editions();
             echo '<div class="notice notice-success is-dismissible"><p>' . __('Settings saved! Edition check completed - see Activity Log for details.', 'prepmedico-course-management') . '</p></div>';
+        }
+
+        if (isset($_POST['wcem_save_notifications']) && check_admin_referer('wcem_notifications_nonce')) {
+            self::save_notification_settings();
+            echo '<div class="notice notice-success is-dismissible"><p>' . __('Notification settings saved.', 'prepmedico-course-management') . '</p></div>';
         }
 
         if (isset($_GET['clear_log']) && wp_verify_nonce($_GET['_wpnonce'], 'clear_log')) {
@@ -883,6 +942,10 @@ class PMCM_Admin
                                 <code class="wcem-shortcode-code">[course_registration_info course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
                                 <p class="wcem-shortcode-desc"><?php _e('Complete registration info box with edition name, dates, status badge, and early bird message.', 'prepmedico-course-management'); ?></p>
                             </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[edition_dates course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Displays the current edition date range as plain text (e.g. "01 Jan 2025 – 28 Feb 2025"). Returns "TBA" when no dates are set.', 'prepmedico-course-management'); ?></p>
+                            </div>
 
                             <h4 class="wcem-shortcode-group-title" style="margin-top: 16px;"><?php _e('Elementor Table / Frontend Shortcodes', 'prepmedico-course-management'); ?></h4>
                             <div class="wcem-shortcode-item">
@@ -921,7 +984,86 @@ class PMCM_Admin
                                 <code class="wcem-shortcode-code">[pmcm_edition_products_script]</code>
                                 <p class="wcem-shortcode-desc"><?php _e('Simplified JS for edition links. Works with pmcm_edition_marker - no data attributes needed on buttons.', 'prepmedico-course-management'); ?></p>
                             </div>
+                            <div class="wcem-shortcode-item">
+                                <code class="wcem-shortcode-code">[pmcm_exam_dates course="<span class="wcem-dynamic-course"><?php echo esc_html($first_course_slug); ?></span>" slot="current"]</code>
+                                <p class="wcem-shortcode-desc"><?php _e('Displays the free-text exam dates entered in settings (e.g. "May 11-15 Birmingham"). Use slot="next" for next edition. Returns "TBA" when empty.', 'prepmedico-course-management'); ?></p>
+                            </div>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Notification Settings -->
+                <section class="wcem-card">
+                    <div class="wcem-card-header">
+                        <div class="wcem-icon-box" style="background:#fef3c7;color:#d97706;">
+                            <span class="material-icons-round">notifications_active</span>
+                        </div>
+                        <h3><?php _e('Email Notification Settings', 'prepmedico-course-management'); ?></h3>
+                    </div>
+                    <div class="wcem-card-body">
+                        <form method="post" action="">
+                            <?php wp_nonce_field('wcem_notifications_nonce'); ?>
+                            <input type="hidden" name="wcem_save_notifications" value="1">
+
+                            <!-- Recipients -->
+                            <div class="wcem-section">
+                                <div class="wcem-section-header">
+                                    <div class="wcem-icon-box" style="background:#e0f2fe;color:#0369a1;">
+                                        <span class="material-icons-round">group</span>
+                                    </div>
+                                    <div>
+                                        <h4><?php _e('Notification Recipients', 'prepmedico-course-management'); ?></h4>
+                                        <p class="description"><?php _e('The site admin email is always included. Add extra addresses below.', 'prepmedico-course-management'); ?></p>
+                                    </div>
+                                </div>
+                                <div class="wcem-field" style="margin-top:12px;">
+                                    <label for="pmcm_notification_emails"><?php _e('Additional Recipients', 'prepmedico-course-management'); ?></label>
+                                    <input type="text" id="pmcm_notification_emails" name="pmcm_notification_emails" value="<?php echo esc_attr(get_option('pmcm_notification_emails', '')); ?>" placeholder="editor@example.com, manager@example.com" style="width:100%;margin-top:4px;">
+                                    <p class="description" style="margin-top:6px;"><?php printf(__('Comma-separated emails. Admin email <strong>%s</strong> is always notified.', 'prepmedico-course-management'), esc_html(get_option('admin_email'))); ?></p>
+                                </div>
+                            </div>
+
+                            <!-- Triggers -->
+                            <div class="wcem-section" style="margin-top:20px;">
+                                <div class="wcem-section-header">
+                                    <div class="wcem-icon-box" style="background:#f0fdf4;color:#16a34a;">
+                                        <span class="material-icons-round">bolt</span>
+                                    </div>
+                                    <div>
+                                        <h4><?php _e('Email Triggers', 'prepmedico-course-management'); ?></h4>
+                                        <p class="description"><?php _e('Select which events send an email notification to all recipients.', 'prepmedico-course-management'); ?></p>
+                                    </div>
+                                </div>
+                                <?php
+                                $notif_triggers = json_decode((string) get_option('pmcm_notification_triggers', '[]'), true);
+                                if (!is_array($notif_triggers)) $notif_triggers = [];
+                                $trigger_opts = [
+                                    'reg_force_open'   => ['color' => '#16a34a', 'label' => __('Registration → Force Open',   'prepmedico-course-management'), 'desc' => __('Send email when any course registration override is set to Force Open.',          'prepmedico-course-management')],
+                                    'reg_force_closed' => ['color' => '#dc2626', 'label' => __('Registration → Force Closed', 'prepmedico-course-management'), 'desc' => __('Send email when any course registration override is set to Force Closed (Opening Soon).', 'prepmedico-course-management')],
+                                    'reg_auto'         => ['color' => '#2563eb', 'label' => __('Registration → Auto',         'prepmedico-course-management'), 'desc' => __('Send email when any course registration override is set back to Auto (date-based).', 'prepmedico-course-management')],
+                                    'edition_switch'   => ['color' => '#7c3aed', 'label' => __('Edition Auto-Switch',         'prepmedico-course-management'), 'desc' => __('Send email when the daily cron auto-increments or promotes an edition.',           'prepmedico-course-management')],
+                                ];
+                                ?>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+                                    <?php foreach ($trigger_opts as $val => $opt): ?>
+                                    <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1.5px solid <?php echo in_array($val, $notif_triggers) ? esc_attr($opt['color']) : '#e2e8f0'; ?>;border-radius:8px;cursor:pointer;background:<?php echo in_array($val, $notif_triggers) ? 'rgba(0,0,0,0.02)' : '#f8fafc'; ?>;">
+                                        <input type="checkbox" name="pmcm_notification_triggers[]" value="<?php echo esc_attr($val); ?>" <?php checked(in_array($val, $notif_triggers)); ?> style="margin-top:2px;flex-shrink:0;">
+                                        <div>
+                                            <span style="font-size:12px;font-weight:700;color:<?php echo esc_attr($opt['color']); ?>;"><?php echo esc_html($opt['label']); ?></span>
+                                            <p class="description" style="font-size:11px;margin-top:2px;line-height:1.4;"><?php echo esc_html($opt['desc']); ?></p>
+                                        </div>
+                                    </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:16px;text-align:right;">
+                                <button type="submit" class="wcem-save-btn">
+                                    <span class="material-icons-round">save</span>
+                                    <?php _e('Save Notification Settings', 'prepmedico-course-management'); ?>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </section>
 

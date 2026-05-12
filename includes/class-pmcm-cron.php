@@ -148,10 +148,19 @@ class PMCM_Cron {
      * Send edition switch notification
      */
     private static function send_edition_switch_notification($switched, $promoted = []) {
-        $admin_email = get_option('admin_email');
-        $subject = '[PrepMedico] Edition Update Completed';
+        // Respect the edition_switch trigger setting
+        $triggers = json_decode((string) get_option('pmcm_notification_triggers', '[]'), true);
+        if (!is_array($triggers) || !in_array('edition_switch', $triggers, true)) {
+            return;
+        }
 
-        $message = "";
+        $recipients = PMCM_Admin::get_notification_recipients();
+        if (empty($recipients)) {
+            return;
+        }
+
+        $subject = '[PrepMedico] Edition Update Completed';
+        $message = '';
 
         if (!empty($promoted)) {
             $message .= "The following course editions have been PROMOTED from Next slot:\n\n";
@@ -171,6 +180,6 @@ class PMCM_Cron {
 
         $message .= "\nManage editions: " . admin_url('admin.php?page=prepmedico-management');
 
-        wp_mail($admin_email, $subject, $message);
+        wp_mail($recipients, $subject, $message);
     }
 }
