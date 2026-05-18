@@ -76,8 +76,8 @@ class PMCM_Admin
 
         add_submenu_page(
             'prepmedico-management',
-            __('ASiT Coupon Management', 'prepmedico-course-management'),
-            __('ASiT Coupon Management', 'prepmedico-course-management'),
+            __('Academic Partners', 'prepmedico-course-management'),
+            __('Academic Partners', 'prepmedico-course-management'),
             'manage_woocommerce',
             'prepmedico-asit-management',
             [__CLASS__, 'render_asit_page']
@@ -121,6 +121,8 @@ class PMCM_Admin
         register_setting('pmcm_asit_settings', 'pmcm_asit_library_include_children', ['type' => 'boolean', 'sanitize_callback' => function ($v) {
             return $v ? 1 : 0;
         }]);
+        register_setting('pmcm_asit_settings', 'pmcm_bomss_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
+        register_setting('pmcm_asit_settings', 'pmcm_rouleaux_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
     }
 
     /**
@@ -380,9 +382,15 @@ class PMCM_Admin
      */
     private static function save_asit_settings()
     {
-        // Save global coupon code
+        // Save global coupon codes
         if (isset($_POST['pmcm_asit_coupon_code'])) {
             update_option('pmcm_asit_coupon_code', sanitize_text_field($_POST['pmcm_asit_coupon_code']));
+        }
+        if (isset($_POST['pmcm_bomss_coupon_code'])) {
+            update_option('pmcm_bomss_coupon_code', sanitize_text_field($_POST['pmcm_bomss_coupon_code']));
+        }
+        if (isset($_POST['pmcm_rouleaux_coupon_code'])) {
+            update_option('pmcm_rouleaux_coupon_code', sanitize_text_field($_POST['pmcm_rouleaux_coupon_code']));
         }
         if (isset($_POST['pmcm_asit_discount_early_bird'])) {
             update_option('pmcm_asit_discount_early_bird', absint($_POST['pmcm_asit_discount_early_bird']));
@@ -440,6 +448,50 @@ class PMCM_Admin
             update_option('pmcm_course_mappings', $courses);
             PMCM_Core::clear_cache();
             PMCM_Core::log_activity('ASiT per-course settings updated', 'success');
+        }
+
+        // Save per-course BOMSS configuration
+        if (isset($_POST['bomss_config']) && is_array($_POST['bomss_config'])) {
+            $courses = get_option('pmcm_course_mappings', []);
+            if (empty($courses)) $courses = PMCM_Core::get_default_courses();
+
+            foreach ($_POST['bomss_config'] as $course_slug => $config) {
+                $course_slug = sanitize_text_field($course_slug);
+                if (!isset($courses[$course_slug])) continue;
+
+                $mode = in_array($config['mode'] ?? '', ['none', 'early_bird_only', 'always']) ? $config['mode'] : 'none';
+                $courses[$course_slug]['bomss_discount_mode']       = $mode;
+                $courses[$course_slug]['bomss_early_bird_discount'] = absint($config['eb_discount'] ?? 0);
+                $courses[$course_slug]['bomss_normal_discount']     = absint($config['normal_discount'] ?? 0);
+                $courses[$course_slug]['bomss_show_field']          = isset($config['show_field']) && $config['show_field'] == '1';
+                $courses[$course_slug]['bomss_eligible']            = ($mode !== 'none');
+            }
+
+            update_option('pmcm_course_mappings', $courses);
+            PMCM_Core::clear_cache();
+            PMCM_Core::log_activity('BOMSS per-course settings updated', 'success');
+        }
+
+        // Save per-course Rouleaux configuration
+        if (isset($_POST['rouleaux_config']) && is_array($_POST['rouleaux_config'])) {
+            $courses = get_option('pmcm_course_mappings', []);
+            if (empty($courses)) $courses = PMCM_Core::get_default_courses();
+
+            foreach ($_POST['rouleaux_config'] as $course_slug => $config) {
+                $course_slug = sanitize_text_field($course_slug);
+                if (!isset($courses[$course_slug])) continue;
+
+                $mode = in_array($config['mode'] ?? '', ['none', 'early_bird_only', 'always']) ? $config['mode'] : 'none';
+                $courses[$course_slug]['rouleaux_discount_mode']       = $mode;
+                $courses[$course_slug]['rouleaux_early_bird_discount'] = absint($config['eb_discount'] ?? 0);
+                $courses[$course_slug]['rouleaux_normal_discount']     = absint($config['normal_discount'] ?? 0);
+                $courses[$course_slug]['rouleaux_show_field']          = isset($config['show_field']) && $config['show_field'] == '1';
+                $courses[$course_slug]['rouleaux_eligible']            = ($mode !== 'none');
+            }
+
+            update_option('pmcm_course_mappings', $courses);
+            PMCM_Core::clear_cache();
+            PMCM_Core::log_activity('Rouleaux per-course settings updated', 'success');
         }
     }
 
@@ -1166,10 +1218,12 @@ class PMCM_Admin
 
         if (isset($_POST['pmcm_save_asit_settings']) && check_admin_referer('pmcm_asit_settings_nonce')) {
             self::save_asit_settings();
-            echo '<div class="notice notice-success is-dismissible"><p>' . __('ASiT settings saved successfully!', 'prepmedico-course-management') . '</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>' . __('Academic Partners settings saved successfully!', 'prepmedico-course-management') . '</p></div>';
         }
 
-        $coupon_code = get_option('pmcm_asit_coupon_code', 'ASIT');
+        $coupon_code         = get_option('pmcm_asit_coupon_code', 'ASIT');
+        $bomss_coupon_code   = get_option('pmcm_bomss_coupon_code', 'BOMSS');
+        $rouleaux_coupon_code = get_option('pmcm_rouleaux_coupon_code', 'ROULEAUX');
         $default_discount = get_option('pmcm_asit_discount_normal', 15);
         $all_courses = PMCM_Core::get_courses();
     ?>
@@ -1178,7 +1232,7 @@ class PMCM_Admin
             <header class="wcem-asit-header">
                 <div class="wcem-asit-header-content">
                     <span class="material-icons-round wcem-asit-icon">local_offer</span>
-                    <h1><?php _e('ASiT Coupon Management', 'prepmedico-course-management'); ?></h1>
+                    <h1><?php _e('Academic Partners', 'prepmedico-course-management'); ?></h1>
                 </div>
             </header>
 
@@ -1199,10 +1253,24 @@ class PMCM_Admin
                     </div>
                     <div class="wcem-asit-global-body">
                         <div class="wcem-asit-global-field">
-                            <label><?php _e('Active Coupon Code', 'prepmedico-course-management'); ?></label>
+                            <label><?php _e('ASiT Coupon Code', 'prepmedico-course-management'); ?></label>
                             <div class="wcem-asit-input-with-tag">
                                 <input type="text" name="pmcm_asit_coupon_code" value="<?php echo esc_attr($coupon_code); ?>" class="wcem-asit-coupon-input">
                                 <span class="wcem-asit-tag"><?php _e('GLOBAL OVERRIDE', 'prepmedico-course-management'); ?></span>
+                            </div>
+                        </div>
+                        <div class="wcem-asit-global-field">
+                            <label><?php _e('BOMSS Coupon Code', 'prepmedico-course-management'); ?></label>
+                            <div class="wcem-asit-input-with-tag">
+                                <input type="text" name="pmcm_bomss_coupon_code" value="<?php echo esc_attr($bomss_coupon_code); ?>" class="wcem-asit-coupon-input">
+                                <span class="wcem-asit-tag" style="background:#1a6b3c;"><?php _e('BOMSS', 'prepmedico-course-management'); ?></span>
+                            </div>
+                        </div>
+                        <div class="wcem-asit-global-field">
+                            <label><?php _e('Rouleaux Club Coupon Code', 'prepmedico-course-management'); ?></label>
+                            <div class="wcem-asit-input-with-tag">
+                                <input type="text" name="pmcm_rouleaux_coupon_code" value="<?php echo esc_attr($rouleaux_coupon_code); ?>" class="wcem-asit-coupon-input">
+                                <span class="wcem-asit-tag" style="background:#1565c0;"><?php _e('ROULEAUX', 'prepmedico-course-management'); ?></span>
                             </div>
                         </div>
                         <div class="wcem-asit-global-field">
@@ -1433,6 +1501,74 @@ class PMCM_Admin
                                     </div>
                                 </div>
 
+                                <!-- BOMSS Sub-section -->
+                                <?php
+                                $b_mode   = isset($course['bomss_discount_mode']) ? $course['bomss_discount_mode'] : 'none';
+                                $b_eb     = isset($course['bomss_early_bird_discount']) ? intval($course['bomss_early_bird_discount']) : 0;
+                                $b_norm   = isset($course['bomss_normal_discount']) ? intval($course['bomss_normal_discount']) : 0;
+                                $b_show   = isset($course['bomss_show_field']) ? (bool) $course['bomss_show_field'] : false;
+                                ?>
+                                <details class="wcem-partner-subsection" style="border-top:1px solid #eee;padding-top:10px;margin-top:10px;">
+                                    <summary style="cursor:pointer;font-weight:600;color:#1a6b3c;user-select:none;">
+                                        BOMSS
+                                        <span class="wcem-asit-status-badge <?php echo ($b_mode !== 'none') ? 'active' : 'inactive'; ?>" style="font-size:10px;margin-left:6px;">
+                                            <?php echo ($b_mode !== 'none') ? 'ON' : 'OFF'; ?>
+                                        </span>
+                                    </summary>
+                                    <div style="padding-top:10px;">
+                                        <div class="wcem-asit-mode-toggle" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
+                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'none') ? 'active' : ''; ?>" data-mode="none">No Discount</button>
+                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only">Early Bird</button>
+                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'always') ? 'active' : ''; ?>" data-mode="always">Always</button>
+                                        </div>
+                                        <input type="hidden" name="bomss_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($b_mode); ?>" class="wcem-partner-mode-input" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
+                                        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;<?php echo ($b_mode === 'none') ? 'display:none;' : ''; ?>" class="wcem-partner-discount-row" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
+                                            <label style="font-size:13px;">EB Discount %</label>
+                                            <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($b_eb); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
+                                            <label style="font-size:13px;">Normal %</label>
+                                            <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($b_norm); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
+                                            <label style="font-size:13px;display:flex;align-items:center;gap:4px;">
+                                                <input type="checkbox" name="bomss_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($b_show, true); ?>>
+                                                Show Field
+                                            </label>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <!-- Rouleaux Club Sub-section -->
+                                <?php
+                                $r_mode   = isset($course['rouleaux_discount_mode']) ? $course['rouleaux_discount_mode'] : 'none';
+                                $r_eb     = isset($course['rouleaux_early_bird_discount']) ? intval($course['rouleaux_early_bird_discount']) : 0;
+                                $r_norm   = isset($course['rouleaux_normal_discount']) ? intval($course['rouleaux_normal_discount']) : 0;
+                                $r_show   = isset($course['rouleaux_show_field']) ? (bool) $course['rouleaux_show_field'] : false;
+                                ?>
+                                <details class="wcem-partner-subsection" style="border-top:1px solid #eee;padding-top:10px;margin-top:10px;">
+                                    <summary style="cursor:pointer;font-weight:600;color:#1565c0;user-select:none;">
+                                        Rouleaux Club
+                                        <span class="wcem-asit-status-badge <?php echo ($r_mode !== 'none') ? 'active' : 'inactive'; ?>" style="font-size:10px;margin-left:6px;">
+                                            <?php echo ($r_mode !== 'none') ? 'ON' : 'OFF'; ?>
+                                        </span>
+                                    </summary>
+                                    <div style="padding-top:10px;">
+                                        <div class="wcem-asit-mode-toggle" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
+                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'none') ? 'active' : ''; ?>" data-mode="none">No Discount</button>
+                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only">Early Bird</button>
+                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'always') ? 'active' : ''; ?>" data-mode="always">Always</button>
+                                        </div>
+                                        <input type="hidden" name="rouleaux_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($r_mode); ?>" class="wcem-partner-mode-input" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
+                                        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;<?php echo ($r_mode === 'none') ? 'display:none;' : ''; ?>" class="wcem-partner-discount-row" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
+                                            <label style="font-size:13px;">EB Discount %</label>
+                                            <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($r_eb); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
+                                            <label style="font-size:13px;">Normal %</label>
+                                            <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($r_norm); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
+                                            <label style="font-size:13px;display:flex;align-items:center;gap:4px;">
+                                                <input type="checkbox" name="rouleaux_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($r_show, true); ?>>
+                                                Show Field
+                                            </label>
+                                        </div>
+                                    </div>
+                                </details>
+
                                 <div class="wcem-asit-card-footer">
                                     <?php if ($mode === 'early_bird_only'): ?>
                                         <?php if ($edition_scope === 'next' || $edition_scope === 'both'): ?>
@@ -1578,6 +1714,29 @@ class PMCM_Admin
                     }
 
                     $card.attr('data-status', mode === 'always' ? 'active' : (mode === 'early_bird_only' ? 'early-bird' : 'inactive'));
+                });
+
+                // BOMSS / Rouleaux partner mode toggle buttons
+                $(document).on('click', '.wcem-partner-mode-btn', function() {
+                    var $btn     = $(this);
+                    var $toggle  = $btn.closest('.wcem-asit-mode-toggle');
+                    var partner  = $toggle.data('partner');
+                    var course   = $toggle.data('course');
+                    var mode     = $btn.data('mode');
+
+                    $toggle.find('.wcem-partner-mode-btn').removeClass('active');
+                    $btn.addClass('active');
+
+                    // Update hidden input
+                    $('.wcem-partner-mode-input[data-partner="' + partner + '"][data-course="' + course + '"]').val(mode);
+
+                    // Show/hide discount row
+                    var $row = $('.wcem-partner-discount-row[data-partner="' + partner + '"][data-course="' + course + '"]');
+                    if (mode === 'none') {
+                        $row.hide();
+                    } else {
+                        $row.show();
+                    }
                 });
 
                 // Edition scope toggle buttons

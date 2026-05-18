@@ -272,12 +272,26 @@ class PMCM_Cart {
             $order->update_meta_data('_wcem_courses_data', json_encode($courses_in_order));
         }
 
-        // Check for ASiT membership number (already saved by PMCM_ASiT class)
-        $asit_number = $order->get_meta('_asit_membership_number');
-        if (!empty($asit_number)) {
-            $order->update_meta_data('_wcem_asit_member', 'yes');
-            $order->update_meta_data('_wcem_asit_number', $asit_number);
-            PMCM_Core::log_activity('Order #' . $order_id . ' - ASiT member: ' . $asit_number, 'info');
+        // Sync academic partner meta to legacy keys for backwards compat
+        $partner     = $order->get_meta('_pmcm_academic_partner');
+        $partner_num = $order->get_meta('_pmcm_partner_number');
+
+        if (!empty($partner) && !empty($partner_num)) {
+            $order->update_meta_data('_wcem_partner', $partner);
+            $order->update_meta_data('_wcem_partner_number', $partner_num);
+            if ($partner === 'asit') {
+                $order->update_meta_data('_wcem_asit_member', 'yes');
+                $order->update_meta_data('_wcem_asit_number', $partner_num);
+            }
+            PMCM_Core::log_activity('Order #' . $order_id . ' - Academic partner: ' . $partner . ' #' . $partner_num, 'info');
+        } else {
+            // Backwards compat: orders placed before unified system
+            $asit_number = $order->get_meta('_asit_membership_number');
+            if (!empty($asit_number)) {
+                $order->update_meta_data('_wcem_asit_member', 'yes');
+                $order->update_meta_data('_wcem_asit_number', $asit_number);
+                PMCM_Core::log_activity('Order #' . $order_id . ' - ASiT member: ' . $asit_number, 'info');
+            }
         }
 
         $order->save();
@@ -337,17 +351,35 @@ class PMCM_Cart {
             }
         }
 
-        // Show ASiT Member status with membership number
-        $is_asit_member = $order->get_meta('_wcem_asit_member');
-        $asit_number = $order->get_meta('_wcem_asit_number');
-        if (empty($asit_number)) {
-            $asit_number = $order->get_meta('_asit_membership_number');
+        // Show academic partner badge + membership number
+        $partner     = $order->get_meta('_pmcm_academic_partner');
+        $partner_num = $order->get_meta('_pmcm_partner_number');
+
+        // Backwards compat for orders placed before the unified system
+        if (empty($partner)) {
+            $is_asit_member = $order->get_meta('_wcem_asit_member');
+            $legacy_num     = $order->get_meta('_wcem_asit_number');
+            if (empty($legacy_num)) $legacy_num = $order->get_meta('_asit_membership_number');
+            if ($is_asit_member === 'yes' || !empty($legacy_num)) {
+                $partner     = 'asit';
+                $partner_num = $legacy_num;
+            }
         }
 
-        if ($is_asit_member === 'yes' || !empty($asit_number)) {
-            $output .= '<p style="margin:10px 0 5px;"><span style="display:inline-block;padding:3px 10px;background:linear-gradient(135deg,#8d2063,#442e8c);color:#fff;border-radius:4px;font-size:12px;font-weight:600;">ASiT Member</span>';
-            if ($asit_number) {
-                $output .= ' <span style="color:#333;font-weight:600;font-size:14px;">#' . esc_html($asit_number) . '</span>';
+        if (!empty($partner)) {
+            $partner_labels = ['asit' => 'ASiT', 'bomss' => 'BOMSS', 'rouleaux' => 'Rouleaux Club'];
+            $partner_colors = ['asit' => 'linear-gradient(135deg,#8d2063,#442e8c)', 'bomss' => '#1a6b3c', 'rouleaux' => '#1565c0'];
+            $label = isset($partner_labels[$partner]) ? $partner_labels[$partner] : strtoupper($partner);
+            $color = isset($partner_colors[$partner]) ? $partner_colors[$partner] : '#555';
+
+            $output .= '<p style="margin:10px 0 5px;">';
+            $output .= '<span style="display:inline-block;padding:3px 10px;background:' . esc_attr($color) . ';color:#fff;border-radius:4px;font-size:12px;font-weight:600;">' . esc_html($label) . ' Member</span>';
+            if (!empty($partner_num)) {
+                $output .= ' <span style="color:#333;font-weight:600;font-size:14px;">#' . esc_html($partner_num) . '</span>';
+            }
+            // Membership pending badge
+            if ($order->get_status() === 'membership-pending') {
+                $output .= ' <span style="display:inline-block;padding:3px 8px;background:#f9a825;color:#333;border-radius:4px;font-size:11px;font-weight:600;margin-left:6px;">Membership Pending Verification</span>';
             }
             $output .= '</p>';
         }

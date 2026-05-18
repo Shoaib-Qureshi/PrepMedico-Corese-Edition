@@ -116,15 +116,27 @@ class PMCM_FluentCRM {
                 );
             }
 
-            // Check for ASiT membership number and update the asit custom field
-            $asit_number = $order->get_meta('_wcem_asit_number');
-            if (empty($asit_number)) {
-                $asit_number = $order->get_meta('_asit_membership_number');
-            }
+            // Sync academic partner membership number to FluentCRM custom field
+            $partner     = $order->get_meta('_pmcm_academic_partner');
+            $partner_num = $order->get_meta('_pmcm_partner_number');
 
-            if (!empty($asit_number)) {
-                self::update_custom_field($subscriber, 'asit', $asit_number);
-                PMCM_Core::log_activity('Updated FluentCRM asit field for ' . $email . ' with number: ' . $asit_number, 'success');
+            if (!empty($partner) && !empty($partner_num)) {
+                // Map partner slug to FluentCRM field slug
+                $field_map = ['asit' => 'asit', 'bomss' => 'bomss', 'rouleaux' => 'rouleaux'];
+                if (isset($field_map[$partner])) {
+                    self::update_custom_field($subscriber, $field_map[$partner], $partner_num);
+                    PMCM_Core::log_activity('Updated FluentCRM ' . $partner . ' field for ' . $email . ' with number: ' . $partner_num, 'success');
+                }
+            } else {
+                // Backwards compat: legacy orders that only have _asit_membership_number
+                $asit_number = $order->get_meta('_wcem_asit_number');
+                if (empty($asit_number)) {
+                    $asit_number = $order->get_meta('_asit_membership_number');
+                }
+                if (!empty($asit_number)) {
+                    self::update_custom_field($subscriber, 'asit', $asit_number);
+                    PMCM_Core::log_activity('Updated FluentCRM asit field for ' . $email . ' with number: ' . $asit_number, 'success');
+                }
             }
 
             return true;

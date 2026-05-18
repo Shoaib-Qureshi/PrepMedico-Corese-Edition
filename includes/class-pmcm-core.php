@@ -20,14 +20,16 @@ class PMCM_Core {
     private static $child_map_cache = null;
 
     /**
-     * ASiT discount modes
-     * - 'none': No ASiT discount, don't show field
-     * - 'early_bird_only': ASiT discount only during early bird period
-     * - 'always': ASiT discount always applies
+     * ASiT / partner discount modes
      */
     const ASIT_MODE_NONE = 'none';
     const ASIT_MODE_EARLY_BIRD_ONLY = 'early_bird_only';
     const ASIT_MODE_ALWAYS = 'always';
+
+    /**
+     * Supported academic partners
+     */
+    const PARTNERS = ['asit', 'bomss', 'rouleaux'];
 
     /**
      * Default courses - used as fallback and for initial migration
@@ -74,6 +76,16 @@ class PMCM_Core {
             'asit_early_bird_discount' => 5,
             'asit_normal_discount' => 0,
             'asit_show_field' => true,
+            'bomss_eligible' => true,
+            'bomss_discount_mode' => 'early_bird_only',
+            'bomss_early_bird_discount' => 10,
+            'bomss_normal_discount' => 0,
+            'bomss_show_field' => true,
+            'rouleaux_eligible' => false,
+            'rouleaux_discount_mode' => 'none',
+            'rouleaux_early_bird_discount' => 0,
+            'rouleaux_normal_discount' => 0,
+            'rouleaux_show_field' => false,
             'children' => ['frcs-rapid-review-lecture-series', 'mock-viva', 'sba-q-bank', 'speciality-based-weekend-viva-sessions']
         ],
         'frcs-vasc' => [
@@ -89,6 +101,16 @@ class PMCM_Core {
             'asit_early_bird_discount' => 5,
             'asit_normal_discount' => 0,
             'asit_show_field' => true,
+            'bomss_eligible' => false,
+            'bomss_discount_mode' => 'none',
+            'bomss_early_bird_discount' => 0,
+            'bomss_normal_discount' => 0,
+            'bomss_show_field' => false,
+            'rouleaux_eligible' => true,
+            'rouleaux_discount_mode' => 'early_bird_only',
+            'rouleaux_early_bird_discount' => 10,
+            'rouleaux_normal_discount' => 0,
+            'rouleaux_show_field' => true,
             'children' => ['frcs-vasc-individual-weekend-viva-sessions', 'frcs-vasc-library-subscription']
         ],
         'library-subscription' => [
@@ -103,6 +125,16 @@ class PMCM_Core {
             'asit_early_bird_discount' => 10,
             'asit_normal_discount' => 10,
             'asit_show_field' => true,
+            'bomss_eligible' => true,
+            'bomss_discount_mode' => 'always',
+            'bomss_early_bird_discount' => 10,
+            'bomss_normal_discount' => 10,
+            'bomss_show_field' => true,
+            'rouleaux_eligible' => false,
+            'rouleaux_discount_mode' => 'none',
+            'rouleaux_early_bird_discount' => 0,
+            'rouleaux_normal_discount' => 0,
+            'rouleaux_show_field' => false,
             'children' => []
         ],
         'scfhs' => [
@@ -710,6 +742,23 @@ class PMCM_Core {
         // Set asit_eligible based on mode for backward compatibility
         $course_data['asit_eligible'] = ($course_data['asit_discount_mode'] !== 'none');
 
+        // BOMSS/Rouleaux configuration defaults
+        foreach (['bomss', 'rouleaux'] as $partner) {
+            if (!isset($course_data[$partner . '_discount_mode'])) {
+                $course_data[$partner . '_discount_mode'] = 'none';
+            }
+            if (!isset($course_data[$partner . '_early_bird_discount'])) {
+                $course_data[$partner . '_early_bird_discount'] = 0;
+            }
+            if (!isset($course_data[$partner . '_normal_discount'])) {
+                $course_data[$partner . '_normal_discount'] = 0;
+            }
+            if (!isset($course_data[$partner . '_show_field'])) {
+                $course_data[$partner . '_show_field'] = false;
+            }
+            $course_data[$partner . '_eligible'] = ($course_data[$partner . '_discount_mode'] !== 'none');
+        }
+
         $courses[$course_slug] = $course_data;
         update_option('pmcm_course_mappings', $courses);
 
@@ -746,8 +795,9 @@ class PMCM_Core {
         $existing = get_option('pmcm_course_mappings', null);
 
         if ($existing !== null && !empty($existing)) {
-            // Already migrated - but check if ASiT fields need to be added
+            // Already migrated - ensure all partner fields are present
             self::migrate_asit_fields();
+            self::migrate_partner_fields();
             return false;
         }
 
@@ -815,6 +865,125 @@ class PMCM_Core {
         }
 
         return $updated;
+    }
+
+    /**
+     * Migrate BOMSS and Rouleaux partner fields to existing course installations
+     */
+    public static function migrate_partner_fields() {
+        $courses = get_option('pmcm_course_mappings', []);
+        if (empty($courses)) {
+            return false;
+        }
+
+        $updated = false;
+        $partner_defaults = [
+            'bomss'   => ['eligible' => false, 'discount_mode' => 'none', 'early_bird_discount' => 0, 'normal_discount' => 0, 'show_field' => false],
+            'rouleaux' => ['eligible' => false, 'discount_mode' => 'none', 'early_bird_discount' => 0, 'normal_discount' => 0, 'show_field' => false],
+        ];
+
+        // Known initial values per discount matrix
+        $preset_overrides = [
+            'frcs'                 => ['bomss' => ['eligible' => true, 'discount_mode' => 'early_bird_only', 'early_bird_discount' => 10, 'show_field' => true]],
+            'frcs-vasc'            => ['rouleaux' => ['eligible' => true, 'discount_mode' => 'early_bird_only', 'early_bird_discount' => 10, 'show_field' => true]],
+            'library-subscription' => ['bomss' => ['eligible' => true, 'discount_mode' => 'always', 'early_bird_discount' => 10, 'normal_discount' => 10, 'show_field' => true]],
+        ];
+
+        foreach ($courses as $slug => &$course) {
+            foreach (array_keys($partner_defaults) as $partner) {
+                if (!isset($course[$partner . '_discount_mode'])) {
+                    $defaults = $partner_defaults[$partner];
+                    if (isset($preset_overrides[$slug][$partner])) {
+                        $defaults = array_merge($defaults, $preset_overrides[$slug][$partner]);
+                    }
+                    $course[$partner . '_eligible']            = $defaults['eligible'];
+                    $course[$partner . '_discount_mode']       = $defaults['discount_mode'];
+                    $course[$partner . '_early_bird_discount'] = $defaults['early_bird_discount'];
+                    $course[$partner . '_normal_discount']     = $defaults['normal_discount'];
+                    $course[$partner . '_show_field']          = $defaults['show_field'];
+                    $updated = true;
+                }
+            }
+        }
+        unset($course);
+
+        if ($updated) {
+            update_option('pmcm_course_mappings', $courses);
+            self::clear_cache();
+            self::log_activity('Migrated BOMSS/Rouleaux partner fields to course configuration', 'success');
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Get partner discount config for a product (mirrors get_asit_config_for_product)
+     *
+     * @param int    $product_id
+     * @param string $partner_slug  asit | bomss | rouleaux
+     * @param string $edition_slot  current | next
+     */
+    public static function get_partner_config_for_product($product_id, $partner_slug, $edition_slot = 'current') {
+        if ($partner_slug === 'asit') {
+            return self::get_asit_config_for_product($product_id, $edition_slot);
+        }
+
+        $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        $child_map  = self::get_child_to_parent_map();
+        $courses    = self::get_courses();
+
+        foreach ($categories as $cat_slug) {
+            if (isset($courses[$cat_slug])) {
+                return self::get_partner_discount_for_course($cat_slug, $partner_slug, $edition_slot);
+            }
+            if (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
+                return self::get_partner_discount_for_course($child_map[$cat_slug], $partner_slug, $edition_slot);
+            }
+        }
+
+        return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+    }
+
+    /**
+     * Get partner discount settings for a specific course + partner
+     */
+    public static function get_partner_discount_for_course($course_slug, $partner_slug, $edition_slot = 'current') {
+        if ($partner_slug === 'asit') {
+            return self::get_asit_discount_for_course($course_slug, $edition_slot);
+        }
+
+        $courses = self::get_courses();
+        $course  = isset($courses[$course_slug]) ? $courses[$course_slug] : null;
+
+        if (!$course) {
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+        }
+
+        $p     = $partner_slug;
+        $mode  = isset($course[$p . '_discount_mode']) ? $course[$p . '_discount_mode'] : 'none';
+        $eb    = isset($course[$p . '_early_bird_discount']) ? intval($course[$p . '_early_bird_discount']) : 0;
+        $norm  = isset($course[$p . '_normal_discount']) ? intval($course[$p . '_normal_discount']) : 0;
+        $show  = isset($course[$p . '_show_field']) ? (bool) $course[$p . '_show_field'] : false;
+
+        if ($mode === 'none') {
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+        }
+
+        if ($mode === 'always') {
+            return ['discount' => $norm, 'is_eligible' => true, 'show_field' => $show, 'mode' => 'always'];
+        }
+
+        if ($mode === 'early_bird_only') {
+            $current_eb = self::is_course_early_bird_active($course_slug);
+            $next_eb    = self::is_next_edition_early_bird_active($course_slug);
+            $is_early_bird = ($edition_slot === 'next') ? $next_eb : $current_eb;
+            if ($is_early_bird) {
+                return ['discount' => $eb, 'is_eligible' => true, 'show_field' => $show, 'mode' => 'early_bird_only'];
+            }
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => $show, 'mode' => 'early_bird_only'];
+        }
+
+        return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
     }
 
     /**

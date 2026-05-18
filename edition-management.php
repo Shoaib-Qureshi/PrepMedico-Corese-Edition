@@ -41,6 +41,7 @@ function pmcm_load_files()
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-admin.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-fluentcrm.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-asit.php';
+    require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-academic-partners.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-cart.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-frontend.php';
     require_once PMCM_PLUGIN_DIR . 'includes/class-pmcm-cron.php';
@@ -67,8 +68,9 @@ function pmcm_init()
     if (!PMCM_Core::is_migrated()) {
         PMCM_Core::migrate_to_database();
     } else {
-        // Ensure ASiT fields are migrated for existing installations
+        // Ensure all partner fields are migrated for existing installations
         PMCM_Core::migrate_asit_fields();
+        PMCM_Core::migrate_partner_fields();
     }
 
     // Initialize all components
@@ -76,12 +78,26 @@ function pmcm_init()
     PMCM_Admin::init();
     PMCM_FluentCRM::init();
     PMCM_ASiT::init();
+    PMCM_Academic_Partners::init();
     PMCM_Cart::init();
     PMCM_Frontend::init();
     PMCM_Cron::init();
     PMCM_Product_Expiration::init();
 }
 add_action('plugins_loaded', 'pmcm_init', 20);
+
+// Register custom order status early (before WooCommerce loads its own status list)
+add_action('init', function () {
+    if (class_exists('PMCM_Academic_Partners')) {
+        PMCM_Academic_Partners::register_order_status();
+    }
+}, 5);
+add_filter('wc_order_statuses', function ($statuses) {
+    if (class_exists('PMCM_Academic_Partners')) {
+        return PMCM_Academic_Partners::add_order_status_to_list($statuses);
+    }
+    return $statuses;
+});
 
 /**
  * Plugin activation
@@ -118,9 +134,15 @@ function pmcm_activate()
         }
     }
 
-    // ASiT Coupon settings
+    // Academic Partners coupon code defaults
     if (get_option('pmcm_asit_coupon_code') === false) {
         add_option('pmcm_asit_coupon_code', 'ASIT');
+    }
+    if (get_option('pmcm_bomss_coupon_code') === false) {
+        add_option('pmcm_bomss_coupon_code', 'BOMSS');
+    }
+    if (get_option('pmcm_rouleaux_coupon_code') === false) {
+        add_option('pmcm_rouleaux_coupon_code', 'ROULEAUX');
     }
     if (get_option('pmcm_asit_discount_early_bird') === false) {
         add_option('pmcm_asit_discount_early_bird', 5);

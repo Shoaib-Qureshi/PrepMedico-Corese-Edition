@@ -16,10 +16,9 @@ class PMCM_ASiT {
      * Initialize ASiT hooks
      */
     public static function init() {
-        add_action('woocommerce_after_checkout_billing_form', [__CLASS__, 'add_membership_field']);
-        add_action('woocommerce_checkout_process', [__CLASS__, 'validate_membership_field']);
-        add_action('woocommerce_checkout_update_order_review', [__CLASS__, 'apply_coupon_on_checkout']);
-        add_action('woocommerce_checkout_create_order', [__CLASS__, 'save_membership_to_order'], 10, 2);
+        // Checkout UI, validation, and coupon application moved to PMCM_Academic_Partners
+        // This class retains only the dynamic discount filter and coupon bypass filters for the ASIT coupon
+
         // Override ALL three WooCommerce coupon validation touchpoints
         add_filter('woocommerce_coupon_is_valid',              [__CLASS__, 'asit_coupon_is_valid'],              10, 2);
         add_filter('woocommerce_coupon_is_valid_for_product',  [__CLASS__, 'asit_coupon_is_valid_for_product'],  10, 4);
@@ -31,8 +30,6 @@ class PMCM_ASiT {
         add_filter('woocommerce_coupon_get_excluded_product_categories', [__CLASS__, 'bypass_coupon_excluded_product_categories'], 10, 2);
         add_filter('woocommerce_coupon_get_exclude_sale_items', [__CLASS__, 'bypass_coupon_exclude_sale_items'], 10, 2);
         add_filter('woocommerce_coupon_error', [__CLASS__, 'maybe_suppress_empty_coupon_notice'], 10, 3);
-        add_action('wp_footer', [__CLASS__, 'checkout_scripts']);
-        add_action('wp_head', [__CLASS__, 'checkout_styles']);
     }
 
     /**
