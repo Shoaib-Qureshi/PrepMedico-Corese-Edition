@@ -50,11 +50,21 @@ class PMCM_Email_Membership_Pending_Customer extends WC_Email {
             return;
         }
 
+        // Guard against double-sending (direct trigger + action hook both firing).
+        // Admin email sets this flag first (priority 10), customer email checks it (priority 15).
+        // Use a separate flag so each sends exactly once.
+        if ($order->get_meta('_pmcm_customer_email_sent')) {
+            $this->restore_locale();
+            return;
+        }
+
         $this->placeholders['{order_number}'] = $order->get_order_number();
         $this->placeholders['{order_date}']   = wc_format_datetime($order->get_date_created());
 
         if ($this->is_enabled() && $this->get_recipient()) {
             $this->send($this->get_recipient(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments());
+            $order->update_meta_data('_pmcm_customer_email_sent', 'yes');
+            $order->save();
         }
 
         $this->restore_locale();

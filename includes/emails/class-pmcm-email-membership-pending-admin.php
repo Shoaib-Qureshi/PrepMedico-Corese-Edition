@@ -53,11 +53,19 @@ class PMCM_Email_Membership_Pending_Admin extends WC_Email {
             return;
         }
 
+        // Guard against double-sending (direct trigger + action hook both firing)
+        if ($order->get_meta('_pmcm_membership_emails_sent')) {
+            $this->restore_locale();
+            return;
+        }
+
         $this->placeholders['{order_number}'] = $order->get_order_number();
         $this->placeholders['{order_date}']   = wc_format_datetime($order->get_date_created());
 
         if ($this->is_enabled() && $this->get_recipient()) {
             $this->send($this->get_recipient(), $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments());
+            $order->update_meta_data('_pmcm_membership_emails_sent', 'yes');
+            $order->save();
         }
 
         $this->restore_locale();

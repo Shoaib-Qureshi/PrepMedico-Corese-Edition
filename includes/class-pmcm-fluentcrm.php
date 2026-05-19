@@ -12,14 +12,27 @@ if (!defined('ABSPATH')) {
 
 class PMCM_FluentCRM {
 
+    // Partner label map (shared with PMCM_Academic_Partners)
+    private static $partner_labels = [
+        'asit'     => 'ASiT',
+        'bomss'    => 'BOMSS',
+        'rouleaux' => 'Rouleaux Club',
+    ];
+
+    // All partner slugs write to this single FluentCRM custom field
+    const PARTNER_FIELD_SLUG = 'asit';
+
     /**
      * Initialize FluentCRM hooks
      */
     public static function init() {
-        add_action('woocommerce_order_status_processing', [__CLASS__, 'trigger_update'], 20, 1);
-        add_action('woocommerce_order_status_completed', [__CLASS__, 'trigger_update'], 20, 1);
-        add_action('woocommerce_payment_complete', [__CLASS__, 'trigger_update'], 20, 1);
-        add_action('woocommerce_thankyou', [__CLASS__, 'trigger_update'], 20, 1);
+        add_action('woocommerce_order_status_processing',         [__CLASS__, 'trigger_update'], 20, 1);
+        add_action('woocommerce_order_status_completed',          [__CLASS__, 'trigger_update'], 20, 1);
+        add_action('woocommerce_payment_complete',                [__CLASS__, 'trigger_update'], 20, 1);
+        add_action('woocommerce_thankyou',                        [__CLASS__, 'trigger_update'], 20, 1);
+        // Sync partner field when admin approves membership (pending → processing)
+        add_action('woocommerce_order_status_membership-pending_to_processing', [__CLASS__, 'trigger_update'], 20, 1);
+        add_action('woocommerce_order_status_membership-pending_to_completed',  [__CLASS__, 'trigger_update'], 20, 1);
     }
 
     /**
@@ -44,13 +57,12 @@ class PMCM_FluentCRM {
             return;
         }
 
-        $courses_json = $order->get_meta('_wcem_courses_data');
-        if (empty($courses_json)) {
-            return;
-        }
+        $courses_json     = $order->get_meta('_wcem_courses_data');
+        $courses_in_order = !empty($courses_json) ? json_decode($courses_json, true) : [];
+        $has_partner      = !empty($order->get_meta('_pmcm_academic_partner'));
 
-        $courses_in_order = json_decode($courses_json, true);
-        if (empty($courses_in_order)) {
+        // Bail only if there's nothing to sync at all
+        if (empty($courses_in_order) && !$has_partner) {
             return;
         }
 
@@ -88,11 +100,11 @@ class PMCM_FluentCRM {
                 PMCM_Core::log_activity('Creating new FluentCRM subscriber: ' . $email, 'info');
 
                 $subscriber = \FluentCrm\App\Models\Subscriber::create([
-                    'email' => $email,
+                    'email'      => $email,
                     'first_name' => $order->get_billing_first_name(),
-                    'last_name' => $order->get_billing_last_name(),
-                    'status' => 'subscribed',
-                    'source' => 'woocommerce'
+                    'last_name'  => $order->get_billing_last_name(),
+                    'status'     => 'subscribed',
+                    'source'     => 'woocommerce'
                 ]);
 
                 if (!$subscriber) {
@@ -103,8 +115,9 @@ class PMCM_FluentCRM {
 
             PMCM_Core::log_activity('Found/created FluentCRM subscriber ID: ' . $subscriber->id . ' for ' . $email, 'success');
 
+            // Sync course edition tags + fields
             foreach ($courses_in_order as $course_data) {
-                $course = $course_data['course'];
+                $course       = $course_data['course'];
                 $edition_name = $course_data['edition_name'];
 
                 self::apply_tag($subscriber, $course['fluentcrm_tag']);
@@ -116,17 +129,26 @@ class PMCM_FluentCRM {
                 );
             }
 
-            // Sync academic partner membership number to FluentCRM custom field
+            // Sync academic partner membership number → single "asit" custom field
+            // All partners (ASiT / BOMSS / Rouleaux Club) write to this one field so the
+            // "Academic Partners" field in FluentCRM shows the correct badge + number.
             $partner     = $order->get_meta('_pmcm_academic_partner');
             $partner_num = $order->get_meta('_pmcm_partner_number');
 
+            if (empty($partner)) {
+                // Fallback: legacy unified keys
+                $partner     = $order->get_meta('_wcem_partner');
+                $partner_num = $order->get_meta('_wcem_partner_number');
+            }
+
             if (!empty($partner) && !empty($partner_num)) {
-                // Map partner slug to FluentCRM field slug
-                $field_map = ['asit' => 'asit', 'bomss' => 'bomss', 'rouleaux' => 'rouleaux'];
-                if (isset($field_map[$partner])) {
-                    self::update_custom_field($subscriber, $field_map[$partner], $partner_num);
-                    PMCM_Core::log_activity('Updated FluentCRM ' . $partner . ' field for ' . $email . ' with number: ' . $partner_num, 'success');
-                }
+                $label        = isset(self::$partner_labels[$partner]) ? self::$partner_labels[$partner] : strtoupper($partner);
+                $field_value  = $label . ': ' . $partner_num;  // e.g. "ASiT: 12345" or "BOMSS: 67890"
+                self::update_custom_field($subscriber, self::PARTNER_FIELD_SLUG, $field_value);
+                PMCM_Core::log_activity(
+                    'Updated FluentCRM ' . self::PARTNER_FIELD_SLUG . ' field for ' . $email . ' → ' . $field_value,
+                    'success'
+                );
             } else {
                 // Backwards compat: legacy orders that only have _asit_membership_number
                 $asit_number = $order->get_meta('_wcem_asit_number');
@@ -134,8 +156,12 @@ class PMCM_FluentCRM {
                     $asit_number = $order->get_meta('_asit_membership_number');
                 }
                 if (!empty($asit_number)) {
-                    self::update_custom_field($subscriber, 'asit', $asit_number);
-                    PMCM_Core::log_activity('Updated FluentCRM asit field for ' . $email . ' with number: ' . $asit_number, 'success');
+                    $field_value = 'ASiT: ' . $asit_number;
+                    self::update_custom_field($subscriber, self::PARTNER_FIELD_SLUG, $field_value);
+                    PMCM_Core::log_activity(
+                        'Updated FluentCRM ' . self::PARTNER_FIELD_SLUG . ' field for ' . $email . ' → ' . $field_value . ' (legacy)',
+                        'success'
+                    );
                 }
             }
 

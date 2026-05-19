@@ -294,10 +294,15 @@ class PMCM_Academic_Partners {
         $partner = isset($_POST['pmcm_selected_partner']) ? sanitize_text_field($_POST['pmcm_selected_partner']) : '';
         $number  = isset($_POST['pmcm_partner_number'])   ? sanitize_text_field($_POST['pmcm_partner_number'])   : '';
 
-        // Fall back to session (block checkout, etc.)
+        // Fall back to session for both values if partner missing from POST
         if (empty($partner) && WC()->session) {
             $partner = WC()->session->get('pmcm_selected_partner', '');
             $number  = WC()->session->get('pmcm_partner_number', '');
+        }
+
+        // Also fall back to session for number alone if partner set but number missing/invalid
+        if (!empty($partner) && (empty($number) || !preg_match('/^[0-9]{5,10}$/', $number)) && WC()->session) {
+            $number = WC()->session->get('pmcm_partner_number', '');
         }
 
         if (empty($partner) || !preg_match('/^[0-9]{5,10}$/', $number)) {
@@ -334,11 +339,25 @@ class PMCM_Academic_Partners {
 
         $partner_label = isset(self::$partner_labels[$partner]) ? self::$partner_labels[$partner] : strtoupper($partner);
 
+        // Force WC email system to initialize so our email class hooks are registered
+        // before the status change action fires.
+        $mailer = WC()->mailer();
+
         $order->update_status('wc-membership-pending', sprintf(
             __('Order placed with %s membership discount. Membership #%s pending admin verification.', 'prepmedico-course-management'),
             $partner_label,
             $partner_num
         ));
+
+        // Belt-and-suspenders: directly trigger each email if the status action hooks
+        // didn't fire (e.g. WC_Emails initialized before our classes were loaded).
+        // Each trigger() method sets its own sent flag, so no double-sending occurs.
+        if (!$order->get_meta('_pmcm_membership_emails_sent') && isset($mailer->emails['PMCM_Email_Membership_Pending_Admin'])) {
+            $mailer->emails['PMCM_Email_Membership_Pending_Admin']->trigger($order->get_id(), $order);
+        }
+        if (!$order->get_meta('_pmcm_customer_email_sent') && isset($mailer->emails['PMCM_Email_Membership_Pending_Customer'])) {
+            $mailer->emails['PMCM_Email_Membership_Pending_Customer']->trigger($order->get_id(), $order);
+        }
     }
 
     // -------------------------------------------------------------------------
