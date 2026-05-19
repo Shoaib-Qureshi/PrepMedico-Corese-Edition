@@ -28,19 +28,10 @@ class PMCM_Academic_Partners {
         add_action('woocommerce_checkout_update_order_review', [__CLASS__, 'apply_partner_session']);
         add_action('woocommerce_cart_calculate_fees',          [__CLASS__, 'apply_partner_fee_discount']);
         add_action('woocommerce_checkout_create_order',        [__CLASS__, 'save_partner_to_order'], 10, 2);
-        add_action('woocommerce_checkout_order_processed',     [__CLASS__, 'set_membership_pending_status'], 10, 3);
 
         // Dedicated AJAX: set session immediately before cart recalculation
         add_action('wp_ajax_nopriv_pmcm_apply_partner', [__CLASS__, 'ajax_apply_partner']);
         add_action('wp_ajax_pmcm_apply_partner',        [__CLASS__, 'ajax_apply_partner']);
-
-        // Email registration
-        add_filter('woocommerce_email_classes', [__CLASS__, 'register_membership_emails']);
-
-        // Suppress default WC emails for membership-pending orders
-        add_filter('woocommerce_email_enabled_new_order',                 [__CLASS__, 'suppress_default_emails_for_pending'], 10, 2);
-        add_filter('woocommerce_email_enabled_customer_processing_order', [__CLASS__, 'suppress_default_emails_for_pending'], 10, 2);
-        add_filter('woocommerce_email_enabled_customer_on_hold_order',    [__CLASS__, 'suppress_default_emails_for_pending'], 10, 2);
 
         // Frontend scripts/styles
         add_action('wp_head',   [__CLASS__, 'checkout_styles']);
@@ -316,76 +307,6 @@ class PMCM_Academic_Partners {
         if ($partner === 'asit') {
             $order->update_meta_data('_asit_membership_number', $number);
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // Set order to membership-pending after checkout
-    // -------------------------------------------------------------------------
-
-    public static function set_membership_pending_status($order_id, $posted_data, $order) {
-        if (!is_a($order, 'WC_Order')) {
-            $order = wc_get_order($order_id);
-        }
-        if (!$order) {
-            return;
-        }
-
-        $partner     = $order->get_meta('_pmcm_academic_partner');
-        $partner_num = $order->get_meta('_pmcm_partner_number');
-
-        if (empty($partner)) {
-            return;
-        }
-
-        $partner_label = isset(self::$partner_labels[$partner]) ? self::$partner_labels[$partner] : strtoupper($partner);
-
-        // Force WC email system to initialize so our email class hooks are registered
-        // before the status change action fires.
-        $mailer = WC()->mailer();
-
-        $order->update_status('wc-membership-pending', sprintf(
-            __('Order placed with %s membership discount. Membership #%s pending admin verification.', 'prepmedico-course-management'),
-            $partner_label,
-            $partner_num
-        ));
-
-        // Belt-and-suspenders: directly trigger each email if the status action hooks
-        // didn't fire (e.g. WC_Emails initialized before our classes were loaded).
-        // Each trigger() method sets its own sent flag, so no double-sending occurs.
-        if (!$order->get_meta('_pmcm_membership_emails_sent') && isset($mailer->emails['PMCM_Email_Membership_Pending_Admin'])) {
-            $mailer->emails['PMCM_Email_Membership_Pending_Admin']->trigger($order->get_id(), $order);
-        }
-        if (!$order->get_meta('_pmcm_customer_email_sent') && isset($mailer->emails['PMCM_Email_Membership_Pending_Customer'])) {
-            $mailer->emails['PMCM_Email_Membership_Pending_Customer']->trigger($order->get_id(), $order);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Email classes registration
-    // -------------------------------------------------------------------------
-
-    public static function register_membership_emails($email_classes) {
-        require_once PMCM_PLUGIN_DIR . 'includes/emails/class-pmcm-email-membership-pending-admin.php';
-        require_once PMCM_PLUGIN_DIR . 'includes/emails/class-pmcm-email-membership-pending-customer.php';
-
-        $email_classes['PMCM_Email_Membership_Pending_Admin']    = new PMCM_Email_Membership_Pending_Admin();
-        $email_classes['PMCM_Email_Membership_Pending_Customer'] = new PMCM_Email_Membership_Pending_Customer();
-
-        return $email_classes;
-    }
-
-    // -------------------------------------------------------------------------
-    // Email suppression for membership-pending orders
-    // -------------------------------------------------------------------------
-
-    public static function suppress_default_emails_for_pending($enabled, $order) {
-        if (!is_a($order, 'WC_Order')) {
-            return $enabled;
-        }
-        if (!empty($order->get_meta('_pmcm_academic_partner'))) {
-            return false;
-        }
-        return $enabled;
     }
 
     // -------------------------------------------------------------------------

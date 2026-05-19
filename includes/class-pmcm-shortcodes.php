@@ -44,10 +44,30 @@ class PMCM_Shortcodes {
     private static function get_registration_override(string $prefix): string
     {
         $val = get_option($prefix . 'registration_override', '');
-        if (in_array($val, ['auto', 'force_open', 'force_closed'], true)) {
-            return $val;
+        if (!in_array($val, ['auto', 'force_open', 'force_closed'], true)) {
+            $val = get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
         }
-        return get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
+
+        // Self-cancel: once the real dates catch up, the override is no longer needed.
+        // Force Open auto-reverts to Auto when start_date arrives; Force Closed reverts after end_date.
+        if ($val === 'force_open' || $val === 'force_closed') {
+            $today_ts = strtotime(current_time('Y-m-d'));
+            $start    = get_option($prefix . 'edition_start', '');
+            $end      = get_option($prefix . 'edition_end', '');
+            $reset = false;
+            if ($val === 'force_open' && !empty($start) && $today_ts >= strtotime($start)) {
+                $reset = true;
+            }
+            if ($val === 'force_closed' && !empty($end) && $today_ts > strtotime($end)) {
+                $reset = true;
+            }
+            if ($reset) {
+                update_option($prefix . 'registration_override', 'auto');
+                return 'auto';
+            }
+        }
+
+        return $val;
     }
 
     /**

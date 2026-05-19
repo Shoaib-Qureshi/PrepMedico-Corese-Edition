@@ -23,6 +23,7 @@ class PMCM_Admin
         add_action('admin_init', [__CLASS__, 'register_settings']);
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_scripts']);
         add_action('admin_notices', [__CLASS__, 'admin_notices']);
+        add_action('admin_bar_menu', [__CLASS__, 'add_admin_bar_node'], 100);
 
         // AJAX handlers
         add_action('wp_ajax_wcem_manual_edition_switch', [__CLASS__, 'ajax_manual_edition_switch']);
@@ -82,6 +83,39 @@ class PMCM_Admin
             'prepmedico-asit-management',
             [__CLASS__, 'render_asit_page']
         );
+    }
+
+    /**
+     * Add Edition Management shortcut to WP admin bar
+     */
+    public static function add_admin_bar_node($wp_admin_bar) {
+        if (!current_user_can('manage_woocommerce')) {
+            return;
+        }
+        $wp_admin_bar->add_node([
+            'id'     => 'pmcm-edition-management',
+            'title'  => '<span class="ab-icon dashicons dashicons-welcome-learn-more" style="font-size:16px;margin-top:3px;"></span> Edition MGMT',
+            'href'   => admin_url('admin.php?page=prepmedico-management'),
+            'meta'   => ['title' => 'Edition / Course Management'],
+        ]);
+        $wp_admin_bar->add_node([
+            'id'     => 'pmcm-edition-management-editions',
+            'parent' => 'pmcm-edition-management',
+            'title'  => 'Edition Management',
+            'href'   => admin_url('admin.php?page=prepmedico-management'),
+        ]);
+        $wp_admin_bar->add_node([
+            'id'     => 'pmcm-edition-management-partners',
+            'parent' => 'pmcm-edition-management',
+            'title'  => 'Academic Partners',
+            'href'   => admin_url('admin.php?page=prepmedico-asit-management'),
+        ]);
+        $wp_admin_bar->add_node([
+            'id'     => 'pmcm-edition-management-courses',
+            'parent' => 'pmcm-edition-management',
+            'title'  => 'Course Configuration',
+            'href'   => admin_url('admin.php?page=prepmedico-course-config'),
+        ]);
     }
 
     /**
@@ -251,11 +285,30 @@ class PMCM_Admin
     private static function get_registration_override(string $prefix): string
     {
         $val = get_option($prefix . 'registration_override', '');
-        if (in_array($val, ['auto', 'force_open', 'force_closed'], true)) {
-            return $val;
+        if (!in_array($val, ['auto', 'force_open', 'force_closed'], true)) {
+            // Migrate from old binary toggle
+            $val = get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
         }
-        // Migrate from old binary toggle
-        return get_option($prefix . 'force_registration_open', 'no') === 'yes' ? 'force_open' : 'auto';
+
+        // Self-cancel once dates catch up. Keeps the admin UI in sync with frontend behaviour.
+        if ($val === 'force_open' || $val === 'force_closed') {
+            $today_ts = strtotime(current_time('Y-m-d'));
+            $start    = get_option($prefix . 'edition_start', '');
+            $end      = get_option($prefix . 'edition_end', '');
+            $reset = false;
+            if ($val === 'force_open' && !empty($start) && $today_ts >= strtotime($start)) {
+                $reset = true;
+            }
+            if ($val === 'force_closed' && !empty($end) && $today_ts > strtotime($end)) {
+                $reset = true;
+            }
+            if ($reset) {
+                update_option($prefix . 'registration_override', 'auto');
+                return 'auto';
+            }
+        }
+
+        return $val;
     }
 
     public static function get_notification_recipients(): array
@@ -554,27 +607,41 @@ class PMCM_Admin
         $start = get_option($prefix . 'edition_start', '');
         $end = get_option($prefix . 'edition_end', '');
         $early_bird = get_option($prefix . 'early_bird_enabled', 'no');
+        $eb_start   = get_option($prefix . 'early_bird_start', '');
+        $eb_end     = get_option($prefix . 'early_bird_end', '');
+        $override   = self::get_registration_override($prefix);
 
-        $status = 'active';
-        $status_label = __('Active', 'prepmedico-course-management');
+        $today_ts = strtotime(current_time('Y-m-d'));
+        $start_ts = !empty($start) ? strtotime($start) : null;
+        $end_ts   = !empty($end)   ? strtotime($end)   : null;
+        $eb_s_ts  = !empty($eb_start) ? strtotime($eb_start) : null;
+        $eb_e_ts  = !empty($eb_end)   ? strtotime($eb_end)   : null;
 
-        if (empty($start) || empty($end)) {
+        // Override wins (it self-cancels once dates catch up, so this only fires when really active)
+        if ($override === 'force_open') {
+            $status = 'forced-open';
+            $status_label = __('Forced Open', 'prepmedico-course-management');
+        } elseif ($override === 'force_closed') {
+            $status = 'forced-closed';
+            $status_label = __('Forced Closed', 'prepmedico-course-management');
+        } elseif (empty($start) || empty($end)) {
             $status = 'needs-dates';
             $status_label = __('Needs Dates', 'prepmedico-course-management');
-        } elseif ($early_bird === 'yes') {
-            $eb_end = get_option($prefix . 'early_bird_end', '');
-            if (!empty($eb_end) && time() <= strtotime($eb_end)) {
-                $status = 'early-bird';
-                $status_label = __('Early Bird', 'prepmedico-course-management');
-            }
-        }
-
-        if (!empty($end)) {
-            $end_timestamp = strtotime($end);
-            if (time() > $end_timestamp) {
-                $status = 'expired';
-                $status_label = __('Opening Soon', 'prepmedico-course-management');
-            } elseif ((($end_timestamp - time()) / DAY_IN_SECONDS) <= 7) {
+        } elseif ($end_ts && $today_ts > $end_ts) {
+            // Past end → either rollover pending or just closed
+            $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
+            $status = $next_enabled ? 'awaiting-next' : 'expired';
+            $status_label = $next_enabled ? __('Awaiting Rollover', 'prepmedico-course-management') : __('Closed', 'prepmedico-course-management');
+        } elseif ($early_bird === 'yes' && $eb_e_ts && (!$eb_s_ts || $today_ts >= $eb_s_ts) && $today_ts <= $eb_e_ts) {
+            $status = 'early-bird';
+            $status_label = __('Early Bird Live', 'prepmedico-course-management');
+        } elseif ($start_ts && $today_ts < $start_ts) {
+            $status = 'opening-soon';
+            $status_label = __('Opening Soon', 'prepmedico-course-management');
+        } else {
+            $status = 'active';
+            $status_label = __('Registration Live', 'prepmedico-course-management');
+            if ($end_ts && (($end_ts - $today_ts) / DAY_IN_SECONDS) <= 7) {
                 $status = 'ending-soon';
                 $status_label = __('Ending Soon', 'prepmedico-course-management');
             }
@@ -728,35 +795,30 @@ class PMCM_Admin
                                             </div>
                                         </div>
 
-                                        <!-- Registration Override (3-state) -->
-                                        <div style="margin-top:16px;">
-                                            <div class="wcem-section-header" style="padding:0 0 10px 0;border:none;background:none;">
-                                                <div class="wcem-icon-box" style="background:#ede9fe;color:#7c3aed;">
-                                                    <span class="material-icons-round">toggle_on</span>
-                                                </div>
-                                                <div>
-                                                    <span style="font-size:13px;font-weight:600;color:#1e293b;"><?php _e('Registration Override', 'prepmedico-course-management'); ?></span>
-                                                    <p class="description" style="margin-top:3px;font-size:12px;"><?php _e('Override date-based registration status for the current edition.', 'prepmedico-course-management'); ?></p>
-                                                </div>
+                                        <!-- Advanced: emergency registration override (collapsed by default) -->
+                                        <details class="pmcm-advanced-toggle" <?php echo ($reg_override !== 'auto') ? 'open' : ''; ?>>
+                                            <summary>
+                                                <span class="pmcm-advanced-arrow material-icons-round">chevron_right</span>
+                                                <span class="pmcm-advanced-title"><?php _e('Advanced — Emergency Override', 'prepmedico-course-management'); ?></span>
+                                                <?php if ($reg_override !== 'auto'): ?>
+                                                    <span class="pmcm-advanced-pill pmcm-advanced-pill-<?php echo esc_attr($reg_override); ?>">
+                                                        <?php echo $reg_override === 'force_open' ? esc_html__('Forced Open', 'prepmedico-course-management') : esc_html__('Forced Closed', 'prepmedico-course-management'); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </summary>
+                                            <div class="pmcm-advanced-body">
+                                                <p class="description" style="margin:0 0 10px 0;"><?php _e('Leave on Auto — dates drive the status. Use override only in emergencies; it self-resets to Auto the moment dates catch up.', 'prepmedico-course-management'); ?></p>
+                                                <select name="<?php echo esc_attr($prefix); ?>registration_override" class="pmcm-advanced-select">
+                                                    <option value="auto" <?php selected($reg_override, 'auto'); ?>><?php _e('Auto (use dates) — default', 'prepmedico-course-management'); ?></option>
+                                                    <option value="force_open" <?php selected($reg_override, 'force_open'); ?>><?php _e('Force Open — show Enrol now', 'prepmedico-course-management'); ?></option>
+                                                    <option value="force_closed" <?php selected($reg_override, 'force_closed'); ?>><?php _e('Force Closed — show Opening Soon', 'prepmedico-course-management'); ?></option>
+                                                </select>
+                                                <p class="description" style="margin:8px 0 0 0;font-size:11px;color:#64748b;">
+                                                    <span class="material-icons-round" style="font-size:13px;vertical-align:middle;">info</span>
+                                                    <?php _e('Force Open auto-reverts to Auto once the Start date arrives. Force Closed auto-reverts after the End date.', 'prepmedico-course-management'); ?>
+                                                </p>
                                             </div>
-                                            <div style="display:flex;gap:10px;">
-                                                <label style="flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1.5px solid <?php echo $reg_override === 'force_open' ? '#86efac' : '#e2e8f0'; ?>;border-radius:10px;cursor:pointer;background:<?php echo $reg_override === 'force_open' ? 'rgba(34,197,94,0.08)' : '#f8fafc'; ?>;">
-                                                    <input type="radio" name="<?php echo esc_attr($prefix); ?>registration_override" value="force_open" <?php checked($reg_override, 'force_open'); ?>>
-                                                    <span style="font-size:12px;font-weight:700;color:#16a34a;"><?php _e('Force Open', 'prepmedico-course-management'); ?></span>
-                                                    <span style="font-size:11px;color:#64748b;line-height:1.4;"><?php _e('Shows Enroll button — ignores start/end dates.', 'prepmedico-course-management'); ?></span>
-                                                </label>
-                                                <label style="flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1.5px solid <?php echo $reg_override === 'auto' ? '#93c5fd' : '#e2e8f0'; ?>;border-radius:10px;cursor:pointer;background:<?php echo $reg_override === 'auto' ? 'rgba(59,130,246,0.07)' : '#f8fafc'; ?>;">
-                                                    <input type="radio" name="<?php echo esc_attr($prefix); ?>registration_override" value="auto" <?php checked($reg_override, 'auto'); ?>>
-                                                    <span style="font-size:12px;font-weight:700;color:#2563eb;"><?php _e('Auto (Use Dates)', 'prepmedico-course-management'); ?></span>
-                                                    <span style="font-size:11px;color:#64748b;line-height:1.4;"><?php _e('Status determined by start/end dates.', 'prepmedico-course-management'); ?></span>
-                                                </label>
-                                                <label style="flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1.5px solid <?php echo $reg_override === 'force_closed' ? '#fca5a5' : '#e2e8f0'; ?>;border-radius:10px;cursor:pointer;background:<?php echo $reg_override === 'force_closed' ? 'rgba(239,68,68,0.07)' : '#f8fafc'; ?>;">
-                                                    <input type="radio" name="<?php echo esc_attr($prefix); ?>registration_override" value="force_closed" <?php checked($reg_override, 'force_closed'); ?>>
-                                                    <span style="font-size:12px;font-weight:700;color:#dc2626;"><?php _e('Force Closed', 'prepmedico-course-management'); ?></span>
-                                                    <span style="font-size:11px;color:#64748b;line-height:1.4;"><?php _e('Shows "Opening Soon" — blocks enrollment regardless of dates.', 'prepmedico-course-management'); ?></span>
-                                                </label>
-                                            </div>
-                                        </div>
+                                        </details>
                                     </section>
 
                                     <!-- Exam Dates -->
@@ -1471,30 +1533,51 @@ class PMCM_Admin
                                 $b_norm   = isset($course['bomss_normal_discount']) ? intval($course['bomss_normal_discount']) : 0;
                                 $b_show   = isset($course['bomss_show_field']) ? (bool) $course['bomss_show_field'] : false;
                                 ?>
-                                <details class="wcem-partner-subsection" style="border-top:1px solid #eee;padding-top:10px;margin-top:10px;">
-                                    <summary style="cursor:pointer;font-weight:600;color:#1a6b3c;user-select:none;">
-                                        BOMSS
-                                        <span class="wcem-asit-status-badge <?php echo ($b_mode !== 'none') ? 'active' : 'inactive'; ?>" style="font-size:10px;margin-left:6px;">
+                                <details class="wcem-partner-subsection wcem-partner-bomss" <?php echo ($b_mode !== 'none') ? 'open' : ''; ?>>
+                                    <summary class="wcem-partner-summary">
+                                        <span class="wcem-partner-summary-arrow material-icons-round">chevron_right</span>
+                                        <span class="wcem-partner-name">BOMSS</span>
+                                        <span class="wcem-asit-status-badge <?php echo ($b_mode !== 'none') ? 'active' : 'inactive'; ?>">
                                             <?php echo ($b_mode !== 'none') ? 'ON' : 'OFF'; ?>
                                         </span>
                                     </summary>
-                                    <div style="padding-top:10px;">
-                                        <div class="wcem-asit-mode-toggle" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
-                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'none') ? 'active' : ''; ?>" data-mode="none">No Discount</button>
-                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only">Early Bird</button>
-                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'always') ? 'active' : ''; ?>" data-mode="always">Always</button>
+                                    <div class="wcem-partner-subsection-body">
+                                        <div class="wcem-asit-mode-section">
+                                            <label class="wcem-asit-mode-label"><?php _e('Discount Mode', 'prepmedico-course-management'); ?></label>
+                                            <div class="wcem-asit-mode-toggle" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'none') ? 'active' : ''; ?>" data-mode="none"><?php _e('No Discount', 'prepmedico-course-management'); ?></button>
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only"><?php _e('Early Bird', 'prepmedico-course-management'); ?></button>
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($b_mode === 'always') ? 'active' : ''; ?>" data-mode="always"><?php _e('Always Active', 'prepmedico-course-management'); ?></button>
+                                            </div>
                                         </div>
                                         <input type="hidden" name="bomss_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($b_mode); ?>" class="wcem-partner-mode-input" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
-                                        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;<?php echo ($b_mode === 'none') ? 'display:none;' : ''; ?>" class="wcem-partner-discount-row" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
-                                            <label style="font-size:13px;">EB Discount %</label>
-                                            <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($b_eb); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
-                                            <label style="font-size:13px;">Normal %</label>
-                                            <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($b_norm); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
-                                            <label style="font-size:13px;display:flex;align-items:center;gap:4px;">
-                                                <input type="checkbox" name="bomss_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($b_show, true); ?>>
-                                                Show Field
+                                        <div class="wcem-partner-discount-fields wcem-partner-discount-row" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>"<?php echo ($b_mode === 'none') ? ' style="display:none;"' : ''; ?>>
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('EB Discount %', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($b_eb); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('Normal %', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($b_norm); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                            <label class="wcem-asit-toggle-item">
+                                                <span><?php _e('Show Field', 'prepmedico-course-management'); ?></span>
+                                                <input type="checkbox" name="bomss_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($b_show, true); ?> class="wcem-asit-toggle-checkbox">
+                                                <span class="wcem-asit-toggle-slider"></span>
                                             </label>
                                         </div>
+                                        <?php if ($b_mode === 'none'): ?>
+                                        <span class="wcem-asit-footer-status disabled wcem-partner-status-pill">
+                                            <span class="material-icons-round">block</span>
+                                            <?php _e('Disabled', 'prepmedico-course-management'); ?>
+                                        </span>
+                                        <?php endif; ?>
                                     </div>
                                 </details>
 
@@ -1505,30 +1588,51 @@ class PMCM_Admin
                                 $r_norm   = isset($course['rouleaux_normal_discount']) ? intval($course['rouleaux_normal_discount']) : 0;
                                 $r_show   = isset($course['rouleaux_show_field']) ? (bool) $course['rouleaux_show_field'] : false;
                                 ?>
-                                <details class="wcem-partner-subsection" style="border-top:1px solid #eee;padding-top:10px;margin-top:10px;">
-                                    <summary style="cursor:pointer;font-weight:600;color:#1565c0;user-select:none;">
-                                        Rouleaux Club
-                                        <span class="wcem-asit-status-badge <?php echo ($r_mode !== 'none') ? 'active' : 'inactive'; ?>" style="font-size:10px;margin-left:6px;">
+                                <details class="wcem-partner-subsection wcem-partner-rouleaux" <?php echo ($r_mode !== 'none') ? 'open' : ''; ?>>
+                                    <summary class="wcem-partner-summary">
+                                        <span class="wcem-partner-summary-arrow material-icons-round">chevron_right</span>
+                                        <span class="wcem-partner-name">Rouleaux Club</span>
+                                        <span class="wcem-asit-status-badge <?php echo ($r_mode !== 'none') ? 'active' : 'inactive'; ?>">
                                             <?php echo ($r_mode !== 'none') ? 'ON' : 'OFF'; ?>
                                         </span>
                                     </summary>
-                                    <div style="padding-top:10px;">
-                                        <div class="wcem-asit-mode-toggle" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
-                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'none') ? 'active' : ''; ?>" data-mode="none">No Discount</button>
-                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only">Early Bird</button>
-                                            <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'always') ? 'active' : ''; ?>" data-mode="always">Always</button>
+                                    <div class="wcem-partner-subsection-body">
+                                        <div class="wcem-asit-mode-section">
+                                            <label class="wcem-asit-mode-label"><?php _e('Discount Mode', 'prepmedico-course-management'); ?></label>
+                                            <div class="wcem-asit-mode-toggle" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'none') ? 'active' : ''; ?>" data-mode="none"><?php _e('No Discount', 'prepmedico-course-management'); ?></button>
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only"><?php _e('Early Bird', 'prepmedico-course-management'); ?></button>
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($r_mode === 'always') ? 'active' : ''; ?>" data-mode="always"><?php _e('Always Active', 'prepmedico-course-management'); ?></button>
+                                            </div>
                                         </div>
                                         <input type="hidden" name="rouleaux_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($r_mode); ?>" class="wcem-partner-mode-input" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
-                                        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;<?php echo ($r_mode === 'none') ? 'display:none;' : ''; ?>" class="wcem-partner-discount-row" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
-                                            <label style="font-size:13px;">EB Discount %</label>
-                                            <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($r_eb); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
-                                            <label style="font-size:13px;">Normal %</label>
-                                            <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($r_norm); ?>" min="0" max="100" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;">
-                                            <label style="font-size:13px;display:flex;align-items:center;gap:4px;">
-                                                <input type="checkbox" name="rouleaux_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($r_show, true); ?>>
-                                                Show Field
+                                        <div class="wcem-partner-discount-fields wcem-partner-discount-row" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>"<?php echo ($r_mode === 'none') ? ' style="display:none;"' : ''; ?>>
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('EB Discount %', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($r_eb); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('Normal %', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($r_norm); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
+                                                    <span>%</span>
+                                                </div>
+                                            </div>
+                                            <label class="wcem-asit-toggle-item">
+                                                <span><?php _e('Show Field', 'prepmedico-course-management'); ?></span>
+                                                <input type="checkbox" name="rouleaux_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($r_show, true); ?> class="wcem-asit-toggle-checkbox">
+                                                <span class="wcem-asit-toggle-slider"></span>
                                             </label>
                                         </div>
+                                        <?php if ($r_mode === 'none'): ?>
+                                        <span class="wcem-asit-footer-status disabled wcem-partner-status-pill">
+                                            <span class="material-icons-round">block</span>
+                                            <?php _e('Disabled', 'prepmedico-course-management'); ?>
+                                        </span>
+                                        <?php endif; ?>
                                     </div>
                                 </details>
 

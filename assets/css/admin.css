@@ -5044,4 +5044,197 @@
     }
 }
 
+/* =====================================================
+   PARTNER SUB-SECTIONS (BOMSS / Rouleaux Club)
+   within the Academic Partners course cards
+   ===================================================== */
+.wcem-asit-modern .wcem-partner-subsection {
+    border-top: 1px solid var(--pmcm-border);
+    margin-top: 14px;
+    padding-top: 0;
+}
 
+.wcem-asit-modern .wcem-partner-subsection > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.wcem-asit-modern .wcem-partner-subsection > summary::-webkit-details-marker {
+    display: none;
+}
+
+.wcem-asit-modern .wcem-partner-summary-arrow {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: var(--pmcm-text-secondary);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.wcem-asit-modern .wcem-partner-subsection[open] > summary .wcem-partner-summary-arrow {
+    transform: rotate(90deg);
+}
+
+.wcem-asit-modern .wcem-partner-bomss > summary .wcem-partner-name {
+    color: #1a6b3c;
+}
+
+.wcem-asit-modern .wcem-partner-rouleaux > summary .wcem-partner-name {
+    color: #1565c0;
+}
+
+.wcem-asit-modern .wcem-partner-subsection .wcem-asit-status-badge {
+    margin-left: auto;
+    font-size: 10px;
+}
+
+.wcem-asit-modern .wcem-partner-subsection-body {
+    padding: 10px 0 6px 26px;
+}
+
+.wcem-asit-modern .wcem-partner-subsection-body .wcem-asit-mode-section {
+    margin-bottom: 10px;
+}
+
+.wcem-asit-modern .wcem-partner-discount-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-top: 10px;
+}
+
+.wcem-asit-modern .wcem-partner-discount-fields .wcem-asit-discount-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.wcem-asit-modern .wcem-partner-discount-fields .wcem-asit-discount-field > label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--pmcm-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+}
+
+.wcem-asit-modern .wcem-partner-subsection .wcem-asit-toggle-item {
+    align-self: center;
+    margin-bottom: 0;
+}
+
+.wcem-asit-modern .wcem-partner-status-pill {
+    display: inline-flex;
+    margin-top: 8px;
+    font-size: 11px;
+}
+
+/* Admin bar shortcut icon spacing */
+#wp-admin-bar-pmcm-edition-management .ab-icon {
+    top: 2px;
+}
+
+/* =====================================================
+   ADVANCED — EMERGENCY OVERRIDE (collapsible)
+   Replaces the old 3-button override card
+   ===================================================== */
+.pmcm-advanced-toggle {
+    margin-top: 14px;
+    border: 1px dashed #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.pmcm-advanced-toggle > summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.pmcm-advanced-toggle > summary::-webkit-details-marker {
+    display: none;
+}
+
+.pmcm-advanced-arrow {
+    font-size: 18px !important;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.pmcm-advanced-toggle[open] > summary .pmcm-advanced-arrow {
+    transform: rotate(90deg);
+}
+
+.pmcm-advanced-pill {
+    margin-left: auto;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.pmcm-advanced-pill-force_open {
+    background: #16a34a;
+}
+
+.pmcm-advanced-pill-force_closed {
+    background: #dc2626;
+}
+
+.pmcm-advanced-body {
+    padding: 4px 14px 14px 40px;
+}
+
+.pmcm-advanced-select {
+    width: 100%;
+    max-width: 360px;
+    padding: 8px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.pmcm-advanced-select:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+/* Status pill variants for new live states */
+.wcem-course-status.wcem-status-opening-soon,
+.wcem-course-status.wcem-status-awaiting-next {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.wcem-course-status.wcem-status-forced-open {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+}
+
+.wcem-course-status.wcem-status-forced-closed {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}

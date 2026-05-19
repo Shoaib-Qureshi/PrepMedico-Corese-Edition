@@ -105,6 +105,12 @@ class PMCM_Cron {
                         // Clear closed categories — the new current edition starts fresh
                         update_option($prefix . 'closed_categories_current', '[]');
 
+                        // Reset registration override — new edition starts in pure auto mode
+                        update_option($prefix . 'registration_override', 'auto');
+
+                        // Audit trail for the rollover
+                        update_option($prefix . 'last_rollover', current_time('mysql'));
+
                         $promoted[] = ['course' => $course['name'], 'from' => $old_edition, 'to' => $next_edition];
                         PMCM_Core::log_activity('Promoted Next Edition for ' . $course['name'] . ': Edition ' . $old_edition . ' → ' . $next_edition . ' (Next slot promoted to Current)', 'success');
                         continue;
@@ -128,6 +134,12 @@ class PMCM_Cron {
 
                 // Clear closed categories — the new edition starts fresh
                 update_option($prefix . 'closed_categories_current', '[]');
+
+                // Reset registration override — new edition starts in pure auto mode
+                update_option($prefix . 'registration_override', 'auto');
+
+                // Audit trail for the rollover
+                update_option($prefix . 'last_rollover', current_time('mysql'));
 
                 $switched[] = ['course' => $course['name'], 'from' => $old_edition, 'to' => $new_edition];
                 PMCM_Core::log_activity('Auto-incremented ' . $course['name'] . ': Edition ' . $old_edition . ' → ' . $new_edition . ' (End Date passed)', 'success');
