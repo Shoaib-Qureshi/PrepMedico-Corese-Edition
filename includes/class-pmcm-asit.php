@@ -16,20 +16,8 @@ class PMCM_ASiT {
      * Initialize ASiT hooks
      */
     public static function init() {
-        // Checkout UI, validation, and coupon application moved to PMCM_Academic_Partners
-        // This class retains only the dynamic discount filter and coupon bypass filters for the ASIT coupon
-
-        // Override ALL three WooCommerce coupon validation touchpoints
-        add_filter('woocommerce_coupon_is_valid',              [__CLASS__, 'asit_coupon_is_valid'],              10, 2);
-        add_filter('woocommerce_coupon_is_valid_for_product',  [__CLASS__, 'asit_coupon_is_valid_for_product'],  10, 4);
-        add_filter('woocommerce_coupon_is_valid_for_cart',     [__CLASS__, 'asit_coupon_is_valid_for_cart'],     10, 2);
-        add_filter('woocommerce_coupon_get_discount_amount',   [__CLASS__, 'dynamic_coupon_discount'],           10, 5);
-        add_filter('woocommerce_coupon_get_product_ids', [__CLASS__, 'bypass_coupon_product_ids'], 10, 2);
-        add_filter('woocommerce_coupon_get_product_categories', [__CLASS__, 'bypass_coupon_product_categories'], 10, 2);
-        add_filter('woocommerce_coupon_get_excluded_product_ids', [__CLASS__, 'bypass_coupon_excluded_product_ids'], 10, 2);
-        add_filter('woocommerce_coupon_get_excluded_product_categories', [__CLASS__, 'bypass_coupon_excluded_product_categories'], 10, 2);
-        add_filter('woocommerce_coupon_get_exclude_sale_items', [__CLASS__, 'bypass_coupon_exclude_sale_items'], 10, 2);
-        add_filter('woocommerce_coupon_error', [__CLASS__, 'maybe_suppress_empty_coupon_notice'], 10, 3);
+        // Discount is now applied as a cart fee by PMCM_Academic_Partners::apply_partner_fee_discount().
+        // No coupon hooks needed here.
     }
 
     /**

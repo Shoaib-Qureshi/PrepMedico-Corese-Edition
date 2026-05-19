@@ -134,16 +134,6 @@ function pmcm_activate()
         }
     }
 
-    // Academic Partners coupon code defaults
-    if (get_option('pmcm_asit_coupon_code') === false) {
-        add_option('pmcm_asit_coupon_code', 'ASIT');
-    }
-    if (get_option('pmcm_bomss_coupon_code') === false) {
-        add_option('pmcm_bomss_coupon_code', 'BOMSS');
-    }
-    if (get_option('pmcm_rouleaux_coupon_code') === false) {
-        add_option('pmcm_rouleaux_coupon_code', 'ROULEAUX');
-    }
     if (get_option('pmcm_asit_discount_early_bird') === false) {
         add_option('pmcm_asit_discount_early_bird', 5);
     }

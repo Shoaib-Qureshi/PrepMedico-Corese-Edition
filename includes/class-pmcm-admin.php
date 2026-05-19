@@ -114,15 +114,12 @@ class PMCM_Admin
             register_setting('wcem_settings', $prefix . 'next_exam_dates', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
         }
 
-        register_setting('pmcm_asit_settings', 'pmcm_asit_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
         register_setting('pmcm_asit_settings', 'pmcm_asit_discount_early_bird', ['type' => 'integer', 'sanitize_callback' => 'absint']);
         register_setting('pmcm_asit_settings', 'pmcm_asit_discount_normal', ['type' => 'integer', 'sanitize_callback' => 'absint']);
         register_setting('pmcm_asit_settings', 'pmcm_asit_library_products', ['type' => 'array', 'sanitize_callback' => ['PMCM_Core', 'sanitize_int_array']]);
         register_setting('pmcm_asit_settings', 'pmcm_asit_library_include_children', ['type' => 'boolean', 'sanitize_callback' => function ($v) {
             return $v ? 1 : 0;
         }]);
-        register_setting('pmcm_asit_settings', 'pmcm_bomss_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
-        register_setting('pmcm_asit_settings', 'pmcm_rouleaux_coupon_code', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
     }
 
     /**
@@ -382,16 +379,6 @@ class PMCM_Admin
      */
     private static function save_asit_settings()
     {
-        // Save global coupon codes
-        if (isset($_POST['pmcm_asit_coupon_code'])) {
-            update_option('pmcm_asit_coupon_code', sanitize_text_field($_POST['pmcm_asit_coupon_code']));
-        }
-        if (isset($_POST['pmcm_bomss_coupon_code'])) {
-            update_option('pmcm_bomss_coupon_code', sanitize_text_field($_POST['pmcm_bomss_coupon_code']));
-        }
-        if (isset($_POST['pmcm_rouleaux_coupon_code'])) {
-            update_option('pmcm_rouleaux_coupon_code', sanitize_text_field($_POST['pmcm_rouleaux_coupon_code']));
-        }
         if (isset($_POST['pmcm_asit_discount_early_bird'])) {
             update_option('pmcm_asit_discount_early_bird', absint($_POST['pmcm_asit_discount_early_bird']));
         }
@@ -1221,9 +1208,6 @@ class PMCM_Admin
             echo '<div class="notice notice-success is-dismissible"><p>' . __('Academic Partners settings saved successfully!', 'prepmedico-course-management') . '</p></div>';
         }
 
-        $coupon_code         = get_option('pmcm_asit_coupon_code', 'ASIT');
-        $bomss_coupon_code   = get_option('pmcm_bomss_coupon_code', 'BOMSS');
-        $rouleaux_coupon_code = get_option('pmcm_rouleaux_coupon_code', 'ROULEAUX');
         $default_discount = get_option('pmcm_asit_discount_normal', 15);
         $all_courses = PMCM_Core::get_courses();
     ?>
@@ -1236,7 +1220,7 @@ class PMCM_Admin
                 </div>
             </header>
 
-            <!-- Global Coupon Configuration Card -->
+            <!-- Global Partner Discount Configuration -->
             <form method="post" action="" id="wcem-asit-form">
                 <?php wp_nonce_field('pmcm_asit_settings_nonce'); ?>
 
@@ -1245,34 +1229,13 @@ class PMCM_Admin
                         <div class="wcem-asit-global-icon">
                             <span class="material-icons-round">settings</span>
                         </div>
-                        <h2><?php _e('Global Coupon Configuration', 'prepmedico-course-management'); ?></h2>
+                        <h2><?php _e('Global Discount Configuration', 'prepmedico-course-management'); ?></h2>
                         <button type="submit" name="pmcm_save_asit_settings" class="wcem-asit-save-global">
                             <span class="material-icons-round">save</span>
                             <?php _e('Save Global Settings', 'prepmedico-course-management'); ?>
                         </button>
                     </div>
                     <div class="wcem-asit-global-body">
-                        <div class="wcem-asit-global-field">
-                            <label><?php _e('ASiT Coupon Code', 'prepmedico-course-management'); ?></label>
-                            <div class="wcem-asit-input-with-tag">
-                                <input type="text" name="pmcm_asit_coupon_code" value="<?php echo esc_attr($coupon_code); ?>" class="wcem-asit-coupon-input">
-                                <span class="wcem-asit-tag"><?php _e('GLOBAL OVERRIDE', 'prepmedico-course-management'); ?></span>
-                            </div>
-                        </div>
-                        <div class="wcem-asit-global-field">
-                            <label><?php _e('BOMSS Coupon Code', 'prepmedico-course-management'); ?></label>
-                            <div class="wcem-asit-input-with-tag">
-                                <input type="text" name="pmcm_bomss_coupon_code" value="<?php echo esc_attr($bomss_coupon_code); ?>" class="wcem-asit-coupon-input">
-                                <span class="wcem-asit-tag" style="background:#1a6b3c;"><?php _e('BOMSS', 'prepmedico-course-management'); ?></span>
-                            </div>
-                        </div>
-                        <div class="wcem-asit-global-field">
-                            <label><?php _e('Rouleaux Club Coupon Code', 'prepmedico-course-management'); ?></label>
-                            <div class="wcem-asit-input-with-tag">
-                                <input type="text" name="pmcm_rouleaux_coupon_code" value="<?php echo esc_attr($rouleaux_coupon_code); ?>" class="wcem-asit-coupon-input">
-                                <span class="wcem-asit-tag" style="background:#1565c0;"><?php _e('ROULEAUX', 'prepmedico-course-management'); ?></span>
-                            </div>
-                        </div>
                         <div class="wcem-asit-global-field">
                             <label><?php _e('Default Discount Percentage', 'prepmedico-course-management'); ?></label>
                             <div class="wcem-asit-input-with-note">
@@ -1626,22 +1589,6 @@ class PMCM_Admin
                     </button>
                 </div>
             </form>
-
-            <!-- Instructions Section -->
-            <section class="wcem-asit-instructions">
-                <div class="wcem-asit-instructions-header">
-                    <span class="material-icons-round">help_outline</span>
-                    <h3><?php _e('WooCommerce Coupon Setup', 'prepmedico-course-management'); ?></h3>
-                </div>
-                <div class="wcem-asit-instructions-body">
-                    <ol>
-                        <li><?php printf(__('Go to <a href="%s">WooCommerce → Coupons</a>', 'prepmedico-course-management'), admin_url('edit.php?post_type=shop_coupon')); ?></li>
-                        <li><?php printf(__('Create or edit a coupon with code: <code>%s</code>', 'prepmedico-course-management'), esc_html($coupon_code)); ?></li>
-                        <li><?php _e('Set "Discount type" to "Percentage discount"', 'prepmedico-course-management'); ?></li>
-                        <li><?php _e('Set any percentage (it will be overridden dynamically per product)', 'prepmedico-course-management'); ?></li>
-                    </ol>
-                </div>
-            </section>
 
             <!-- Bulk Sync Section -->
             <section class="wcem-asit-sync-section">

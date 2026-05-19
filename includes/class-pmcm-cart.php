@@ -377,6 +377,19 @@ class PMCM_Cart {
             if (!empty($partner_num)) {
                 $output .= ' <span style="color:#333;font-weight:600;font-size:14px;">#' . esc_html($partner_num) . '</span>';
             }
+
+            // Show discount amount from order fee
+            $partner_discount = 0;
+            foreach ($order->get_fees() as $fee) {
+                if (stripos($fee->get_name(), 'Member Discount') !== false) {
+                    $partner_discount = abs($fee->get_total());
+                    break;
+                }
+            }
+            if ($partner_discount > 0) {
+                $output .= ' <span style="display:inline-block;padding:2px 8px;background:#e8f5e9;color:#1a6b3c;border-radius:4px;font-size:12px;font-weight:600;margin-left:4px;">Discount applied: -' . wc_price($partner_discount) . '</span>';
+            }
+
             // Membership pending badge
             if ($order->get_status() === 'membership-pending') {
                 $output .= ' <span style="display:inline-block;padding:3px 8px;background:#f9a825;color:#333;border-radius:4px;font-size:11px;font-weight:600;margin-left:6px;">Membership Pending Verification</span>';

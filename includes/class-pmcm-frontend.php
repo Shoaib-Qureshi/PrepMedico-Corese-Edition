@@ -525,6 +525,9 @@ class PMCM_Frontend {
         $course_slug = self::get_product_course_slug($product->get_id());
         if (!$course_slug) return $sale_price;
 
+        // If Early Bird is not enabled for this course, the sale price is permanent — always show it.
+        if (!self::is_early_bird_enabled_for_course($course_slug)) return $sale_price;
+
         $current_eb = PMCM_Core::is_course_early_bird_active($course_slug);
         $next_eb    = PMCM_Core::is_next_edition_early_bird_active($course_slug);
 
@@ -550,11 +553,25 @@ class PMCM_Frontend {
         $course_slug = self::get_product_course_slug($product->get_id());
         if (!$course_slug) return $price;
 
+        // If Early Bird is not enabled for this course, the sale price is permanent — always show it.
+        if (!self::is_early_bird_enabled_for_course($course_slug)) return $price;
+
         $current_eb = PMCM_Core::is_course_early_bird_active($course_slug);
         $next_eb    = PMCM_Core::is_next_edition_early_bird_active($course_slug);
 
         if ($slot === 'current' && !$current_eb) return $regular_price;
         if ($slot === 'next'    && !$next_eb)    return $regular_price;
         return $price;
+    }
+
+    /**
+     * Returns true if Early Bird is configured/enabled for the given course slug.
+     * Used to distinguish permanent sale prices from EB-only sale prices.
+     */
+    private static function is_early_bird_enabled_for_course($course_slug) {
+        $courses = PMCM_Core::get_courses();
+        if (!isset($courses[$course_slug])) return false;
+        $prefix = $courses[$course_slug]['settings_prefix'];
+        return get_option($prefix . 'early_bird_enabled', 'no') === 'yes';
     }
 }
