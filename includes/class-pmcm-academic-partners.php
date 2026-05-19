@@ -30,6 +30,10 @@ class PMCM_Academic_Partners {
         add_action('woocommerce_checkout_create_order',        [__CLASS__, 'save_partner_to_order'], 10, 2);
         add_action('woocommerce_checkout_order_processed',     [__CLASS__, 'set_membership_pending_status'], 10, 3);
 
+        // Dedicated AJAX: set session immediately before cart recalculation
+        add_action('wp_ajax_nopriv_pmcm_apply_partner', [__CLASS__, 'ajax_apply_partner']);
+        add_action('wp_ajax_pmcm_apply_partner',        [__CLASS__, 'ajax_apply_partner']);
+
         // Email registration
         add_filter('woocommerce_email_classes', [__CLASS__, 'register_membership_emails']);
 
@@ -176,6 +180,72 @@ class PMCM_Academic_Partners {
         // Backwards compat for any code still reading the old ASiT session key
         if ($partner === 'asit') {
             WC()->session->set('asit_membership_number', $number);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Dedicated AJAX endpoint — sets session and confirms eligibility immediately
+    // Called by the Apply button BEFORE update_checkout fires, so the fee hook
+    // reads a fully-committed session on the very next calculate_totals() call.
+    // -------------------------------------------------------------------------
+
+    public static function ajax_apply_partner() {
+        check_ajax_referer('pmcm_apply_partner_nonce', 'nonce');
+
+        if (!WC()->session) {
+            wp_send_json_error(['message' => 'Session unavailable']);
+        }
+
+        $partner = isset($_POST['partner']) ? sanitize_text_field($_POST['partner']) : '';
+        $number  = isset($_POST['number'])  ? sanitize_text_field(trim($_POST['number'])) : '';
+
+        // Clear session if inputs are empty or invalid
+        if (empty($partner) || empty($number) || !in_array($partner, ['asit', 'bomss', 'rouleaux'], true)) {
+            WC()->session->set('pmcm_selected_partner', '');
+            WC()->session->set('pmcm_partner_number', '');
+            wp_send_json_success(['applied' => false, 'message' => '']);
+        }
+
+        // Validate number format (5-10 digits)
+        if (!preg_match('/^[0-9]{5,10}$/', $number)) {
+            wp_send_json_error(['message' => __('Membership number must be 5–10 digits.', 'prepmedico-course-management')]);
+        }
+
+        // Persist in WC session before calculate_totals fires
+        WC()->session->set('pmcm_selected_partner', $partner);
+        WC()->session->set('pmcm_partner_number', $number);
+        if ($partner === 'asit') {
+            WC()->session->set('asit_membership_number', $number);
+        }
+
+        // Check eligibility to provide immediate feedback
+        $eligible = false;
+        if (WC()->cart) {
+            foreach (WC()->cart->get_cart() as $key => $cart_item) {
+                $config = PMCM_Core::get_partner_config_for_product(
+                    $cart_item['product_id'],
+                    $partner,
+                    'current'
+                );
+                if ($config['is_eligible'] && $config['discount'] > 0) {
+                    $eligible = true;
+                    break;
+                }
+            }
+        }
+
+        $label = isset(self::$partner_labels[$partner]) ? self::$partner_labels[$partner] : strtoupper($partner);
+
+        if ($eligible) {
+            wp_send_json_success([
+                'applied'  => true,
+                'message'  => sprintf(__('%s discount will be applied.', 'prepmedico-course-management'), $label),
+            ]);
+        } else {
+            wp_send_json_success([
+                'applied'  => false,
+                'message'  => sprintf(__('%s discount is not available for the current products/period.', 'prepmedico-course-management'), $label),
+            ]);
         }
     }
 
@@ -357,6 +427,9 @@ class PMCM_Academic_Partners {
             p.form-row.form-row-last.pmcm-button-wrapper { margin-bottom: 0px !important; }
             .pmcm-apply-button:hover { background: #7a1c57 !important; transform: translateY(-1px); }
             .pmcm-apply-button:disabled { background: #ccc !important; cursor: not-allowed; opacity: 0.8; }
+            .pmcm-discount-notice { margin-top: 8px; padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: 500; }
+            .pmcm-discount-notice.applied  { background: #e8f5e9; color: #1a6b3c; border: 1px solid #a5d6a7; }
+            .pmcm-discount-notice.unavailable { background: #fff8e1; color: #7a5c00; border: 1px solid #ffe082; }
         </style>
         <?php
     }
@@ -368,16 +441,23 @@ class PMCM_Academic_Partners {
         ?>
         <script type="text/javascript">
         jQuery(document).ready(function($) {
-            var $partnerSelect = $('#pmcm_selected_partner');
-            var $numberWrap    = $('.pmcm-partner-number-wrap');
-            var $numberInput   = $('#pmcm_partner_number');
-            var $applyButton   = $('#apply_partner_membership');
-            var isApplying     = false;
+            var $partnerSelect  = $('#pmcm_selected_partner');
+            var $numberWrap     = $('.pmcm-partner-number-wrap');
+            var $numberInput    = $('#pmcm_partner_number');
+            var $applyButton    = $('#apply_partner_membership');
+            var $noticeEl       = null;
+            var isApplying      = false;
+            var ajaxUrl         = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+            var applyNonce      = '<?php echo esc_js(wp_create_nonce('pmcm_apply_partner_nonce')); ?>';
 
             if ($partnerSelect.length === 0) return;
 
+            // Inject notice element after help text
+            $numberWrap.append('<div class="pmcm-discount-notice" style="display:none;"></div>');
+            $noticeEl = $numberWrap.find('.pmcm-discount-notice');
+
             function validateNumber() {
-                var val = $numberInput.val();
+                var val = $numberInput.val().trim();
                 if (/^[0-9]{5,10}$/.test(val)) {
                     $applyButton.prop('disabled', false);
                     return true;
@@ -386,19 +466,42 @@ class PMCM_Academic_Partners {
                 return false;
             }
 
+            function showNotice(message, type) {
+                $noticeEl.removeClass('applied unavailable').addClass(type).text(message).show();
+            }
+
+            function hideNotice() {
+                $noticeEl.hide().text('');
+            }
+
             $partnerSelect.on('change', function() {
+                hideNotice();
                 if ($(this).val()) {
                     $numberWrap.show();
                     validateNumber();
                 } else {
                     $numberWrap.hide();
                     $numberInput.val('');
-                    $('body').trigger('update_checkout');
+                    // Clear session and refresh cart
+                    $.post(ajaxUrl, {
+                        action: 'pmcm_apply_partner',
+                        nonce: applyNonce,
+                        partner: '',
+                        number: ''
+                    }, function() {
+                        $('body').trigger('update_checkout');
+                    });
                 }
             });
 
             validateNumber();
-            $numberInput.on('input', validateNumber);
+            $numberInput.on('input', function() {
+                hideNotice();
+                validateNumber();
+                if ($(this).val().trim().length === 0) {
+                    $('body').trigger('update_checkout');
+                }
+            });
 
             $numberInput.on('keydown', function(e) {
                 if (e.key === 'Enter') {
@@ -411,22 +514,50 @@ class PMCM_Academic_Partners {
             $applyButton.on('click', function(e) {
                 e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
                 if (isApplying || !validateNumber()) return false;
+
                 isApplying = true;
                 $applyButton.text('Applying...').prop('disabled', true);
-                $('body').trigger('update_checkout');
-                setTimeout(function() {
-                    $applyButton.text('Applied ✓');
-                    setTimeout(function() {
+                hideNotice();
+
+                // Step 1: set session via dedicated AJAX (guarantees session is committed
+                //         before WooCommerce's calculate_totals() runs in step 2)
+                $.ajax({
+                    url: ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action:  'pmcm_apply_partner',
+                        nonce:   applyNonce,
+                        partner: $partnerSelect.val(),
+                        number:  $numberInput.val().trim()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            var msg  = response.data.message || '';
+                            var type = response.data.applied ? 'applied' : 'unavailable';
+                            if (msg) showNotice(msg, type);
+
+                            // Step 2: trigger WC cart recalculation — session is already set
+                            $('body').trigger('update_checkout');
+                        } else {
+                            var errMsg = (response.data && response.data.message) ? response.data.message : 'Could not apply discount.';
+                            showNotice(errMsg, 'unavailable');
+                        }
+                        $applyButton.text('Applied ✓');
+                        setTimeout(function() {
+                            $applyButton.text('Apply');
+                            validateNumber();
+                            isApplying = false;
+                        }, 2000);
+                    },
+                    error: function() {
+                        showNotice('Could not apply discount. Please try again.', 'unavailable');
                         $applyButton.text('Apply');
                         validateNumber();
                         isApplying = false;
-                    }, 2000);
-                }, 1000);
-                return false;
-            });
+                    }
+                });
 
-            $numberInput.on('input', function() {
-                if ($(this).val().length === 0) $('body').trigger('update_checkout');
+                return false;
             });
 
             $(document.body).on('updated_checkout', function() { isApplying = false; });
