@@ -143,9 +143,9 @@ class PMCM_Admin
             register_setting('wcem_settings', $prefix . 'next_early_bird_start', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_early_bird_end', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
 
-            // Exam dates (free-text, per slot)
-            register_setting('wcem_settings', $prefix . 'exam_dates', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
-            register_setting('wcem_settings', $prefix . 'next_exam_dates', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
+            // Exam dates (rich text, per slot)
+            register_setting('wcem_settings', $prefix . 'exam_dates', ['type' => 'string', 'sanitize_callback' => 'wp_kses_post']);
+            register_setting('wcem_settings', $prefix . 'next_exam_dates', ['type' => 'string', 'sanitize_callback' => 'wp_kses_post']);
         }
 
         register_setting('pmcm_asit_settings', 'pmcm_asit_discount_early_bird', ['type' => 'integer', 'sanitize_callback' => 'absint']);
@@ -371,7 +371,11 @@ class PMCM_Admin
                 if ($field === 'early_bird_enabled') {
                     $value = isset($_POST[$key]) ? 'yes' : 'no';
                 } elseif (isset($_POST[$key])) {
-                    $value = sanitize_text_field($_POST[$key]);
+                    if ($field === 'exam_dates') {
+                        $value = wp_kses_post(wp_unslash($_POST[$key]));
+                    } else {
+                        $value = sanitize_text_field($_POST[$key]);
+                    }
                     if ($field === 'current_edition') {
                         $value = absint($value);
                     }
@@ -392,7 +396,11 @@ class PMCM_Admin
                 if ($field === 'next_early_bird_enabled') {
                     $value = isset($_POST[$key]) ? 'yes' : 'no';
                 } elseif (isset($_POST[$key])) {
-                    $value = sanitize_text_field($_POST[$key]);
+                    if ($field === 'next_exam_dates') {
+                        $value = wp_kses_post(wp_unslash($_POST[$key]));
+                    } else {
+                        $value = sanitize_text_field($_POST[$key]);
+                    }
                     if ($field === 'next_edition') {
                         $value = absint($value);
                     }
@@ -832,14 +840,38 @@ class PMCM_Admin
                                                 <p class="description"><?php _e('Enter the exam dates shown on the frontend table. Free text — type exactly what should be displayed (e.g. "May 11-15 Birmingham AND June 22-23 KL, Malaysia").', 'prepmedico-course-management'); ?></p>
                                             </div>
                                         </div>
-                                        <div class="wcem-fields-grid wcem-fields-2col">
-                                            <div class="wcem-field">
-                                                <label for="<?php echo esc_attr($prefix); ?>exam_dates"><?php _e('Current Edition Exam Dates', 'prepmedico-course-management'); ?></label>
-                                                <input type="text" id="<?php echo esc_attr($prefix); ?>exam_dates" name="<?php echo esc_attr($prefix); ?>exam_dates" value="<?php echo esc_attr($exam_dates); ?>" placeholder="e.g. May 11-15 Birmingham AND June 22-23 KL, Malaysia" style="width:100%;">
+                                        <div class="wcem-fields-grid">
+                                            <div class="wcem-field" style="width:100%;">
+                                                <label><?php _e('Current Edition Exam Dates', 'prepmedico-course-management'); ?></label>
+                                                <?php
+                                                $editor_id_current = preg_replace('/[^a-z0-9_]/', '_', strtolower($prefix)) . 'exam_dates';
+                                                wp_editor(wp_kses_post($exam_dates), $editor_id_current, [
+                                                    'textarea_name' => $prefix . 'exam_dates',
+                                                    'media_buttons' => false,
+                                                    'textarea_rows' => 6,
+                                                    'tinymce'       => [
+                                                        'toolbar1' => 'bold,italic,bullist,numlist,|,link,unlink,|,undo,redo',
+                                                        'toolbar2' => '',
+                                                    ],
+                                                    'quicktags' => true,
+                                                ]);
+                                                ?>
                                             </div>
-                                            <div class="wcem-field">
-                                                <label for="<?php echo esc_attr($prefix); ?>next_exam_dates"><?php _e('Next Edition Exam Dates', 'prepmedico-course-management'); ?></label>
-                                                <input type="text" id="<?php echo esc_attr($prefix); ?>next_exam_dates" name="<?php echo esc_attr($prefix); ?>next_exam_dates" value="<?php echo esc_attr($next_exam_dates); ?>" placeholder="e.g. TBA" style="width:100%;">
+                                            <div class="wcem-field" style="width:100%;margin-top:16px;">
+                                                <label><?php _e('Next Edition Exam Dates', 'prepmedico-course-management'); ?></label>
+                                                <?php
+                                                $editor_id_next = preg_replace('/[^a-z0-9_]/', '_', strtolower($prefix)) . 'next_exam_dates';
+                                                wp_editor(wp_kses_post($next_exam_dates), $editor_id_next, [
+                                                    'textarea_name' => $prefix . 'next_exam_dates',
+                                                    'media_buttons' => false,
+                                                    'textarea_rows' => 6,
+                                                    'tinymce'       => [
+                                                        'toolbar1' => 'bold,italic,bullist,numlist,|,link,unlink,|,undo,redo',
+                                                        'toolbar2' => '',
+                                                    ],
+                                                    'quicktags' => true,
+                                                ]);
+                                                ?>
                                             </div>
                                         </div>
                                     </section>

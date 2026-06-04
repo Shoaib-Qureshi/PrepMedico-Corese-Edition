@@ -1695,9 +1695,9 @@ class PMCM_Shortcodes {
             : get_option($prefix . 'exam_dates', '');
 
         if (empty($text)) {
-            return '<span class="pmcm-exam-dates">' . __('TBA', 'prepmedico-course-management') . '</span>';
+            return '<div class="pmcm-exam-dates">' . __('TBA', 'prepmedico-course-management') . '</div>';
         }
 
-        return '<span class="pmcm-exam-dates">' . esc_html($text) . '</span>';
+        return '<div class="pmcm-exam-dates">' . wp_kses_post($text) . '</div>';
     }
 }
