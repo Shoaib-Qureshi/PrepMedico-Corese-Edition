@@ -247,6 +247,26 @@ class PMCM_Shortcodes {
         $atts = shortcode_atts(['course' => ''], $atts, 'registration_status');
         $course_slug = sanitize_text_field($atts['course']);
 
+        // Auto-detect course from the current product page when no course attr given
+        if (empty($course_slug)) {
+            $product_id = get_the_ID();
+            if ($product_id) {
+                $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+                $child_map  = PMCM_Core::get_child_to_parent_map();
+                $courses    = PMCM_Core::get_courses();
+                foreach ($categories as $cat_slug) {
+                    if (isset($courses[$cat_slug])) {
+                        $course_slug = $cat_slug;
+                        break;
+                    }
+                    if (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
+                        $course_slug = $child_map[$cat_slug];
+                        break;
+                    }
+                }
+            }
+        }
+
         if (!isset(PMCM_Core::get_courses()[$course_slug])) {
             return '';
         }
