@@ -2141,10 +2141,34 @@
 .wcem-course-status {
     font-size: 8px;
     font-weight: 700;
-    text-transform: uppercase;
     padding: 3px 6px;
     border-radius: var(--pmcm-radius-sm);
     letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.wcem-course-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: currentColor;
+    opacity: 0.8;
+}
+
+.wcem-course-status.wcem-status-active::before {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.wcem-course-status.wcem-status-early-bird::before {
+    animation: pulse-warning 1s ease-in-out infinite;
+}
+
+.wcem-course-status.wcem-status-ending-soon::before {
+    animation: pulse-warning 1s ease-in-out infinite;
 }
 
 .wcem-course-status.wcem-status-ending-soon {
@@ -2216,10 +2240,34 @@
 .wcem-panel-status-badge {
     font-size: 10px;
     font-weight: 700;
-    text-transform: uppercase;
     padding: 4px 10px;
     border-radius: var(--pmcm-radius);
     letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wcem-panel-status-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: currentColor;
+    opacity: 0.8;
+}
+
+.wcem-panel-status-badge.wcem-status-active::before {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.wcem-panel-status-badge.wcem-status-early-bird::before {
+    animation: pulse-warning 1s ease-in-out infinite;
+}
+
+.wcem-panel-status-badge.wcem-status-ending-soon::before {
+    animation: pulse-warning 1s ease-in-out infinite;
 }
 
 .wcem-panel-status-badge.wcem-status-ending-soon {

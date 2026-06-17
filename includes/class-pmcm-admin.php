@@ -628,30 +628,30 @@ class PMCM_Admin
         // Override wins (it self-cancels once dates catch up, so this only fires when really active)
         if ($override === 'force_open') {
             $status = 'forced-open';
-            $status_label = __('Forced Open', 'prepmedico-course-management');
+            $status_label = __('Forced open', 'prepmedico-course-management');
         } elseif ($override === 'force_closed') {
             $status = 'forced-closed';
-            $status_label = __('Forced Closed', 'prepmedico-course-management');
+            $status_label = __('Forced closed', 'prepmedico-course-management');
         } elseif (empty($start) || empty($end)) {
             $status = 'needs-dates';
-            $status_label = __('Needs Dates', 'prepmedico-course-management');
+            $status_label = __('Needs dates', 'prepmedico-course-management');
         } elseif ($end_ts && $today_ts > $end_ts) {
             // Past end → either rollover pending or just closed
             $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
             $status = $next_enabled ? 'awaiting-next' : 'expired';
-            $status_label = $next_enabled ? __('Awaiting Rollover', 'prepmedico-course-management') : __('Closed', 'prepmedico-course-management');
+            $status_label = $next_enabled ? __('Awaiting rollover', 'prepmedico-course-management') : __('Closed', 'prepmedico-course-management');
         } elseif ($early_bird === 'yes' && $eb_e_ts && (!$eb_s_ts || $today_ts >= $eb_s_ts) && $today_ts <= $eb_e_ts) {
             $status = 'early-bird';
-            $status_label = __('Early Bird Live', 'prepmedico-course-management');
+            $status_label = __('Early bird live', 'prepmedico-course-management');
         } elseif ($start_ts && $today_ts < $start_ts) {
             $status = 'opening-soon';
-            $status_label = __('Opening Soon', 'prepmedico-course-management');
+            $status_label = __('Opening soon', 'prepmedico-course-management');
         } else {
             $status = 'active';
-            $status_label = __('Registration Live', 'prepmedico-course-management');
+            $status_label = __('Registration live', 'prepmedico-course-management');
             if ($end_ts && (($end_ts - $today_ts) / DAY_IN_SECONDS) <= 7) {
                 $status = 'ending-soon';
-                $status_label = __('Ending Soon', 'prepmedico-course-management');
+                $status_label = __('Ending soon', 'prepmedico-course-management');
             }
         }
 
