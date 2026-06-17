@@ -102,6 +102,11 @@
 }
 
 /* Registration Status Styles */
+.wcem-registration-status,
+.wcem-registration-status .wcem-registration-status-label {
+    text-transform: none !important;
+}
+
 .wcem-registration-status {
     display: inline-flex;
     align-items: center;

@@ -479,16 +479,17 @@ class PMCM_Shortcodes {
             $type = 'live';
         }
 
-        // 12px dot container; ripples overflow via position:absolute
+        // 12px dot; the glow lives on the dot itself via animated box-shadow
         return '<span class="wcem-pulse-dot wcem-pulse-' . $type . '" aria-hidden="true"'
-            . ' style="position:relative;display:inline-flex;align-items:center;justify-content:center;'
-            . 'width:12px;height:12px;min-width:12px;flex:0 0 12px;overflow:visible;">'
-            . '<span style="width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
+            . ' style="display:inline-flex;align-items:center;justify-content:center;'
+            . 'width:12px;height:12px;min-width:12px;flex:0 0 12px;">'
+            . '<span class="wcem-pulse-core" style="width:12px;height:12px;border-radius:50%;background:' . $color . ';"></span>'
             . '</span>';
     }
 
     /**
-     * Enqueue inline CSS for pulsing dot ripple animation
+     * Enqueue inline CSS for the glowing dot animation.
+     * The glow is a pulsing box-shadow on the dot itself (not expanding rings).
      */
     private static $dot_css_enqueued = false;
 
@@ -500,22 +501,21 @@ class PMCM_Shortcodes {
 
         add_action('wp_footer', function () {
             echo '<style id="wcem-pulse-dot-css">'
-                . '.wcem-pulse-dot{overflow:visible}'
-                . '.wcem-pulse-dot::before,.wcem-pulse-dot::after{'
-                    . 'content:"";position:absolute;top:50%;left:50%;'
-                    . 'width:12px;height:12px;'
-                    . 'border-radius:50%;'
-                    . 'transform:translate(-50%,-50%);'
-                    . 'opacity:0;pointer-events:none;'
+                . '.wcem-pulse-dot .wcem-pulse-core{animation:wcem-glow 1.6s ease-in-out infinite}'
+                . '.wcem-pulse-live .wcem-pulse-core{animation-name:wcem-glow-live}'
+                . '.wcem-pulse-eb .wcem-pulse-core{animation-name:wcem-glow-eb}'
+                . '.wcem-pulse-grey .wcem-pulse-core{animation-name:wcem-glow-grey}'
+                . '@keyframes wcem-glow-live{'
+                    . '0%,100%{box-shadow:0 0 2px 0 rgba(80,193,84,0.5)}'
+                    . '50%{box-shadow:0 0 9px 3px rgba(80,193,84,0.9)}'
                 . '}'
-                . '.wcem-pulse-dot::before{animation:wcem-ripple 1.8s ease-out infinite}'
-                . '.wcem-pulse-dot::after{animation:wcem-ripple 1.8s ease-out 0.7s infinite}'
-                . '.wcem-pulse-live::before,.wcem-pulse-live::after{background-color:#50c154}'
-                . '.wcem-pulse-eb::before,.wcem-pulse-eb::after{background-color:#C026D3}'
-                . '.wcem-pulse-grey::before,.wcem-pulse-grey::after{background-color:#9CA3AF}'
-                . '@keyframes wcem-ripple{'
-                    . '0%{width:12px;height:12px;opacity:0.6}'
-                    . '100%{width:32px;height:32px;opacity:0}'
+                . '@keyframes wcem-glow-eb{'
+                    . '0%,100%{box-shadow:0 0 2px 0 rgba(192,38,211,0.5)}'
+                    . '50%{box-shadow:0 0 9px 3px rgba(192,38,211,0.9)}'
+                . '}'
+                . '@keyframes wcem-glow-grey{'
+                    . '0%,100%{box-shadow:0 0 2px 0 rgba(156,163,175,0.5)}'
+                    . '50%{box-shadow:0 0 9px 3px rgba(156,163,175,0.9)}'
                 . '}'
                 . '</style>';
         }, 99);
