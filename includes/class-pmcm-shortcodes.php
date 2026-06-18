@@ -39,6 +39,106 @@ class PMCM_Shortcodes {
 
         // Exam dates shortcode
         add_shortcode('pmcm_exam_dates', [__CLASS__, 'exam_dates']);
+
+        // Product-level meta shortcodes (Date, Time & CPD Points) — output nothing when empty
+        add_shortcode('course_date', [__CLASS__, 'course_date']);
+        add_shortcode('course_time', [__CLASS__, 'course_time']);
+        add_shortcode('cpd_points', [__CLASS__, 'cpd_points']);
+    }
+
+    /**
+     * Shortcode: Registration close date for the current (or specified) product.
+     * Usage: [course_date] or [course_date product="123" format="d M Y" before="Closes: "]
+     * Outputs nothing if the value is empty (effectively display:none).
+     */
+    public static function course_date($atts) {
+        $atts = shortcode_atts(['product' => '', 'before' => '', 'after' => '', 'format' => ''], $atts, 'course_date');
+        return self::render_product_date_value('_expiration_date', $atts);
+    }
+
+    /**
+     * Shortcode: Course time for the current (or specified) product.
+     * Usage: [course_time] or [course_time product="123"]
+     * Outputs nothing if the value is empty (effectively display:none).
+     */
+    public static function course_time($atts) {
+        $atts = shortcode_atts(['product' => '', 'before' => '', 'after' => ''], $atts, 'course_time');
+        return self::render_product_meta_value('_pmcm_course_time', $atts);
+    }
+
+    /**
+     * Shortcode: CPD points for the current (or specified) product.
+     * Usage: [cpd_points] or [cpd_points product="123" before="CPD Points: " after=" pts"]
+     * Outputs nothing if the value is empty (effectively display:none).
+     */
+    public static function cpd_points($atts) {
+        $atts = shortcode_atts(['product' => '', 'before' => '', 'after' => ''], $atts, 'cpd_points');
+        return self::render_product_meta_value('_pmcm_cpd_points', $atts);
+    }
+
+    /**
+     * Resolve a product (by id, slug, or the current page) and return a meta value.
+     * Returns '' when the product can't be resolved or the value is empty — so any
+     * surrounding label provided via before/after is hidden too.
+     */
+    private static function render_product_meta_value($meta_key, $atts) {
+        $product_id = self::resolve_product_id($atts['product']);
+        if (!$product_id) {
+            return '';
+        }
+
+        $value = get_post_meta($product_id, $meta_key, true);
+        if ($value === '' || $value === null) {
+            return '';
+        }
+
+        return esc_html($atts['before']) . esc_html($value) . esc_html($atts['after']);
+    }
+
+    /**
+     * Same as render_product_meta_value but formats a stored date (YYYY-MM-DD).
+     * Honors the optional `format` attribute, falling back to the site date format.
+     */
+    private static function render_product_date_value($meta_key, $atts) {
+        $product_id = self::resolve_product_id($atts['product']);
+        if (!$product_id) {
+            return '';
+        }
+
+        $value = get_post_meta($product_id, $meta_key, true);
+        if ($value === '' || $value === null) {
+            return '';
+        }
+
+        $ts = strtotime($value);
+        if ($ts === false) {
+            return '';
+        }
+
+        $format = !empty($atts['format']) ? $atts['format'] : get_option('date_format');
+        $formatted = date_i18n($format, $ts);
+
+        return esc_html($atts['before']) . esc_html($formatted) . esc_html($atts['after']);
+    }
+
+    /**
+     * Resolve a product id from a shortcode attribute (id or slug), falling back to
+     * the current page. Returns 0 when nothing can be resolved.
+     */
+    private static function resolve_product_id($product_attr) {
+        $product_attr = sanitize_text_field($product_attr);
+        $product_id   = 0;
+
+        if (!empty($product_attr)) {
+            $product_id = is_numeric($product_attr)
+                ? intval($product_attr)
+                : intval(PMCM_Core::get_product_id_by_slug(sanitize_title($product_attr)));
+        }
+        if (!$product_id) {
+            $product_id = intval(get_the_ID());
+        }
+
+        return $product_id;
     }
 
     private static function get_registration_override(string $prefix): string
@@ -244,8 +344,9 @@ class PMCM_Shortcodes {
      * Usage: [registration_status course="frcs"]
      */
     public static function registration_status($atts) {
-        $atts = shortcode_atts(['course' => ''], $atts, 'registration_status');
+        $atts = shortcode_atts(['course' => '', 'slot' => ''], $atts, 'registration_status');
         $course_slug = sanitize_text_field($atts['course']);
+        $slot_attr   = sanitize_text_field($atts['slot']); // '', 'current' or 'next' — forces the slot to match the enrol button
 
         // Auto-detect course from the current product page when no course attr given
         if (empty($course_slug)) {
@@ -278,7 +379,13 @@ class PMCM_Shortcodes {
         $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
         $show_next    = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
         $use_next = false;
-        if ($next_enabled) {
+        if ($slot_attr === 'next') {
+            // Explicitly forced to the next edition (e.g. to match a slot="next" enrol button)
+            $use_next = $next_enabled;
+        } elseif ($slot_attr === 'current') {
+            // Explicitly forced to the current edition
+            $use_next = false;
+        } elseif ($next_enabled) {
             if ($show_next) {
                 $use_next = true;
             } else {

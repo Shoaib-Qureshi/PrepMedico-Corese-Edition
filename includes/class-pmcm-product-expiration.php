@@ -73,6 +73,26 @@ class PMCM_Product_Expiration {
             'type' => 'date',
         ]);
 
+        // Course Time
+        woocommerce_wp_text_input([
+            'id' => '_pmcm_course_time',
+            'label' => __('Time', 'prepmedico-course-management'),
+            'placeholder' => __('e.g. 9:00 AM - 5:00 PM', 'prepmedico-course-management'),
+            'desc_tip' => true,
+            'description' => __('Optional: Course time/duration. Shown on the frontend via [course_time]. Leave empty to hide it.', 'prepmedico-course-management'),
+            'type' => 'text',
+        ]);
+
+        // CPD Points
+        woocommerce_wp_text_input([
+            'id' => '_pmcm_cpd_points',
+            'label' => __('CPD Points', 'prepmedico-course-management'),
+            'placeholder' => __('e.g. 6', 'prepmedico-course-management'),
+            'desc_tip' => true,
+            'description' => __('Optional: CPD points awarded. Shown on the frontend via [cpd_points]. Leave empty to hide it.', 'prepmedico-course-management'),
+            'type' => 'text',
+        ]);
+
         // Edition Number Lock
         $current_edition = '';
         if ($parent_course) {
@@ -123,6 +143,14 @@ class PMCM_Product_Expiration {
             $expiration_date = ''; // Invalid date
         }
         update_post_meta($post_id, '_expiration_date', $expiration_date);
+
+        // Course Time
+        $course_time = isset($_POST['_pmcm_course_time']) ? sanitize_text_field($_POST['_pmcm_course_time']) : '';
+        update_post_meta($post_id, '_pmcm_course_time', $course_time);
+
+        // CPD Points
+        $cpd_points = isset($_POST['_pmcm_cpd_points']) ? sanitize_text_field($_POST['_pmcm_cpd_points']) : '';
+        update_post_meta($post_id, '_pmcm_cpd_points', $cpd_points);
 
         // Edition Number
         $edition_number = isset($_POST['_pmcm_edition_number']) ? absint($_POST['_pmcm_edition_number']) : '';
