@@ -40,9 +40,10 @@ class PMCM_Shortcodes {
         // Exam dates shortcode
         add_shortcode('pmcm_exam_dates', [__CLASS__, 'exam_dates']);
 
-        // Product-level meta shortcodes (Date, Time & CPD Points) — output nothing when empty
+        // Product-level meta shortcodes (Date, Time, Duration & CPD Points) — output nothing when empty
         add_shortcode('course_date', [__CLASS__, 'course_date']);
         add_shortcode('course_time', [__CLASS__, 'course_time']);
+        add_shortcode('course_duration', [__CLASS__, 'course_duration']);
         add_shortcode('cpd_points', [__CLASS__, 'cpd_points']);
     }
 
@@ -64,6 +65,16 @@ class PMCM_Shortcodes {
     public static function course_time($atts) {
         $atts = shortcode_atts(['product' => '', 'before' => '', 'after' => ''], $atts, 'course_time');
         return self::render_product_meta_value('_pmcm_course_time', $atts);
+    }
+
+    /**
+     * Shortcode: Course duration for the current (or specified) product.
+     * Usage: [course_duration] or [course_duration product="123" before="Duration: "]
+     * Outputs nothing if the value is empty (effectively display:none).
+     */
+    public static function course_duration($atts) {
+        $atts = shortcode_atts(['product' => '', 'before' => '', 'after' => ''], $atts, 'course_duration');
+        return self::render_product_meta_value('_pmcm_course_duration', $atts);
     }
 
     /**
@@ -420,6 +431,21 @@ class PMCM_Shortcodes {
         $closed_current = ($product_id
             && PMCM_Core::is_product_in_closed_category_current($product_id, $course_slug));
 
+        // Product-level Registration Close Date (the "_expiration_date" meta on the product).
+        // Once it has passed, registration for THIS product is closed regardless of the
+        // course-level edition dates — the product is also marked out of stock by the
+        // expiration system, so it can't be purchased.
+        $reg_close_passed = false;
+        if ($product_id) {
+            $exp_date = get_post_meta($product_id, '_expiration_date', true);
+            if (!empty($exp_date)) {
+                $exp_ts = strtotime($exp_date);
+                if ($exp_ts && strtotime(current_time('Y-m-d')) > $exp_ts) {
+                    $reg_close_passed = true;
+                }
+            }
+        }
+
         // Determine slot inline — avoids any chain issues with get_registration_status()
         $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
         $show_next    = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
@@ -442,10 +468,12 @@ class PMCM_Shortcodes {
             }
         }
 
-        // A stopped (closed) category for the current edition reads "Registration closed"
-        // for this product — clearly, without rolling to the next edition. This only applies
-        // while we're on the current slot; use slot="next" to advertise the next edition.
-        if (!$use_next && $closed_current) {
+        // "Registration closed" cases for this specific product:
+        //  - the product's Registration Close Date has passed (applies to any slot — the
+        //    product is out of stock), or
+        //  - the product's category is stopped for the current edition (current slot only;
+        //    use slot="next" to advertise the next edition instead).
+        if ($reg_close_passed || (!$use_next && $closed_current)) {
             return self::render_registration_status_html(
                 ['status' => 'closed', 'label' => __('Registration closed', 'prepmedico-course-management'), 'class' => 'wcem-status-closed'],
                 $course_slug,

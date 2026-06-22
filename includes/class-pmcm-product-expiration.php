@@ -106,7 +106,17 @@ class PMCM_Product_Expiration {
             'label' => __('Time', 'prepmedico-course-management'),
             'placeholder' => __('e.g. 9:00 AM - 5:00 PM', 'prepmedico-course-management'),
             'desc_tip' => true,
-            'description' => __('Optional: Course time/duration. Shown on the frontend via [course_time]. Leave empty to hide it.', 'prepmedico-course-management'),
+            'description' => __('Optional: Course time. Shown on the frontend via [course_time]. Leave empty to hide it.', 'prepmedico-course-management'),
+            'type' => 'text',
+        ]);
+
+        // Course Duration
+        woocommerce_wp_text_input([
+            'id' => '_pmcm_course_duration',
+            'label' => __('Duration', 'prepmedico-course-management'),
+            'placeholder' => __('e.g. 3 hours / 2 days', 'prepmedico-course-management'),
+            'desc_tip' => true,
+            'description' => __('Optional: Course duration. Shown on the frontend via [course_duration]. Leave empty to hide it.', 'prepmedico-course-management'),
             'type' => 'text',
         ]);
 
@@ -174,6 +184,10 @@ class PMCM_Product_Expiration {
         // Course Time
         $course_time = isset($_POST['_pmcm_course_time']) ? sanitize_text_field($_POST['_pmcm_course_time']) : '';
         update_post_meta($post_id, '_pmcm_course_time', $course_time);
+
+        // Course Duration
+        $course_duration = isset($_POST['_pmcm_course_duration']) ? sanitize_text_field($_POST['_pmcm_course_duration']) : '';
+        update_post_meta($post_id, '_pmcm_course_duration', $course_duration);
 
         // CPD Points
         $cpd_points = isset($_POST['_pmcm_cpd_points']) ? sanitize_text_field($_POST['_pmcm_cpd_points']) : '';
