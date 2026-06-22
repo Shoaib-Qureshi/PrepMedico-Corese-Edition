@@ -85,72 +85,50 @@ class PMCM_Frontend {
         if (is_admin()) {
             return;
         }
+        /*
+         * NOTE: written as vanilla JS with block comments only. The site's performance
+         * optimizer minifies inline scripts (collapses newlines) and may delay jQuery, so
+         * this must not depend on jQuery for the reload path and must not use // comments.
+         */
         ?>
         <script type="text/javascript">
         (function () {
-            if (typeof jQuery === 'undefined') { return; }
-            var $ = jQuery;
-
-            function getContainer() {
-                return document.querySelector('.elementor-menu-cart__container');
-            }
-
+            function getContainer() { return document.querySelector('.elementor-menu-cart__container'); }
             function isCartOpen() {
                 var c = getContainer();
                 if (!c) { return false; }
-                return c.classList.contains('pm-cart-open') ||
-                       c.getAttribute('aria-hidden') === 'false' ||
-                       c.classList.contains('elementor-active');
+                return c.classList.contains('pm-cart-open') || c.getAttribute('aria-hidden') === 'false' || c.classList.contains('elementor-active');
             }
-
-            // Mirror the theme's own openCart(): move the panel to <body>, show it, lock
-            // scroll, then add pm-cart-open on the next frame so the slide-in transition runs.
+            /* Mirror the theme's own openCart(): move panel to <body>, show it, lock scroll, then add pm-cart-open next frame for the slide-in. */
             function openSideCart() {
                 var c = getContainer();
                 if (!c) { return false; }
-                if (c.parentElement !== document.body) {
-                    document.body.appendChild(c);
-                }
+                if (c.parentElement !== document.body) { document.body.appendChild(c); }
                 c.style.display = 'block';
                 c.setAttribute('aria-hidden', 'false');
                 document.body.style.overflow = 'hidden';
-                requestAnimationFrame(function () { c.classList.add('pm-cart-open'); });
+                (window.requestAnimationFrame || window.setTimeout)(function () { c.classList.add('pm-cart-open'); }, 16);
                 return true;
             }
-
-            // AJAX add-to-cart (no reload) — theme init has long since run.
-            $(document.body).on('added_to_cart', function () {
-                if (!isCartOpen()) { openSideCart(); }
-            });
-
-            // Non-AJAX add-to-cart: a cookie was set server-side before the reload.
+            function startReopen() {
+                var ticks = 0, openStreak = 0;
+                var iv = setInterval(function () {
+                    ticks++;
+                    if (isCartOpen()) { openStreak++; if (openStreak >= 2) { clearInterval(iv); } return; }
+                    openStreak = 0;
+                    openSideCart();
+                    if (ticks >= 16) { clearInterval(iv); }
+                }, 200);
+            }
+            /* AJAX add-to-cart: WooCommerce fires added_to_cart via jQuery — bind only if jQuery is present. */
+            if (window.jQuery) {
+                window.jQuery(document.body).on('added_to_cart', function () { if (!isCartOpen()) { openSideCart(); } });
+            }
+            /* Non-AJAX add-to-cart: a cookie was set server-side before the reload. */
             if (document.cookie.indexOf('pmcm_open_cart=1') !== -1) {
-                // Clear the cookie immediately so it only fires once.
                 document.cookie = 'pmcm_open_cart=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-
-                // Wait until the page has loaded (so the theme's cart-panel init has run and
-                // won't reset display:none over us), then open — re-opening if the init briefly
-                // closes it, and settling once it has stayed open for two ticks.
-                var start = function () {
-                    var ticks = 0, openStreak = 0;
-                    var iv = setInterval(function () {
-                        ticks++;
-                        if (isCartOpen()) {
-                            openStreak++;
-                            if (openStreak >= 2) { clearInterval(iv); }
-                            return;
-                        }
-                        openStreak = 0;
-                        openSideCart();
-                        if (ticks >= 16) { clearInterval(iv); }
-                    }, 200);
-                };
-
-                if (document.readyState === 'complete') {
-                    start();
-                } else {
-                    window.addEventListener('load', start);
-                }
+                if (document.readyState === 'complete') { startReopen(); }
+                else { window.addEventListener('load', startReopen); }
             }
         })();
         </script>
