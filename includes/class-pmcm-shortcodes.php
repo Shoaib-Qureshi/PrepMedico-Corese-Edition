@@ -371,26 +371,38 @@ class PMCM_Shortcodes {
      * Usage: [registration_status course="frcs"]
      */
     public static function registration_status($atts) {
-        $atts = shortcode_atts(['course' => '', 'slot' => ''], $atts, 'registration_status');
-        $course_slug = sanitize_text_field($atts['course']);
-        $slot_attr   = sanitize_text_field($atts['slot']); // '', 'current' or 'next' — forces the slot to match the enrol button
+        $atts = shortcode_atts(['course' => '', 'slot' => '', 'product' => ''], $atts, 'registration_status');
+        $course_slug  = sanitize_text_field($atts['course']);
+        $slot_attr    = sanitize_text_field($atts['slot']);    // '', 'current' or 'next' — forces the slot to match the enrol button
+        $product_attr = sanitize_text_field($atts['product']); // optional: id or slug to resolve the product outside the main loop
 
-        // Auto-detect course from the current product page when no course attr given
-        if (empty($course_slug)) {
-            $product_id = get_the_ID();
-            if ($product_id) {
-                $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
-                $child_map  = PMCM_Core::get_child_to_parent_map();
-                $courses    = PMCM_Core::get_courses();
-                foreach ($categories as $cat_slug) {
-                    if (isset($courses[$cat_slug])) {
-                        $course_slug = $cat_slug;
-                        break;
-                    }
-                    if (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
-                        $course_slug = $child_map[$cat_slug];
-                        break;
-                    }
+        // Resolve which product this status is about: explicit attr, else the current page.
+        $product_id = 0;
+        if (!empty($product_attr)) {
+            $product_id = is_numeric($product_attr)
+                ? intval($product_attr)
+                : intval(PMCM_Core::get_product_id_by_slug(sanitize_title($product_attr)));
+        }
+        if (!$product_id) {
+            $maybe = get_the_ID();
+            if ($maybe && get_post_type($maybe) === 'product') {
+                $product_id = intval($maybe);
+            }
+        }
+
+        // Auto-detect course from the product's categories when no course attr given.
+        if (empty($course_slug) && $product_id) {
+            $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+            $child_map  = PMCM_Core::get_child_to_parent_map();
+            $courses    = PMCM_Core::get_courses();
+            foreach ($categories as $cat_slug) {
+                if (isset($courses[$cat_slug])) {
+                    $course_slug = $cat_slug;
+                    break;
+                }
+                if (isset($child_map[$cat_slug]) && isset($courses[$child_map[$cat_slug]])) {
+                    $course_slug = $child_map[$cat_slug];
+                    break;
                 }
             }
         }
@@ -402,11 +414,11 @@ class PMCM_Shortcodes {
         $course = PMCM_Core::get_courses()[$course_slug];
         $prefix = $course['settings_prefix'];
 
-        // Per-product check: is the viewed product's category closed for the CURRENT edition?
-        // If so, the current slot is not purchasable for this product.
-        $page_product_id = get_the_ID();
-        $closed_current  = ($page_product_id && get_post_type($page_product_id) === 'product'
-            && PMCM_Core::is_product_in_closed_category_current($page_product_id, $course_slug));
+        // Category-wise check: is THIS product's category stopped (closed) for the current
+        // edition? A child course can be stopped while the parent course stays live — in that
+        // case this specific product reads "Registration closed" even though others are live.
+        $closed_current = ($product_id
+            && PMCM_Core::is_product_in_closed_category_current($product_id, $course_slug));
 
         // Determine slot inline — avoids any chain issues with get_registration_status()
         $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
@@ -430,18 +442,15 @@ class PMCM_Shortcodes {
             }
         }
 
-        // Closed category for the current edition overrides the current-slot status.
-        // If the next edition is on sale, show that instead; otherwise show "Registration closed".
+        // A stopped (closed) category for the current edition reads "Registration closed"
+        // for this product — clearly, without rolling to the next edition. This only applies
+        // while we're on the current slot; use slot="next" to advertise the next edition.
         if (!$use_next && $closed_current) {
-            if ($next_enabled && $slot_attr !== 'current') {
-                $use_next = true;
-            } else {
-                return self::render_registration_status_html(
-                    ['status' => 'closed', 'label' => __('Registration closed', 'prepmedico-course-management'), 'class' => 'wcem-status-closed'],
-                    $course_slug,
-                    'span'
-                );
-            }
+            return self::render_registration_status_html(
+                ['status' => 'closed', 'label' => __('Registration closed', 'prepmedico-course-management'), 'class' => 'wcem-status-closed'],
+                $course_slug,
+                'span'
+            );
         }
 
         if ($use_next) {

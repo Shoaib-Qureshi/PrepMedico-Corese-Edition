@@ -590,9 +590,9 @@ class PMCM_Admin
                 'output' => __('12th - Current Edition + dates', 'prepmedico-course-management')
             ],
             [
-                'shortcode' => '[registration_status course="frcs"]',
-                'description' => __('Displays status badge (Live/Closed/Opening Soon/Early Bird). Add slot="next" to match a slot="next" enrol button.', 'prepmedico-course-management'),
-                'output' => __('Registration is live / Early bird registration open', 'prepmedico-course-management')
+                'shortcode' => '[registration_status]',
+                'description' => __('Status badge. On a product page it auto-detects the course and shows "Registration closed" if that product\'s category is stopped. Optional: course="frcs", slot="next", product="123".', 'prepmedico-course-management'),
+                'output' => __('Registration is live / Early bird registration open / Registration closed', 'prepmedico-course-management')
             ],
             [
                 'shortcode' => '[early_bird_message course="frcs"]',
