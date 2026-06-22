@@ -35,67 +35,31 @@ class PMCM_Product_Expiration {
         // Cron: Daily check for expired products
         add_action('pmcm_daily_expiration_check', [__CLASS__, 'daily_expiration_check']);
 
-        // Frontend: hide our raw "registration closed" WooCommerce notices on the product page
-        // (the styled notice box already communicates this — the red banner looks out of place)
-        add_action('template_redirect', [__CLASS__, 'suppress_closed_notices_on_product'], 20);
+        // Frontend: hide all WooCommerce notices on the single product page (the green
+        // "added to cart" banner and our "registration closed" error both look out of place;
+        // the cart drawer opens automatically instead, and our styled notice box still shows).
+        add_action('template_redirect', [__CLASS__, 'suppress_notices_on_product'], 1);
     }
 
     /**
-     * Remove our own "registration closed" error notices from the single product page.
-     * Leaves all other WooCommerce notices untouched.
+     * Clear all WooCommerce notices on the single product page so none render there.
+     * Runs early on template_redirect, before any notice output.
      */
-    public static function suppress_closed_notices_on_product() {
+    public static function suppress_notices_on_product() {
         if (is_admin()) {
             return;
         }
         if (!function_exists('is_product') || !is_product()) {
             return;
         }
-        if (!function_exists('wc_get_notices') || !function_exists('wc_clear_notices')) {
+        if (!function_exists('wc_clear_notices') || !function_exists('wc_notice_count')) {
             return;
         }
         if (!function_exists('WC') || !WC()->session) {
             return;
         }
-
-        $notices = wc_get_notices();
-        if (empty($notices)) {
-            return;
-        }
-
-        $targets = [
-            'Registration is closed for this current edition',
-            'Registration for this product has closed',
-        ];
-
-        $removed = false;
-        foreach ($notices as $type => $list) {
-            foreach ($list as $i => $notice) {
-                $msg = is_array($notice) ? (isset($notice['notice']) ? $notice['notice'] : '') : $notice;
-                foreach ($targets as $needle) {
-                    if (strpos($msg, $needle) !== false) {
-                        unset($notices[$type][$i]);
-                        $removed = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!$removed) {
-            return;
-        }
-
-        // Rebuild the notice store without the removed entries.
-        wc_clear_notices();
-        foreach ($notices as $type => $list) {
-            foreach ($list as $notice) {
-                $msg  = is_array($notice) ? (isset($notice['notice']) ? $notice['notice'] : '') : $notice;
-                $data = (is_array($notice) && isset($notice['data'])) ? $notice['data'] : [];
-                if ($msg !== '') {
-                    wc_add_notice($msg, $type, $data);
-                }
-            }
+        if (wc_notice_count() > 0) {
+            wc_clear_notices();
         }
     }
 

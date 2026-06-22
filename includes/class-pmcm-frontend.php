@@ -85,15 +85,18 @@ class PMCM_Frontend {
 
             function isCartOpen() {
                 var c = document.querySelector('.elementor-menu-cart__container');
-                return !!(c && c.classList.contains('elementor-active'));
+                if (!c) { return false; }
+                // Elementor side-cart uses aria-hidden; dropdown variants use .elementor-active.
+                return c.getAttribute('aria-hidden') === 'false' || c.classList.contains('elementor-active');
             }
 
             function clickCartToggle() {
-                var toggle = document.querySelector('.elementor-menu-cart__toggle');
-                if (toggle) {
+                // Elementor menu cart toggle (note: underscore in toggle_button).
+                var btn = document.querySelector('#elementor-menu-cart__toggle_button') ||
+                          document.querySelector('.elementor-menu-cart__toggle_button') ||
+                          document.querySelector('.elementor-menu-cart__toggle a, .elementor-menu-cart__toggle button');
+                if (btn) {
                     // Native click fires handlers bound via either addEventListener or jQuery.
-                    var btn = toggle.querySelector('.elementor-menu-cart__toggle-button') ||
-                              toggle.querySelector('a, button') || toggle;
                     btn.click();
                     return true;
                 }
@@ -112,19 +115,16 @@ class PMCM_Frontend {
                 if (!isCartOpen()) { clickCartToggle(); }
             });
 
-            // Non-AJAX add-to-cart: open once the cart widget is ready after the reload.
+            // Non-AJAX add-to-cart: a cookie was set server-side before the reload.
             if (document.cookie.indexOf('pmcm_open_cart=1') !== -1) {
                 // Clear the cookie immediately so it only fires once.
                 document.cookie = 'pmcm_open_cart=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-                $(window).on('load', function () {
-                    var attempts = 0;
-                    (function tryOpen() {
-                        attempts++;
-                        if (isCartOpen()) { return; }   // already open — done
-                        clickCartToggle();
-                        if (attempts < 20) { setTimeout(tryOpen, 250); }
-                    })();
-                });
+                var attempts = 0;
+                var iv = setInterval(function () {
+                    attempts++;
+                    if (isCartOpen() || attempts >= 30) { clearInterval(iv); return; }
+                    clickCartToggle(); // one click per tick; stops as soon as the cart is open
+                }, 250);
             }
         })();
         </script>

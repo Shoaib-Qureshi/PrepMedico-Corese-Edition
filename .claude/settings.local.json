@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:unpkg.com)",
-      "WebFetch(domain:lottiefiles.com)"
+      "WebFetch(domain:lottiefiles.com)",
+      "Bash(php -l includes/class-pmcm-product-expiration.php)",
+      "Bash(php -l includes/class-pmcm-frontend.php)"
     ]
   }
 }
