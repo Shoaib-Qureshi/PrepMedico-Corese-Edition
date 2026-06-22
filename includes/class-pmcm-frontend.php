@@ -68,10 +68,18 @@ class PMCM_Frontend {
     }
 
     /**
-     * Open the Elementor menu cart automatically when an item is added.
-     *  - Non-AJAX adds: the `pmcm_open_cart` cookie (set in flag_cart_just_added) makes the
-     *    cart open on the page that loads after the reload, then the cookie is cleared.
-     *  - AJAX adds: the `added_to_cart` event opens it without a reload.
+     * Open the side cart automatically when an item is added.
+     *
+     * The theme replaces Elementor's native cart open behaviour with a custom side panel:
+     * it moves `.elementor-menu-cart__container` to <body> and reveals it by adding the
+     * `pm-cart-open` class (see the theme's "Cart Side Panel" script/CSS). So instead of
+     * clicking the Elementor toggle (which fights both Elementor's and the theme's handlers),
+     * we drive that same `pm-cart-open` mechanism directly — the deterministic, conflict-free
+     * way to open this particular cart.
+     *
+     *  - Non-AJAX adds: the `pmcm_open_cart` cookie (set in flag_cart_just_added) triggers it
+     *    after the page reload, then the cookie is cleared.
+     *  - AJAX adds: the `added_to_cart` event triggers it without a reload.
      */
     public static function auto_open_cart_script() {
         if (is_admin()) {
@@ -83,48 +91,66 @@ class PMCM_Frontend {
             if (typeof jQuery === 'undefined') { return; }
             var $ = jQuery;
 
+            function getContainer() {
+                return document.querySelector('.elementor-menu-cart__container');
+            }
+
             function isCartOpen() {
-                var c = document.querySelector('.elementor-menu-cart__container');
+                var c = getContainer();
                 if (!c) { return false; }
-                // Elementor side-cart uses aria-hidden; dropdown variants use .elementor-active.
-                return c.getAttribute('aria-hidden') === 'false' || c.classList.contains('elementor-active');
+                return c.classList.contains('pm-cart-open') ||
+                       c.getAttribute('aria-hidden') === 'false' ||
+                       c.classList.contains('elementor-active');
             }
 
-            function clickCartToggle() {
-                // Elementor menu cart toggle (note: underscore in toggle_button).
-                var btn = document.querySelector('#elementor-menu-cart__toggle_button') ||
-                          document.querySelector('.elementor-menu-cart__toggle_button') ||
-                          document.querySelector('.elementor-menu-cart__toggle a, .elementor-menu-cart__toggle button');
-                if (btn) {
-                    // Native click fires handlers bound via either addEventListener or jQuery.
-                    btn.click();
-                    return true;
+            // Mirror the theme's own openCart(): move the panel to <body>, show it, lock
+            // scroll, then add pm-cart-open on the next frame so the slide-in transition runs.
+            function openSideCart() {
+                var c = getContainer();
+                if (!c) { return false; }
+                if (c.parentElement !== document.body) {
+                    document.body.appendChild(c);
                 }
-
-                // Best-effort fallbacks for non-Elementor side carts
-                var fallbacks = ['.xoo-wsc-basket', '.ct-header-cart > a', '.site-header-cart .cart-contents', 'a.cart-contents', '.header-cart-toggle'];
-                for (var i = 0; i < fallbacks.length; i++) {
-                    var el = document.querySelector(fallbacks[i]);
-                    if (el) { el.click(); return true; }
-                }
-                return false;
+                c.style.display = 'block';
+                c.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                requestAnimationFrame(function () { c.classList.add('pm-cart-open'); });
+                return true;
             }
 
-            // AJAX add-to-cart (no reload)
+            // AJAX add-to-cart (no reload) — theme init has long since run.
             $(document.body).on('added_to_cart', function () {
-                if (!isCartOpen()) { clickCartToggle(); }
+                if (!isCartOpen()) { openSideCart(); }
             });
 
             // Non-AJAX add-to-cart: a cookie was set server-side before the reload.
             if (document.cookie.indexOf('pmcm_open_cart=1') !== -1) {
                 // Clear the cookie immediately so it only fires once.
                 document.cookie = 'pmcm_open_cart=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-                var attempts = 0;
-                var iv = setInterval(function () {
-                    attempts++;
-                    if (isCartOpen() || attempts >= 30) { clearInterval(iv); return; }
-                    clickCartToggle(); // one click per tick; stops as soon as the cart is open
-                }, 250);
+
+                // Wait until the page has loaded (so the theme's cart-panel init has run and
+                // won't reset display:none over us), then open — re-opening if the init briefly
+                // closes it, and settling once it has stayed open for two ticks.
+                var start = function () {
+                    var ticks = 0, openStreak = 0;
+                    var iv = setInterval(function () {
+                        ticks++;
+                        if (isCartOpen()) {
+                            openStreak++;
+                            if (openStreak >= 2) { clearInterval(iv); }
+                            return;
+                        }
+                        openStreak = 0;
+                        openSideCart();
+                        if (ticks >= 16) { clearInterval(iv); }
+                    }, 200);
+                };
+
+                if (document.readyState === 'complete') {
+                    start();
+                } else {
+                    window.addEventListener('load', start);
+                }
             }
         })();
         </script>
