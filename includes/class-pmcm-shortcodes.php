@@ -375,6 +375,12 @@ class PMCM_Shortcodes {
         $course = PMCM_Core::get_courses()[$course_slug];
         $prefix = $course['settings_prefix'];
 
+        // Per-product check: is the viewed product's category closed for the CURRENT edition?
+        // If so, the current slot is not purchasable for this product.
+        $page_product_id = get_the_ID();
+        $closed_current  = ($page_product_id && get_post_type($page_product_id) === 'product'
+            && PMCM_Core::is_product_in_closed_category_current($page_product_id, $course_slug));
+
         // Determine slot inline — avoids any chain issues with get_registration_status()
         $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
         $show_next    = get_option($prefix . 'shortcode_display_next', 'no') === 'yes';
@@ -394,6 +400,20 @@ class PMCM_Shortcodes {
                 if (!empty($curr_end) && strtotime(current_time('Y-m-d')) > strtotime($curr_end)) {
                     $use_next = true;
                 }
+            }
+        }
+
+        // Closed category for the current edition overrides the current-slot status.
+        // If the next edition is on sale, show that instead; otherwise show "Registration closed".
+        if (!$use_next && $closed_current) {
+            if ($next_enabled && $slot_attr !== 'current') {
+                $use_next = true;
+            } else {
+                return self::render_registration_status_html(
+                    ['status' => 'closed', 'label' => __('Registration closed', 'prepmedico-course-management'), 'class' => 'wcem-status-closed'],
+                    $course_slug,
+                    'span'
+                );
             }
         }
 
@@ -571,6 +591,7 @@ class PMCM_Shortcodes {
             'live'         => '#50c154',
             'course_live'  => '#50c154',
             'early_bird'   => '#C026D3',
+            'closed'       => '#ef4444',
         ];
 
         if (!isset($colors[$status])) {
@@ -582,6 +603,8 @@ class PMCM_Shortcodes {
             $type = 'eb';
         } elseif ($status === 'opening_soon') {
             $type = 'grey';
+        } elseif ($status === 'closed') {
+            $type = 'closed';
         } else {
             $type = 'live';
         }
@@ -612,6 +635,7 @@ class PMCM_Shortcodes {
                 . '.wcem-pulse-live .wcem-pulse-core{animation-name:wcem-glow-live}'
                 . '.wcem-pulse-eb .wcem-pulse-core{animation-name:wcem-glow-eb}'
                 . '.wcem-pulse-grey .wcem-pulse-core{animation-name:wcem-glow-grey}'
+                . '.wcem-pulse-closed .wcem-pulse-core{animation:none;box-shadow:0 0 3px 0 rgba(239,68,68,0.6)}'
                 . '@keyframes wcem-glow-live{'
                     . '0%,100%{box-shadow:0 0 2px 0 rgba(80,193,84,0.5)}'
                     . '50%{box-shadow:0 0 9px 3px rgba(80,193,84,0.9)}'

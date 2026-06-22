@@ -37,6 +37,10 @@ class PMCM_Frontend {
         add_filter('woocommerce_add_to_cart_form_action', [__CLASS__, 'preserve_edition_in_form_action']);
         add_action('wp_footer', [__CLASS__, 'product_form_scripts']);
 
+        // Auto-open the menu cart whenever an item is added
+        add_action('woocommerce_add_to_cart', [__CLASS__, 'flag_cart_just_added'], 10, 0);
+        add_action('wp_footer', [__CLASS__, 'auto_open_cart_script'], 99);
+
         // Edition-aware early bird price display on product pages
         add_filter('woocommerce_product_get_sale_price', [__CLASS__, 'edition_aware_sale_price'], 20, 2);
         add_filter('woocommerce_product_get_price',      [__CLASS__, 'edition_aware_price'],      20, 2);
@@ -47,6 +51,84 @@ class PMCM_Frontend {
      */
     public static function enqueue_scripts() {
         wp_enqueue_style('pmcm-frontend', PMCM_PLUGIN_URL . 'assets/css/frontend.css', [], PMCM_VERSION);
+    }
+
+    /**
+     * On a NON-AJAX add-to-cart (form submit that reloads the page), drop a short-lived
+     * cookie so the page that loads after the reload knows to open the menu cart. A cookie
+     * is used (instead of a session flag) so it survives full-page caches — the JS reads it
+     * regardless of whether the HTML was served from cache. AJAX adds are handled by the
+     * `added_to_cart` event instead, so we skip them here.
+     */
+    public static function flag_cart_just_added() {
+        if (wp_doing_ajax() || headers_sent()) {
+            return;
+        }
+        setcookie('pmcm_open_cart', '1', time() + 60, defined('COOKIEPATH') ? COOKIEPATH : '/', defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '');
+    }
+
+    /**
+     * Open the Elementor menu cart automatically when an item is added.
+     *  - Non-AJAX adds: the `pmcm_open_cart` cookie (set in flag_cart_just_added) makes the
+     *    cart open on the page that loads after the reload, then the cookie is cleared.
+     *  - AJAX adds: the `added_to_cart` event opens it without a reload.
+     */
+    public static function auto_open_cart_script() {
+        if (is_admin()) {
+            return;
+        }
+        ?>
+        <script type="text/javascript">
+        (function () {
+            if (typeof jQuery === 'undefined') { return; }
+            var $ = jQuery;
+
+            function isCartOpen() {
+                var c = document.querySelector('.elementor-menu-cart__container');
+                return !!(c && c.classList.contains('elementor-active'));
+            }
+
+            function clickCartToggle() {
+                var toggle = document.querySelector('.elementor-menu-cart__toggle');
+                if (toggle) {
+                    // Native click fires handlers bound via either addEventListener or jQuery.
+                    var btn = toggle.querySelector('.elementor-menu-cart__toggle-button') ||
+                              toggle.querySelector('a, button') || toggle;
+                    btn.click();
+                    return true;
+                }
+
+                // Best-effort fallbacks for non-Elementor side carts
+                var fallbacks = ['.xoo-wsc-basket', '.ct-header-cart > a', '.site-header-cart .cart-contents', 'a.cart-contents', '.header-cart-toggle'];
+                for (var i = 0; i < fallbacks.length; i++) {
+                    var el = document.querySelector(fallbacks[i]);
+                    if (el) { el.click(); return true; }
+                }
+                return false;
+            }
+
+            // AJAX add-to-cart (no reload)
+            $(document.body).on('added_to_cart', function () {
+                if (!isCartOpen()) { clickCartToggle(); }
+            });
+
+            // Non-AJAX add-to-cart: open once the cart widget is ready after the reload.
+            if (document.cookie.indexOf('pmcm_open_cart=1') !== -1) {
+                // Clear the cookie immediately so it only fires once.
+                document.cookie = 'pmcm_open_cart=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                $(window).on('load', function () {
+                    var attempts = 0;
+                    (function tryOpen() {
+                        attempts++;
+                        if (isCartOpen()) { return; }   // already open — done
+                        clickCartToggle();
+                        if (attempts < 20) { setTimeout(tryOpen, 250); }
+                    })();
+                });
+            }
+        })();
+        </script>
+        <?php
     }
 
     /**
