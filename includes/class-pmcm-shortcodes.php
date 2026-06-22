@@ -185,6 +185,7 @@ class PMCM_Shortcodes {
             'edition'    => $prefix . 'next_edition',
             'start'      => $prefix . 'next_start',
             'end'        => $prefix . 'next_end',
+            'reg_open'   => $prefix . 'next_registration_open',
             'eb_enabled' => $prefix . 'next_early_bird_enabled',
             'eb_start'   => $prefix . 'next_early_bird_start',
             'eb_end'     => $prefix . 'next_early_bird_end',
@@ -206,10 +207,36 @@ class PMCM_Shortcodes {
             'edition'    => $prefix . 'current_edition',
             'start'      => $prefix . 'edition_start',
             'end'        => $prefix . 'edition_end',
+            'reg_open'   => $prefix . 'registration_open',
             'eb_enabled' => $prefix . 'early_bird_enabled',
             'eb_start'   => $prefix . 'early_bird_start',
             'eb_end'     => $prefix . 'early_bird_end',
         ];
+    }
+
+    /**
+     * Resolve the date registration OPENS (the "Opening soon" gate).
+     *
+     * Priority:
+     *   1. Explicit "Registration Opens" date if set.
+     *   2. Early Bird Start (if early bird is enabled) — registration naturally opens
+     *      when the early-bird window begins.
+     *   3. The edition/course start date as a legacy fallback.
+     *
+     * Note: edition_start is the COURSE/exam date, so it is NOT used to gate the
+     * status unless nothing else is configured.
+     *
+     * @return string A Y-m-d date string, or '' if registration should be considered
+     *                open immediately (no gate).
+     */
+    private static function resolve_registration_open($explicit_open, $eb_enabled, $eb_start, $course_start) {
+        if (!empty($explicit_open)) {
+            return $explicit_open;
+        }
+        if ($eb_enabled === 'yes' && !empty($eb_start)) {
+            return $eb_start;
+        }
+        return $course_start;
     }
 
     /**
@@ -418,19 +445,21 @@ class PMCM_Shortcodes {
         }
 
         if ($use_next) {
-            $start      = get_option($prefix . 'next_start', '');
-            $end        = get_option($prefix . 'next_end', '');
-            $eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no');
-            $eb_start   = get_option($prefix . 'next_early_bird_start', '');
-            $eb_end     = get_option($prefix . 'next_early_bird_end', '');
+            $course_start = get_option($prefix . 'next_start', '');
+            $end          = get_option($prefix . 'next_end', '');
+            $eb_enabled   = get_option($prefix . 'next_early_bird_enabled', 'no');
+            $eb_start     = get_option($prefix . 'next_early_bird_start', '');
+            $eb_end       = get_option($prefix . 'next_early_bird_end', '');
+            $reg_open     = get_option($prefix . 'next_registration_open', '');
         } else {
             // Registration override (current slot only)
-            $override   = self::get_registration_override($prefix);
-            $start      = get_option($prefix . 'edition_start', '');
-            $end        = get_option($prefix . 'edition_end', '');
-            $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no');
-            $eb_start   = get_option($prefix . 'early_bird_start', '');
-            $eb_end     = get_option($prefix . 'early_bird_end', '');
+            $override     = self::get_registration_override($prefix);
+            $course_start = get_option($prefix . 'edition_start', '');
+            $end          = get_option($prefix . 'edition_end', '');
+            $eb_enabled   = get_option($prefix . 'early_bird_enabled', 'no');
+            $eb_start     = get_option($prefix . 'early_bird_start', '');
+            $eb_end       = get_option($prefix . 'early_bird_end', '');
+            $reg_open     = get_option($prefix . 'registration_open', '');
 
             if ($override === 'force_open') {
                 // Still show early bird if it is currently active — force_open only overrides closed/coming-soon
@@ -447,7 +476,9 @@ class PMCM_Shortcodes {
             }
         }
 
-        $status_data = self::compute_registration_status($start, $end, $eb_enabled, $eb_start, $eb_end);
+        // The "Opening soon" gate is the registration-open date, NOT the course start date.
+        $gate_open   = self::resolve_registration_open($reg_open, $eb_enabled, $eb_start, $course_start);
+        $status_data = self::compute_registration_status($gate_open, $end, $eb_enabled, $eb_start, $eb_end);
         if (!$status_data) {
             return '';
         }
@@ -655,6 +686,21 @@ class PMCM_Shortcodes {
     /**
      * Pure status computation — no DB reads.
      * Called by both registration_status() shortcode and get_registration_status().
+     *
+     * Robust, single-pass state machine. The states are evaluated in strict priority
+     * order so they can never contradict each other:
+     *
+     *   1. No dates configured            → Coming soon
+     *   2. today  >  end                  → Coming soon (registration window closed)
+     *   3. today  <  start                → Opening soon (registration not open YET —
+     *                                       this ALWAYS beats early bird, because early
+     *                                       bird is a phase *inside* the open window)
+     *   4. start <= today <= end, and within the early-bird sub-window → Early bird open
+     *   5. start <= today <= end, otherwise → Registration is live
+     *
+     * Treats edition_start as the moment registration opens. If you want early bird to
+     * be biddable before the edition start, set early_bird_start to that earlier date
+     * AND set edition_start to that same earlier date (start gates everything).
      */
     private static function compute_registration_status($start, $end, $eb_enabled, $eb_start, $eb_end) {
         $today_ts    = strtotime(current_time('Y-m-d'));
@@ -663,45 +709,36 @@ class PMCM_Shortcodes {
         $eb_start_ts = !empty($eb_start) ? strtotime($eb_start) : null;
         $eb_end_ts   = !empty($eb_end)   ? strtotime($eb_end)   : null;
 
-        // End date passed
-        if ($end_ts && $today_ts > $end_ts) {
-            return ['status' => 'opening_soon', 'label' => __('Coming soon', 'prepmedico-course-management'), 'class' => 'wcem-status-upcoming'];
-        }
+        $coming_soon = ['status' => 'opening_soon', 'label' => __('Coming soon', 'prepmedico-course-management'), 'class' => 'wcem-status-upcoming'];
 
-        // No dates set at all
+        // 1. No usable dates at all.
         if (!$start_ts && !$end_ts) {
-            return ['status' => 'opening_soon', 'label' => __('Coming soon', 'prepmedico-course-management'), 'class' => 'wcem-status-upcoming'];
+            return $coming_soon;
         }
 
-        // Early bird check
-        if ($eb_enabled === 'yes' && $eb_end_ts) {
-            $eb_start_ok = !$eb_start_ts || $today_ts >= $eb_start_ts;
-            $eb_end_ok   = $today_ts <= $eb_end_ts; // inclusive: early bird is active ON the end date
+        // 2. Registration window has closed (past the end date).
+        if ($end_ts && $today_ts > $end_ts) {
+            return $coming_soon;
+        }
 
-            if ($eb_start_ok && $eb_end_ok) {
+        // 3. Registration has not opened yet — wins over early bird.
+        if ($start_ts && $today_ts < $start_ts) {
+            return $coming_soon;
+        }
+
+        // --- Registration is open here: start <= today <= end ---
+
+        // 4. Early-bird sub-window active?
+        if ($eb_enabled === 'yes' && $eb_end_ts) {
+            $eb_started = (!$eb_start_ts || $today_ts >= $eb_start_ts);
+            $eb_active  = $eb_started && ($today_ts <= $eb_end_ts);
+            if ($eb_active) {
                 return ['status' => 'early_bird', 'label' => __('Early bird registration open', 'prepmedico-course-management'), 'early_bird_end' => $eb_end, 'class' => 'wcem-status-early-bird'];
             }
-
-            if ($today_ts >= $eb_end_ts && $end_ts && $today_ts < $end_ts) {
-                if ($today_ts === $eb_end_ts) {
-                    return ['status' => 'live', 'label' => __('Registration is live', 'prepmedico-course-management'), 'class' => 'wcem-status-live'];
-                }
-                if ($start_ts && $today_ts >= $start_ts) {
-                    return ['status' => 'course_live', 'label' => __('Registration and course is live', 'prepmedico-course-management'), 'class' => 'wcem-status-course-live'];
-                }
-                return ['status' => 'live', 'label' => __('Registration is live', 'prepmedico-course-management'), 'class' => 'wcem-status-live'];
-            }
         }
 
-        // Before start date
-        if ($start_ts && $today_ts < $start_ts) {
-            if ($eb_enabled === 'yes' && $eb_end_ts && $today_ts >= $eb_end_ts) {
-                return ['status' => 'live', 'label' => __('Registration is live', 'prepmedico-course-management'), 'class' => 'wcem-status-live'];
-            }
-            return ['status' => 'opening_soon', 'label' => __('Coming soon', 'prepmedico-course-management'), 'class' => 'wcem-status-upcoming'];
-        }
-
-        return ['status' => 'course_live', 'label' => __('Registration and course is live', 'prepmedico-course-management'), 'class' => 'wcem-status-course-live'];
+        // 5. Open, early bird not active (ended or never configured).
+        return ['status' => 'live', 'label' => __('Registration is live', 'prepmedico-course-management'), 'class' => 'wcem-status-live'];
     }
 
     /**
@@ -716,11 +753,20 @@ class PMCM_Shortcodes {
         $prefix = $course['settings_prefix'];
         $keys   = self::get_slot_keys($prefix);
 
+        $eb_enabled = get_option($keys['eb_enabled'], 'no');
+        $eb_start   = get_option($keys['eb_start'], '');
+        $gate_open  = self::resolve_registration_open(
+            get_option($keys['reg_open'], ''),
+            $eb_enabled,
+            $eb_start,
+            get_option($keys['start'], '')
+        );
+
         return self::compute_registration_status(
-            get_option($keys['start'], ''),
+            $gate_open,
             get_option($keys['end'], ''),
-            get_option($keys['eb_enabled'], 'no'),
-            get_option($keys['eb_start'], ''),
+            $eb_enabled,
+            $eb_start,
             get_option($keys['eb_end'], '')
         );
     }

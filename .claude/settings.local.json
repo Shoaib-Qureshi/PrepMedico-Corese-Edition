@@ -4,7 +4,11 @@
       "WebFetch(domain:unpkg.com)",
       "WebFetch(domain:lottiefiles.com)",
       "Bash(php -l includes/class-pmcm-product-expiration.php)",
-      "Bash(php -l includes/class-pmcm-frontend.php)"
+      "Bash(php -l includes/class-pmcm-frontend.php)",
+      "Read(//c/Users/shoai/Downloads/Tier2 Plugins/PrepMedico Plugins/**)",
+      "Bash(xargs grep -l \"PrepMedico_Performance_Optimizer_V6\\\\|prepmedico_warm_cache\\\\|delay_third_party_scripts\")",
+      "Bash(php -l includes/class-pmcm-shortcodes.php)",
+      "Bash(php -l includes/class-pmcm-admin.php)"
     ]
   }
 }

@@ -130,6 +130,7 @@ class PMCM_Admin
             register_setting('wcem_settings', $prefix . 'current_edition', ['type' => 'integer', 'sanitize_callback' => 'absint']);
             register_setting('wcem_settings', $prefix . 'edition_start', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'edition_end', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
+            register_setting('wcem_settings', $prefix . 'registration_open', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'early_bird_enabled', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'early_bird_start', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'early_bird_end', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
@@ -139,6 +140,7 @@ class PMCM_Admin
             register_setting('wcem_settings', $prefix . 'next_edition', ['type' => 'integer', 'sanitize_callback' => 'absint']);
             register_setting('wcem_settings', $prefix . 'next_start', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_end', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
+            register_setting('wcem_settings', $prefix . 'next_registration_open', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_early_bird_enabled', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_early_bird_start', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
             register_setting('wcem_settings', $prefix . 'next_early_bird_end', ['type' => 'string', 'sanitize_callback' => 'sanitize_text_field']);
@@ -365,7 +367,7 @@ class PMCM_Admin
             $prefix = $course['settings_prefix'];
 
             // Current edition slot fields
-            $current_fields = ['current_edition', 'edition_start', 'edition_end', 'early_bird_enabled', 'early_bird_start', 'early_bird_end', 'exam_dates'];
+            $current_fields = ['current_edition', 'edition_start', 'edition_end', 'registration_open', 'early_bird_enabled', 'early_bird_start', 'early_bird_end', 'exam_dates'];
             foreach ($current_fields as $field) {
                 $key = $prefix . $field;
                 if ($field === 'early_bird_enabled') {
@@ -390,7 +392,7 @@ class PMCM_Admin
             $next_enabled = isset($_POST[$next_enabled_key]) ? 'yes' : 'no';
             update_option($next_enabled_key, $next_enabled);
 
-            $next_fields = ['next_edition', 'next_start', 'next_end', 'next_early_bird_enabled', 'next_early_bird_start', 'next_early_bird_end', 'next_exam_dates'];
+            $next_fields = ['next_edition', 'next_start', 'next_end', 'next_registration_open', 'next_early_bird_enabled', 'next_early_bird_start', 'next_early_bird_end', 'next_exam_dates'];
             foreach ($next_fields as $field) {
                 $key = $prefix . $field;
                 if ($field === 'next_early_bird_enabled') {
@@ -614,6 +616,7 @@ class PMCM_Admin
         $current = get_option($prefix . 'current_edition', 1);
         $start = get_option($prefix . 'edition_start', '');
         $end = get_option($prefix . 'edition_end', '');
+        $reg_open   = get_option($prefix . 'registration_open', '');
         $early_bird = get_option($prefix . 'early_bird_enabled', 'no');
         $eb_start   = get_option($prefix . 'early_bird_start', '');
         $eb_end     = get_option($prefix . 'early_bird_end', '');
@@ -624,6 +627,11 @@ class PMCM_Admin
         $end_ts   = !empty($end)   ? strtotime($end)   : null;
         $eb_s_ts  = !empty($eb_start) ? strtotime($eb_start) : null;
         $eb_e_ts  = !empty($eb_end)   ? strtotime($eb_end)   : null;
+
+        // Registration-open gate: explicit date, else Early Bird Start, else course Start Date.
+        // (edition_start is the course/exam date, so it can't gate "opening soon" on its own.)
+        $gate = !empty($reg_open) ? $reg_open : (($early_bird === 'yes' && !empty($eb_start)) ? $eb_start : $start);
+        $gate_ts = !empty($gate) ? strtotime($gate) : null;
 
         // Override wins (it self-cancels once dates catch up, so this only fires when really active)
         if ($override === 'force_open') {
@@ -640,12 +648,13 @@ class PMCM_Admin
             $next_enabled = get_option($prefix . 'next_enabled', 'no') === 'yes';
             $status = $next_enabled ? 'awaiting-next' : 'expired';
             $status_label = $next_enabled ? __('Awaiting rollover', 'prepmedico-course-management') : __('Closed', 'prepmedico-course-management');
+        } elseif ($gate_ts && $today_ts < $gate_ts) {
+            // Registration not open yet — wins over early bird.
+            $status = 'opening-soon';
+            $status_label = __('Opening soon', 'prepmedico-course-management');
         } elseif ($early_bird === 'yes' && $eb_e_ts && (!$eb_s_ts || $today_ts >= $eb_s_ts) && $today_ts <= $eb_e_ts) {
             $status = 'early-bird';
             $status_label = __('Early bird live', 'prepmedico-course-management');
-        } elseif ($start_ts && $today_ts < $start_ts) {
-            $status = 'opening-soon';
-            $status_label = __('Opening soon', 'prepmedico-course-management');
         } else {
             $status = 'active';
             $status_label = __('Registration live', 'prepmedico-course-management');
@@ -742,6 +751,7 @@ class PMCM_Admin
                             $current = get_option($prefix . 'current_edition', 1);
                             $start = get_option($prefix . 'edition_start', '');
                             $end = get_option($prefix . 'edition_end', '');
+                            $reg_open = get_option($prefix . 'registration_open', '');
                             $reg_override = self::get_registration_override($prefix);
                             $eb_enabled = get_option($prefix . 'early_bird_enabled', 'no') === 'yes';
                             $eb_start = get_option($prefix . 'early_bird_start', '');
@@ -750,6 +760,7 @@ class PMCM_Admin
                             $next_edition = max(1, intval(get_option($prefix . 'next_edition', $current + 1)));
                             $next_start = get_option($prefix . 'next_start', '');
                             $next_end = get_option($prefix . 'next_end', '');
+                            $next_reg_open = get_option($prefix . 'next_registration_open', '');
                             $next_eb_enabled = get_option($prefix . 'next_early_bird_enabled', 'no') === 'yes';
                             $next_eb_start = get_option($prefix . 'next_early_bird_start', '');
                             $next_eb_end = get_option($prefix . 'next_early_bird_end', '');
@@ -800,6 +811,11 @@ class PMCM_Admin
                                             <div class="wcem-field">
                                                 <label for="<?php echo esc_attr($prefix); ?>edition_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
                                                 <input type="date" id="<?php echo esc_attr($prefix); ?>edition_end" name="<?php echo esc_attr($prefix); ?>edition_end" value="<?php echo esc_attr($end); ?>">
+                                            </div>
+                                            <div class="wcem-field">
+                                                <label for="<?php echo esc_attr($prefix); ?>registration_open"><?php _e('Registration Opens', 'prepmedico-course-management'); ?></label>
+                                                <input type="date" id="<?php echo esc_attr($prefix); ?>registration_open" name="<?php echo esc_attr($prefix); ?>registration_open" value="<?php echo esc_attr($reg_open); ?>">
+                                                <p class="description"><?php _e('When the status flips from "Coming soon" to live/early bird. Leave empty to use Early Bird Start, then the course Start Date.', 'prepmedico-course-management'); ?></p>
                                             </div>
                                         </div>
 
@@ -976,6 +992,11 @@ class PMCM_Admin
                                                 <div class="wcem-field">
                                                     <label for="<?php echo esc_attr($prefix); ?>next_end"><?php _e('End Date', 'prepmedico-course-management'); ?></label>
                                                     <input type="date" id="<?php echo esc_attr($prefix); ?>next_end" name="<?php echo esc_attr($prefix); ?>next_end" value="<?php echo esc_attr($next_end); ?>">
+                                                </div>
+                                                <div class="wcem-field">
+                                                    <label for="<?php echo esc_attr($prefix); ?>next_registration_open"><?php _e('Registration Opens', 'prepmedico-course-management'); ?></label>
+                                                    <input type="date" id="<?php echo esc_attr($prefix); ?>next_registration_open" name="<?php echo esc_attr($prefix); ?>next_registration_open" value="<?php echo esc_attr($next_reg_open); ?>">
+                                                    <p class="description"><?php _e('When the next edition flips from "Coming soon" to live/early bird. Leave empty to use Early Bird Start, then the course Start Date.', 'prepmedico-course-management'); ?></p>
                                                 </div>
                                             </div>
 
