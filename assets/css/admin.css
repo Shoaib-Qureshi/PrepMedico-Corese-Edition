@@ -5223,6 +5223,41 @@
     box-shadow: 0 1px 3px rgba(141, 32, 99, 0.25) !important;
 }
 
+/* Discount expiry date/time row */
+.wcem-asit-modern .wcem-discount-expiry-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.wcem-asit-modern .wcem-discount-expiry-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.wcem-asit-modern .wcem-discount-expiry-input {
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 5px !important;
+    color: #475569 !important;
+    background: #f8fafc !important;
+    width: auto !important;
+    min-width: 0 !important;
+    box-shadow: none !important;
+}
+
+.wcem-asit-modern .wcem-discount-expiry-input:focus {
+    border-color: #8d2063 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(141, 32, 99, 0.08) !important;
+}
+
 /* Admin bar shortcut icon spacing */
 #wp-admin-bar-pmcm-edition-management .ab-icon {
     top: 2px;

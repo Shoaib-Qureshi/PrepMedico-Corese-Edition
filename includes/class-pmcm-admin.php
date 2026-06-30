@@ -515,6 +515,8 @@ class PMCM_Admin
                 $courses[$course_slug]['bomss_normal_discount']        = absint($config['normal_discount'] ?? 0);
                 $courses[$course_slug]['bomss_eb_discount_type']       = ($config['eb_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
                 $courses[$course_slug]['bomss_normal_discount_type']   = ($config['normal_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug]['bomss_eb_discount_expiry']     = sanitize_text_field($config['eb_discount_expiry'] ?? '');
+                $courses[$course_slug]['bomss_normal_discount_expiry'] = sanitize_text_field($config['normal_discount_expiry'] ?? '');
                 $courses[$course_slug]['bomss_show_field']             = isset($config['show_field']) && $config['show_field'] == '1';
                 $courses[$course_slug]['bomss_eligible']               = ($mode !== 'none');
             }
@@ -539,6 +541,8 @@ class PMCM_Admin
                 $courses[$course_slug]['rouleaux_normal_discount']        = absint($config['normal_discount'] ?? 0);
                 $courses[$course_slug]['rouleaux_eb_discount_type']       = ($config['eb_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
                 $courses[$course_slug]['rouleaux_normal_discount_type']   = ($config['normal_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug]['rouleaux_eb_discount_expiry']     = sanitize_text_field($config['eb_discount_expiry'] ?? '');
+                $courses[$course_slug]['rouleaux_normal_discount_expiry'] = sanitize_text_field($config['normal_discount_expiry'] ?? '');
                 $courses[$course_slug]['rouleaux_show_field']             = isset($config['show_field']) && $config['show_field'] == '1';
                 $courses[$course_slug]['rouleaux_eligible']               = ($mode !== 'none');
             }
@@ -1589,8 +1593,10 @@ class PMCM_Admin
                                 $b_eb        = isset($course['bomss_early_bird_discount']) ? intval($course['bomss_early_bird_discount']) : 0;
                                 $b_norm      = isset($course['bomss_normal_discount']) ? intval($course['bomss_normal_discount']) : 0;
                                 $b_show      = isset($course['bomss_show_field']) ? (bool) $course['bomss_show_field'] : false;
-                                $b_eb_type   = isset($course['bomss_eb_discount_type']) && $course['bomss_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
-                                $b_norm_type = isset($course['bomss_normal_discount_type']) && $course['bomss_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $b_eb_type     = isset($course['bomss_eb_discount_type']) && $course['bomss_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $b_norm_type   = isset($course['bomss_normal_discount_type']) && $course['bomss_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $b_eb_expiry   = isset($course['bomss_eb_discount_expiry']) ? $course['bomss_eb_discount_expiry'] : '';
+                                $b_norm_expiry = isset($course['bomss_normal_discount_expiry']) ? $course['bomss_normal_discount_expiry'] : '';
                                 ?>
                                 <details class="wcem-partner-subsection wcem-partner-bomss" <?php echo ($b_mode !== 'none') ? 'open' : ''; ?>>
                                     <summary class="wcem-partner-summary">
@@ -1622,6 +1628,10 @@ class PMCM_Admin
                                                     <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($b_eb); ?>" min="0" <?php echo ($b_eb_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
                                                     <span class="wcem-discount-symbol"><?php echo ($b_eb_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
                                                 </div>
+                                                <div class="wcem-discount-expiry-row">
+                                                    <span class="wcem-discount-expiry-label"><?php _e('Until', 'prepmedico-course-management'); ?></span>
+                                                    <input type="datetime-local" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount_expiry]" value="<?php echo esc_attr($b_eb_expiry); ?>" class="wcem-discount-expiry-input">
+                                                </div>
                                             </div>
                                             <div class="wcem-asit-discount-field">
                                                 <label><?php _e('Normal', 'prepmedico-course-management'); ?></label>
@@ -1633,6 +1643,10 @@ class PMCM_Admin
                                                 <div class="wcem-asit-discount-input-wrap">
                                                     <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($b_norm); ?>" min="0" <?php echo ($b_norm_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
                                                     <span class="wcem-discount-symbol"><?php echo ($b_norm_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
+                                                </div>
+                                                <div class="wcem-discount-expiry-row">
+                                                    <span class="wcem-discount-expiry-label"><?php _e('Until', 'prepmedico-course-management'); ?></span>
+                                                    <input type="datetime-local" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount_expiry]" value="<?php echo esc_attr($b_norm_expiry); ?>" class="wcem-discount-expiry-input">
                                                 </div>
                                             </div>
                                             <label class="wcem-asit-toggle-item">
@@ -1656,8 +1670,10 @@ class PMCM_Admin
                                 $r_eb        = isset($course['rouleaux_early_bird_discount']) ? intval($course['rouleaux_early_bird_discount']) : 0;
                                 $r_norm      = isset($course['rouleaux_normal_discount']) ? intval($course['rouleaux_normal_discount']) : 0;
                                 $r_show      = isset($course['rouleaux_show_field']) ? (bool) $course['rouleaux_show_field'] : false;
-                                $r_eb_type   = isset($course['rouleaux_eb_discount_type']) && $course['rouleaux_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
-                                $r_norm_type = isset($course['rouleaux_normal_discount_type']) && $course['rouleaux_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $r_eb_type     = isset($course['rouleaux_eb_discount_type']) && $course['rouleaux_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $r_norm_type   = isset($course['rouleaux_normal_discount_type']) && $course['rouleaux_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $r_eb_expiry   = isset($course['rouleaux_eb_discount_expiry']) ? $course['rouleaux_eb_discount_expiry'] : '';
+                                $r_norm_expiry = isset($course['rouleaux_normal_discount_expiry']) ? $course['rouleaux_normal_discount_expiry'] : '';
                                 ?>
                                 <details class="wcem-partner-subsection wcem-partner-rouleaux" <?php echo ($r_mode !== 'none') ? 'open' : ''; ?>>
                                     <summary class="wcem-partner-summary">
@@ -1689,6 +1705,10 @@ class PMCM_Admin
                                                     <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($r_eb); ?>" min="0" <?php echo ($r_eb_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
                                                     <span class="wcem-discount-symbol"><?php echo ($r_eb_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
                                                 </div>
+                                                <div class="wcem-discount-expiry-row">
+                                                    <span class="wcem-discount-expiry-label"><?php _e('Until', 'prepmedico-course-management'); ?></span>
+                                                    <input type="datetime-local" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount_expiry]" value="<?php echo esc_attr($r_eb_expiry); ?>" class="wcem-discount-expiry-input">
+                                                </div>
                                             </div>
                                             <div class="wcem-asit-discount-field">
                                                 <label><?php _e('Normal', 'prepmedico-course-management'); ?></label>
@@ -1700,6 +1720,10 @@ class PMCM_Admin
                                                 <div class="wcem-asit-discount-input-wrap">
                                                     <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($r_norm); ?>" min="0" <?php echo ($r_norm_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
                                                     <span class="wcem-discount-symbol"><?php echo ($r_norm_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
+                                                </div>
+                                                <div class="wcem-discount-expiry-row">
+                                                    <span class="wcem-discount-expiry-label"><?php _e('Until', 'prepmedico-course-management'); ?></span>
+                                                    <input type="datetime-local" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount_expiry]" value="<?php echo esc_attr($r_norm_expiry); ?>" class="wcem-discount-expiry-input">
                                                 </div>
                                             </div>
                                             <label class="wcem-asit-toggle-item">
