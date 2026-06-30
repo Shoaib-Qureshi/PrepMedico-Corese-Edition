@@ -266,8 +266,13 @@ class PMCM_Academic_Partners {
             );
 
             if ($config['is_eligible'] && $config['discount'] > 0) {
-                $price           = (float) $cart_item['data']->get_price();
-                $total_discount += ($price * $config['discount'] / 100) * $cart_item['quantity'];
+                $price         = (float) $cart_item['data']->get_price();
+                $discount_type = isset($config['discount_type']) ? $config['discount_type'] : 'percent';
+                if ($discount_type === 'fixed') {
+                    $total_discount += $config['discount'] * $cart_item['quantity'];
+                } else {
+                    $total_discount += ($price * $config['discount'] / 100) * $cart_item['quantity'];
+                }
             }
         }
 

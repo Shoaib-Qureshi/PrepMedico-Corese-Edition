@@ -5186,6 +5186,43 @@
     font-size: 11px;
 }
 
+/* Discount type toggle (% / £) */
+.wcem-asit-modern .wcem-discount-type-toggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.wcem-asit-modern .wcem-discount-type-btn {
+    padding: 2px 8px !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    line-height: 1.5 !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    transition: background 0.15s, color 0.15s !important;
+}
+
+.wcem-asit-modern .wcem-discount-type-btn:hover {
+    background: #ffffff !important;
+    color: #1e293b !important;
+}
+
+.wcem-asit-modern .wcem-discount-type-btn.active {
+    background: #8d2063 !important;
+    color: #fff !important;
+    box-shadow: 0 1px 3px rgba(141, 32, 99, 0.25) !important;
+}
+
 /* Admin bar shortcut icon spacing */
 #wp-admin-bar-pmcm-edition-management .ab-icon {
     top: 2px;

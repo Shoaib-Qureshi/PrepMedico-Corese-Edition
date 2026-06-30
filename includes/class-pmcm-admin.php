@@ -510,11 +510,13 @@ class PMCM_Admin
                 if (!isset($courses[$course_slug])) continue;
 
                 $mode = in_array($config['mode'] ?? '', ['none', 'early_bird_only', 'always']) ? $config['mode'] : 'none';
-                $courses[$course_slug]['bomss_discount_mode']       = $mode;
-                $courses[$course_slug]['bomss_early_bird_discount'] = absint($config['eb_discount'] ?? 0);
-                $courses[$course_slug]['bomss_normal_discount']     = absint($config['normal_discount'] ?? 0);
-                $courses[$course_slug]['bomss_show_field']          = isset($config['show_field']) && $config['show_field'] == '1';
-                $courses[$course_slug]['bomss_eligible']            = ($mode !== 'none');
+                $courses[$course_slug]['bomss_discount_mode']          = $mode;
+                $courses[$course_slug]['bomss_early_bird_discount']    = absint($config['eb_discount'] ?? 0);
+                $courses[$course_slug]['bomss_normal_discount']        = absint($config['normal_discount'] ?? 0);
+                $courses[$course_slug]['bomss_eb_discount_type']       = ($config['eb_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug]['bomss_normal_discount_type']   = ($config['normal_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug]['bomss_show_field']             = isset($config['show_field']) && $config['show_field'] == '1';
+                $courses[$course_slug]['bomss_eligible']               = ($mode !== 'none');
             }
 
             update_option('pmcm_course_mappings', $courses);
@@ -532,11 +534,13 @@ class PMCM_Admin
                 if (!isset($courses[$course_slug])) continue;
 
                 $mode = in_array($config['mode'] ?? '', ['none', 'early_bird_only', 'always']) ? $config['mode'] : 'none';
-                $courses[$course_slug]['rouleaux_discount_mode']       = $mode;
-                $courses[$course_slug]['rouleaux_early_bird_discount'] = absint($config['eb_discount'] ?? 0);
-                $courses[$course_slug]['rouleaux_normal_discount']     = absint($config['normal_discount'] ?? 0);
-                $courses[$course_slug]['rouleaux_show_field']          = isset($config['show_field']) && $config['show_field'] == '1';
-                $courses[$course_slug]['rouleaux_eligible']            = ($mode !== 'none');
+                $courses[$course_slug]['rouleaux_discount_mode']          = $mode;
+                $courses[$course_slug]['rouleaux_early_bird_discount']    = absint($config['eb_discount'] ?? 0);
+                $courses[$course_slug]['rouleaux_normal_discount']        = absint($config['normal_discount'] ?? 0);
+                $courses[$course_slug]['rouleaux_eb_discount_type']       = ($config['eb_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug]['rouleaux_normal_discount_type']   = ($config['normal_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug]['rouleaux_show_field']             = isset($config['show_field']) && $config['show_field'] == '1';
+                $courses[$course_slug]['rouleaux_eligible']               = ($mode !== 'none');
             }
 
             update_option('pmcm_course_mappings', $courses);
@@ -1581,10 +1585,12 @@ class PMCM_Admin
 
                                 <!-- BOMSS Sub-section -->
                                 <?php
-                                $b_mode   = isset($course['bomss_discount_mode']) ? $course['bomss_discount_mode'] : 'none';
-                                $b_eb     = isset($course['bomss_early_bird_discount']) ? intval($course['bomss_early_bird_discount']) : 0;
-                                $b_norm   = isset($course['bomss_normal_discount']) ? intval($course['bomss_normal_discount']) : 0;
-                                $b_show   = isset($course['bomss_show_field']) ? (bool) $course['bomss_show_field'] : false;
+                                $b_mode      = isset($course['bomss_discount_mode']) ? $course['bomss_discount_mode'] : 'none';
+                                $b_eb        = isset($course['bomss_early_bird_discount']) ? intval($course['bomss_early_bird_discount']) : 0;
+                                $b_norm      = isset($course['bomss_normal_discount']) ? intval($course['bomss_normal_discount']) : 0;
+                                $b_show      = isset($course['bomss_show_field']) ? (bool) $course['bomss_show_field'] : false;
+                                $b_eb_type   = isset($course['bomss_eb_discount_type']) && $course['bomss_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $b_norm_type = isset($course['bomss_normal_discount_type']) && $course['bomss_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
                                 ?>
                                 <details class="wcem-partner-subsection wcem-partner-bomss" <?php echo ($b_mode !== 'none') ? 'open' : ''; ?>>
                                     <summary class="wcem-partner-summary">
@@ -1606,17 +1612,27 @@ class PMCM_Admin
                                         <input type="hidden" name="bomss_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($b_mode); ?>" class="wcem-partner-mode-input" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>">
                                         <div class="wcem-partner-discount-fields wcem-partner-discount-row" data-partner="bomss" data-course="<?php echo esc_attr($slug); ?>"<?php echo ($b_mode === 'none') ? ' style="display:none;"' : ''; ?>>
                                             <div class="wcem-asit-discount-field">
-                                                <label><?php _e('EB Discount %', 'prepmedico-course-management'); ?></label>
+                                                <label><?php _e('EB Discount', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-discount-type-toggle" data-partner="bomss" data-field="eb" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($b_eb_type === 'percent') ? 'active' : ''; ?>" data-type="percent">%</button>
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($b_eb_type === 'fixed') ? 'active' : ''; ?>" data-type="fixed"><?php echo get_woocommerce_currency_symbol(); ?></button>
+                                                </div>
+                                                <input type="hidden" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount_type]" value="<?php echo esc_attr($b_eb_type); ?>" class="wcem-discount-type-input" data-partner="bomss" data-field="eb" data-course="<?php echo esc_attr($slug); ?>">
                                                 <div class="wcem-asit-discount-input-wrap">
-                                                    <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($b_eb); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
-                                                    <span>%</span>
+                                                    <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($b_eb); ?>" min="0" <?php echo ($b_eb_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
+                                                    <span class="wcem-discount-symbol"><?php echo ($b_eb_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
                                                 </div>
                                             </div>
                                             <div class="wcem-asit-discount-field">
-                                                <label><?php _e('Normal %', 'prepmedico-course-management'); ?></label>
+                                                <label><?php _e('Normal', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-discount-type-toggle" data-partner="bomss" data-field="normal" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($b_norm_type === 'percent') ? 'active' : ''; ?>" data-type="percent">%</button>
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($b_norm_type === 'fixed') ? 'active' : ''; ?>" data-type="fixed"><?php echo get_woocommerce_currency_symbol(); ?></button>
+                                                </div>
+                                                <input type="hidden" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount_type]" value="<?php echo esc_attr($b_norm_type); ?>" class="wcem-discount-type-input" data-partner="bomss" data-field="normal" data-course="<?php echo esc_attr($slug); ?>">
                                                 <div class="wcem-asit-discount-input-wrap">
-                                                    <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($b_norm); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
-                                                    <span>%</span>
+                                                    <input type="number" name="bomss_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($b_norm); ?>" min="0" <?php echo ($b_norm_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
+                                                    <span class="wcem-discount-symbol"><?php echo ($b_norm_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
                                                 </div>
                                             </div>
                                             <label class="wcem-asit-toggle-item">
@@ -1636,10 +1652,12 @@ class PMCM_Admin
 
                                 <!-- Rouleaux Club Sub-section -->
                                 <?php
-                                $r_mode   = isset($course['rouleaux_discount_mode']) ? $course['rouleaux_discount_mode'] : 'none';
-                                $r_eb     = isset($course['rouleaux_early_bird_discount']) ? intval($course['rouleaux_early_bird_discount']) : 0;
-                                $r_norm   = isset($course['rouleaux_normal_discount']) ? intval($course['rouleaux_normal_discount']) : 0;
-                                $r_show   = isset($course['rouleaux_show_field']) ? (bool) $course['rouleaux_show_field'] : false;
+                                $r_mode      = isset($course['rouleaux_discount_mode']) ? $course['rouleaux_discount_mode'] : 'none';
+                                $r_eb        = isset($course['rouleaux_early_bird_discount']) ? intval($course['rouleaux_early_bird_discount']) : 0;
+                                $r_norm      = isset($course['rouleaux_normal_discount']) ? intval($course['rouleaux_normal_discount']) : 0;
+                                $r_show      = isset($course['rouleaux_show_field']) ? (bool) $course['rouleaux_show_field'] : false;
+                                $r_eb_type   = isset($course['rouleaux_eb_discount_type']) && $course['rouleaux_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                $r_norm_type = isset($course['rouleaux_normal_discount_type']) && $course['rouleaux_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
                                 ?>
                                 <details class="wcem-partner-subsection wcem-partner-rouleaux" <?php echo ($r_mode !== 'none') ? 'open' : ''; ?>>
                                     <summary class="wcem-partner-summary">
@@ -1661,17 +1679,27 @@ class PMCM_Admin
                                         <input type="hidden" name="rouleaux_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($r_mode); ?>" class="wcem-partner-mode-input" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>">
                                         <div class="wcem-partner-discount-fields wcem-partner-discount-row" data-partner="rouleaux" data-course="<?php echo esc_attr($slug); ?>"<?php echo ($r_mode === 'none') ? ' style="display:none;"' : ''; ?>>
                                             <div class="wcem-asit-discount-field">
-                                                <label><?php _e('EB Discount %', 'prepmedico-course-management'); ?></label>
+                                                <label><?php _e('EB Discount', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-discount-type-toggle" data-partner="rouleaux" data-field="eb" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($r_eb_type === 'percent') ? 'active' : ''; ?>" data-type="percent">%</button>
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($r_eb_type === 'fixed') ? 'active' : ''; ?>" data-type="fixed"><?php echo get_woocommerce_currency_symbol(); ?></button>
+                                                </div>
+                                                <input type="hidden" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount_type]" value="<?php echo esc_attr($r_eb_type); ?>" class="wcem-discount-type-input" data-partner="rouleaux" data-field="eb" data-course="<?php echo esc_attr($slug); ?>">
                                                 <div class="wcem-asit-discount-input-wrap">
-                                                    <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($r_eb); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
-                                                    <span>%</span>
+                                                    <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($r_eb); ?>" min="0" <?php echo ($r_eb_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
+                                                    <span class="wcem-discount-symbol"><?php echo ($r_eb_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
                                                 </div>
                                             </div>
                                             <div class="wcem-asit-discount-field">
-                                                <label><?php _e('Normal %', 'prepmedico-course-management'); ?></label>
+                                                <label><?php _e('Normal', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-discount-type-toggle" data-partner="rouleaux" data-field="normal" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($r_norm_type === 'percent') ? 'active' : ''; ?>" data-type="percent">%</button>
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($r_norm_type === 'fixed') ? 'active' : ''; ?>" data-type="fixed"><?php echo get_woocommerce_currency_symbol(); ?></button>
+                                                </div>
+                                                <input type="hidden" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount_type]" value="<?php echo esc_attr($r_norm_type); ?>" class="wcem-discount-type-input" data-partner="rouleaux" data-field="normal" data-course="<?php echo esc_attr($slug); ?>">
                                                 <div class="wcem-asit-discount-input-wrap">
-                                                    <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($r_norm); ?>" min="0" max="100" class="wcem-asit-card-discount-input">
-                                                    <span>%</span>
+                                                    <input type="number" name="rouleaux_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($r_norm); ?>" min="0" <?php echo ($r_norm_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
+                                                    <span class="wcem-discount-symbol"><?php echo ($r_norm_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
                                                 </div>
                                             </div>
                                             <label class="wcem-asit-toggle-item">
@@ -1818,6 +1846,39 @@ class PMCM_Admin
                     }
 
                     $card.attr('data-status', mode === 'always' ? 'active' : (mode === 'early_bird_only' ? 'early-bird' : 'inactive'));
+                });
+
+                // Discount type toggle (% / fixed)
+                $(document).on('click', '.wcem-discount-type-btn', function() {
+                    var $btn     = $(this);
+                    var $toggle  = $btn.closest('.wcem-discount-type-toggle');
+                    var partner  = $toggle.data('partner');
+                    var field    = $toggle.data('field');
+                    var course   = $toggle.data('course');
+                    var type     = $btn.data('type');
+                    var currSym  = '<?php echo esc_js(get_woocommerce_currency_symbol()); ?>';
+
+                    $toggle.find('.wcem-discount-type-btn').removeClass('active');
+                    $btn.addClass('active');
+
+                    // Update hidden input
+                    $('.wcem-discount-type-input[data-partner="' + partner + '"][data-field="' + field + '"][data-course="' + course + '"]').val(type);
+
+                    // Update symbol and input max constraint
+                    var $field  = $btn.closest('.wcem-asit-discount-field');
+                    var $symbol = $field.find('.wcem-discount-symbol');
+                    var $input  = $field.find('.wcem-asit-card-discount-input');
+
+                    if (type === 'fixed') {
+                        $symbol.text(currSym);
+                        $input.removeAttr('max');
+                    } else {
+                        $symbol.text('%');
+                        $input.attr('max', '100');
+                        if (parseInt($input.val(), 10) > 100) {
+                            $input.val(100);
+                        }
+                    }
                 });
 
                 // BOMSS / Rouleaux partner mode toggle buttons

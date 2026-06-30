@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"c:\\\\Users\\\\shoai\\\\Downloads\\\\Tier2 Plugins\\\\PrepMedico Plugins\\\\woocommerce-edition-management\\\\\")",
+      "Read(//c/Users/shoai/Downloads/Tier2 Plugins/PrepMedico Plugins/**)"
+    ]
+  }
+}

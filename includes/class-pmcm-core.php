@@ -959,18 +959,20 @@ class PMCM_Core {
             return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
         }
 
-        $p     = $partner_slug;
-        $mode  = isset($course[$p . '_discount_mode']) ? $course[$p . '_discount_mode'] : 'none';
-        $eb    = isset($course[$p . '_early_bird_discount']) ? intval($course[$p . '_early_bird_discount']) : 0;
-        $norm  = isset($course[$p . '_normal_discount']) ? intval($course[$p . '_normal_discount']) : 0;
-        $show  = isset($course[$p . '_show_field']) ? (bool) $course[$p . '_show_field'] : false;
+        $p         = $partner_slug;
+        $mode      = isset($course[$p . '_discount_mode']) ? $course[$p . '_discount_mode'] : 'none';
+        $eb        = isset($course[$p . '_early_bird_discount']) ? intval($course[$p . '_early_bird_discount']) : 0;
+        $norm      = isset($course[$p . '_normal_discount']) ? intval($course[$p . '_normal_discount']) : 0;
+        $show      = isset($course[$p . '_show_field']) ? (bool) $course[$p . '_show_field'] : false;
+        $eb_type   = isset($course[$p . '_eb_discount_type']) && $course[$p . '_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+        $norm_type = isset($course[$p . '_normal_discount_type']) && $course[$p . '_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
 
         if ($mode === 'none') {
-            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none', 'discount_type' => 'percent'];
         }
 
         if ($mode === 'always') {
-            return ['discount' => $norm, 'is_eligible' => true, 'show_field' => $show, 'mode' => 'always'];
+            return ['discount' => $norm, 'is_eligible' => true, 'show_field' => $show, 'mode' => 'always', 'discount_type' => $norm_type];
         }
 
         if ($mode === 'early_bird_only') {
@@ -978,12 +980,12 @@ class PMCM_Core {
             $next_eb    = self::is_next_edition_early_bird_active($course_slug);
             $is_early_bird = ($edition_slot === 'next') ? $next_eb : $current_eb;
             if ($is_early_bird) {
-                return ['discount' => $eb, 'is_eligible' => true, 'show_field' => $show, 'mode' => 'early_bird_only'];
+                return ['discount' => $eb, 'is_eligible' => true, 'show_field' => $show, 'mode' => 'early_bird_only', 'discount_type' => $eb_type];
             }
-            return ['discount' => 0, 'is_eligible' => false, 'show_field' => $show, 'mode' => 'early_bird_only'];
+            return ['discount' => 0, 'is_eligible' => false, 'show_field' => $show, 'mode' => 'early_bird_only', 'discount_type' => $eb_type];
         }
 
-        return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none'];
+        return ['discount' => 0, 'is_eligible' => false, 'show_field' => false, 'mode' => 'none', 'discount_type' => 'percent'];
     }
 
     /**
