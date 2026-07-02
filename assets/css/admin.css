@@ -3466,7 +3466,7 @@
 /* Course Cards Grid */
 .wcem-asit-modern .wcem-asit-courses-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    grid-template-columns: repeat(3, 1fr) !important;
     gap: 20px !important;
     padding: 24px !important;
 }
