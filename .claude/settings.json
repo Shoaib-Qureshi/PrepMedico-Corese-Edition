@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(ls -la \"c:\\\\Users\\\\shoai\\\\Downloads\\\\Tier2 Plugins\\\\PrepMedico Plugins\\\\woocommerce-edition-management\\\\\")",
-      "Read(//c/Users/shoai/Downloads/Tier2 Plugins/PrepMedico Plugins/**)"
+      "Read(//c/Users/shoai/Downloads/Tier2 Plugins/PrepMedico Plugins/**)",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"wordpress admin dashboard form compact clean professional\" --design-system -p \"PrepMedico Admin\" -f markdown)"
     ]
   }
 }

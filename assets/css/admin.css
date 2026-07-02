@@ -5152,32 +5152,72 @@
     margin-bottom: 10px;
 }
 
-.wcem-asit-modern .wcem-partner-discount-fields {
+/* Inline mode label with toggle buttons — removes a full wasted row */
+.wcem-asit-modern .wcem-partner-subsection-body .wcem-asit-mode-section {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: flex-end;
-    margin-top: 10px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
 }
 
+.wcem-asit-modern .wcem-partner-subsection-body .wcem-asit-mode-section .wcem-asit-mode-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-bottom: 0 !important;
+}
+
+/* 3-column grid: [EB field] [Normal field] [Show Field] */
+.wcem-asit-modern .wcem-partner-discount-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px 14px;
+    align-items: end;
+    margin-top: 8px;
+}
+
+/* Each field: 2-col inner grid puts type-toggle inline with the number input */
 .wcem-asit-modern .wcem-partner-discount-fields .wcem-asit-discount-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3px 5px;
+    align-items: center;
 }
 
 .wcem-asit-modern .wcem-partner-discount-fields .wcem-asit-discount-field > label {
-    font-size: 11px;
-    font-weight: 600;
+    grid-column: 1 / -1;
+    font-size: 10px;
+    font-weight: 700;
     color: var(--pmcm-text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     margin: 0;
 }
 
-.wcem-asit-modern .wcem-partner-subsection .wcem-asit-toggle-item {
-    align-self: center;
+/* Type toggle aligns with number input on same row */
+.wcem-asit-modern .wcem-partner-discount-fields .wcem-discount-type-toggle {
     margin-bottom: 0;
+    align-self: center;
+}
+
+.wcem-asit-modern .wcem-partner-discount-fields .wcem-asit-discount-input-wrap {
+    align-self: center;
+}
+
+/* Expiry row spans full width of the inner 2-col grid */
+.wcem-asit-modern .wcem-partner-discount-fields .wcem-discount-expiry-row {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+}
+
+/* Show Field toggle: stacked label + toggle in 3rd column */
+.wcem-asit-modern .wcem-partner-subsection .wcem-asit-toggle-item {
+    flex-direction: column;
+    gap: 5px;
+    align-self: end;
+    text-align: center;
+    font-size: 10px;
+    margin-bottom: 0;
+    padding-bottom: 2px;
 }
 
 .wcem-asit-modern .wcem-partner-status-pill {
