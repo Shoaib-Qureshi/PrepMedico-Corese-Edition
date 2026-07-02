@@ -5186,6 +5186,224 @@
     font-size: 11px;
 }
 
+/* =====================================================
+   PARTNER MANAGEMENT SECTION
+   ===================================================== */
+.wcem-asit-modern .wcem-partner-manage-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.wcem-asit-modern .wcem-partner-manage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.wcem-asit-modern .wcem-partner-manage-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcem-asit-modern .wcem-partner-manage-title h2 {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.wcem-asit-modern .wcem-partner-manage-title .material-icons-round {
+    color: #8d2063;
+    font-size: 20px;
+}
+
+.wcem-asit-modern .wcem-add-partner-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 7px 14px !important;
+    background: #8d2063 !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: background 0.15s !important;
+}
+
+.wcem-asit-modern .wcem-add-partner-btn:hover {
+    background: #6d1a4d !important;
+}
+
+.wcem-asit-modern .wcem-partners-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcem-asit-modern .wcem-partners-list-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wcem-asit-modern .wcem-partner-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wcem-asit-modern .wcem-partner-chip.builtin {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.wcem-asit-modern .wcem-partner-chip.custom {
+    background: #fdf2f8;
+    color: #8d2063;
+    border: 1px solid #f0c6e0;
+}
+
+.wcem-asit-modern .wcem-partner-chip-slug {
+    font-size: 10px;
+    background: rgba(141,32,99,0.12);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    color: #8d2063;
+}
+
+.wcem-asit-modern .wcem-delete-partner-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    color: #8d2063 !important;
+    opacity: 0.6;
+    transition: opacity 0.15s !important;
+    margin: 0 !important;
+    min-height: auto !important;
+}
+
+.wcem-asit-modern .wcem-delete-partner-btn:hover {
+    opacity: 1 !important;
+}
+
+.wcem-asit-modern .wcem-delete-partner-btn .material-icons-round {
+    font-size: 14px;
+}
+
+/* Add partner form */
+.wcem-asit-modern .wcem-add-partner-form {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.wcem-asit-modern .wcem-add-partner-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.wcem-asit-modern .wcem-add-partner-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 160px;
+}
+
+.wcem-asit-modern .wcem-add-partner-field-narrow {
+    flex: 0 0 80px;
+    min-width: 80px;
+}
+
+.wcem-asit-modern .wcem-add-partner-field label {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+}
+
+.wcem-asit-modern .wcem-add-partner-field input[type="text"],
+.wcem-asit-modern .wcem-add-partner-field input[type="number"] {
+    padding: 7px 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    background: #fff !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+}
+
+.wcem-asit-modern .wcem-add-partner-field input:focus {
+    border-color: #8d2063 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(141,32,99,0.08) !important;
+}
+
+.wcem-asit-modern .wcem-add-partner-hint {
+    font-size: 10px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.wcem-asit-modern .wcem-required {
+    color: #e11d48;
+}
+
+.wcem-asit-modern .wcem-add-partner-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wcem-asit-modern .wcem-cancel-btn {
+    padding: 7px 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #fff !important;
+    color: #64748b !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    transition: all 0.15s !important;
+}
+
+.wcem-asit-modern .wcem-cancel-btn:hover {
+    border-color: #94a3b8 !important;
+    color: #1e293b !important;
+}
+
+.wcem-asit-modern .wcem-add-partner-msg {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.wcem-asit-modern .wcem-add-partner-msg.success { color: #16a34a; }
+.wcem-asit-modern .wcem-add-partner-msg.error   { color: #dc2626; }
+
 /* Discount type toggle (% / £) */
 .wcem-asit-modern .wcem-discount-type-toggle {
     display: inline-flex;

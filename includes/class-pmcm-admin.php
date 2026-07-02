@@ -34,6 +34,8 @@ class PMCM_Admin
         add_action('wp_ajax_wcem_bulk_sync_asit', [__CLASS__, 'ajax_bulk_sync_asit_orders']);
         add_action('wp_ajax_wcem_save_course', [__CLASS__, 'ajax_save_course']);
         add_action('wp_ajax_wcem_delete_course', [__CLASS__, 'ajax_delete_course']);
+        add_action('wp_ajax_pmcm_add_custom_partner',    [__CLASS__, 'ajax_add_custom_partner']);
+        add_action('wp_ajax_pmcm_delete_custom_partner', [__CLASS__, 'ajax_delete_custom_partner']);
 
         // Bulk actions on WooCommerce Orders page (HPOS + Legacy)
         add_filter('bulk_actions-woocommerce_page_wc-orders', [__CLASS__, 'register_orders_bulk_actions']);
@@ -550,6 +552,35 @@ class PMCM_Admin
             update_option('pmcm_course_mappings', $courses);
             PMCM_Core::clear_cache();
             PMCM_Core::log_activity('Rouleaux per-course settings updated', 'success');
+        }
+
+        // Save per-course configuration for each custom partner
+        foreach (PMCM_Core::get_custom_partners() as $cp_slug => $cp_data) {
+            $post_key = $cp_slug . '_config';
+            if (!isset($_POST[$post_key]) || !is_array($_POST[$post_key])) {
+                continue;
+            }
+            $courses = get_option('pmcm_course_mappings', []);
+            if (empty($courses)) $courses = PMCM_Core::get_default_courses();
+
+            foreach ($_POST[$post_key] as $course_slug => $config) {
+                $course_slug = sanitize_text_field($course_slug);
+                if (!isset($courses[$course_slug])) continue;
+
+                $mode = in_array($config['mode'] ?? '', ['none', 'early_bird_only', 'always']) ? $config['mode'] : 'none';
+                $courses[$course_slug][$cp_slug . '_discount_mode']          = $mode;
+                $courses[$course_slug][$cp_slug . '_early_bird_discount']    = absint($config['eb_discount'] ?? 0);
+                $courses[$course_slug][$cp_slug . '_normal_discount']        = absint($config['normal_discount'] ?? 0);
+                $courses[$course_slug][$cp_slug . '_eb_discount_type']       = ($config['eb_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug][$cp_slug . '_normal_discount_type']   = ($config['normal_discount_type'] ?? '') === 'fixed' ? 'fixed' : 'percent';
+                $courses[$course_slug][$cp_slug . '_eb_discount_expiry']     = sanitize_text_field($config['eb_discount_expiry'] ?? '');
+                $courses[$course_slug][$cp_slug . '_normal_discount_expiry'] = sanitize_text_field($config['normal_discount_expiry'] ?? '');
+                $courses[$course_slug][$cp_slug . '_show_field']             = isset($config['show_field']) && $config['show_field'] == '1';
+                $courses[$course_slug][$cp_slug . '_eligible']               = ($mode !== 'none');
+            }
+
+            update_option('pmcm_course_mappings', $courses);
+            PMCM_Core::clear_cache();
         }
     }
 
@@ -1343,6 +1374,70 @@ class PMCM_Admin
                 </div>
             </header>
 
+            <!-- Partner Management Section -->
+            <section class="wcem-partner-manage-section">
+                <div class="wcem-partner-manage-header">
+                    <div class="wcem-partner-manage-title">
+                        <span class="material-icons-round">groups</span>
+                        <h2><?php _e('Academic Partners', 'prepmedico-course-management'); ?></h2>
+                    </div>
+                    <button type="button" id="wcem-toggle-add-partner" class="wcem-add-partner-btn">
+                        <span class="material-icons-round">add</span>
+                        <?php _e('Add New Partner', 'prepmedico-course-management'); ?>
+                    </button>
+                </div>
+                <div class="wcem-partners-list">
+                    <span class="wcem-partners-list-label"><?php _e('Built-in:', 'prepmedico-course-management'); ?></span>
+                    <span class="wcem-partner-chip builtin">ASiT</span>
+                    <span class="wcem-partner-chip builtin">BOMSS</span>
+                    <span class="wcem-partner-chip builtin">Rouleaux Club</span>
+                    <?php foreach (PMCM_Core::get_custom_partners() as $cp_slug => $cp_data): ?>
+                    <span class="wcem-partner-chip custom">
+                        <?php echo esc_html($cp_data['name']); ?>
+                        <code class="wcem-partner-chip-slug"><?php echo esc_html($cp_slug); ?></code>
+                        <button type="button" class="wcem-delete-partner-btn" data-slug="<?php echo esc_attr($cp_slug); ?>" title="<?php esc_attr_e('Remove partner', 'prepmedico-course-management'); ?>">
+                            <span class="material-icons-round">close</span>
+                        </button>
+                    </span>
+                    <?php endforeach; ?>
+                </div>
+                <div id="wcem-add-partner-form" class="wcem-add-partner-form" style="display:none;">
+                    <div class="wcem-add-partner-fields">
+                        <div class="wcem-add-partner-field">
+                            <label><?php _e('Partner Name', 'prepmedico-course-management'); ?> <span class="wcem-required">*</span></label>
+                            <input type="text" id="wcem-new-partner-name" placeholder="<?php esc_attr_e('e.g. British Orthopaedic Association', 'prepmedico-course-management'); ?>">
+                        </div>
+                        <div class="wcem-add-partner-field">
+                            <label><?php _e('Slug', 'prepmedico-course-management'); ?> <span class="wcem-required">*</span></label>
+                            <input type="text" id="wcem-new-partner-slug" placeholder="<?php esc_attr_e('e.g. boa', 'prepmedico-course-management'); ?>">
+                            <span class="wcem-add-partner-hint"><?php _e('Lowercase letters, numbers, hyphens. Auto-generated from name.', 'prepmedico-course-management'); ?></span>
+                        </div>
+                        <div class="wcem-add-partner-field">
+                            <label><?php _e('Membership Number Label', 'prepmedico-course-management'); ?></label>
+                            <input type="text" id="wcem-new-partner-number-label" placeholder="<?php esc_attr_e('e.g. BOA Membership Number', 'prepmedico-course-management'); ?>">
+                        </div>
+                        <div class="wcem-add-partner-field wcem-add-partner-field-narrow">
+                            <label><?php _e('Min Digits', 'prepmedico-course-management'); ?></label>
+                            <input type="number" id="wcem-new-partner-min" value="5" min="1" max="20">
+                        </div>
+                        <div class="wcem-add-partner-field wcem-add-partner-field-narrow">
+                            <label><?php _e('Max Digits', 'prepmedico-course-management'); ?></label>
+                            <input type="number" id="wcem-new-partner-max" value="10" min="1" max="30">
+                        </div>
+                    </div>
+                    <div class="wcem-add-partner-actions">
+                        <button type="button" id="wcem-save-new-partner" class="wcem-asit-save-btn">
+                            <span class="material-icons-round">save</span>
+                            <?php _e('Add Partner', 'prepmedico-course-management'); ?>
+                        </button>
+                        <button type="button" id="wcem-cancel-add-partner" class="wcem-cancel-btn">
+                            <?php _e('Cancel', 'prepmedico-course-management'); ?>
+                        </button>
+                        <span id="wcem-add-partner-msg" class="wcem-add-partner-msg"></span>
+                    </div>
+                </div>
+            </section>
+
             <!-- Global Partner Discount Configuration -->
             <form method="post" action="" id="wcem-asit-form">
                 <?php wp_nonce_field('pmcm_asit_settings_nonce'); ?>
@@ -1741,6 +1836,84 @@ class PMCM_Admin
                                     </div>
                                 </details>
 
+                                <!-- Custom Partner Sub-sections -->
+                                <?php foreach (PMCM_Core::get_custom_partners() as $cp_slug => $cp_data):
+                                    $cp_mode      = isset($course[$cp_slug . '_discount_mode']) ? $course[$cp_slug . '_discount_mode'] : 'none';
+                                    $cp_eb        = isset($course[$cp_slug . '_early_bird_discount']) ? intval($course[$cp_slug . '_early_bird_discount']) : 0;
+                                    $cp_norm      = isset($course[$cp_slug . '_normal_discount']) ? intval($course[$cp_slug . '_normal_discount']) : 0;
+                                    $cp_show      = isset($course[$cp_slug . '_show_field']) ? (bool) $course[$cp_slug . '_show_field'] : false;
+                                    $cp_eb_type   = isset($course[$cp_slug . '_eb_discount_type']) && $course[$cp_slug . '_eb_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                    $cp_norm_type = isset($course[$cp_slug . '_normal_discount_type']) && $course[$cp_slug . '_normal_discount_type'] === 'fixed' ? 'fixed' : 'percent';
+                                    $cp_eb_exp    = isset($course[$cp_slug . '_eb_discount_expiry']) ? $course[$cp_slug . '_eb_discount_expiry'] : '';
+                                    $cp_norm_exp  = isset($course[$cp_slug . '_normal_discount_expiry']) ? $course[$cp_slug . '_normal_discount_expiry'] : '';
+                                ?>
+                                <details class="wcem-partner-subsection wcem-partner-custom" <?php echo ($cp_mode !== 'none') ? 'open' : ''; ?>>
+                                    <summary class="wcem-partner-summary">
+                                        <span class="wcem-partner-summary-arrow material-icons-round">chevron_right</span>
+                                        <span class="wcem-partner-name"><?php echo esc_html($cp_data['name']); ?></span>
+                                        <span class="wcem-asit-status-badge <?php echo ($cp_mode !== 'none') ? 'active' : 'inactive'; ?>">
+                                            <?php echo ($cp_mode !== 'none') ? 'ON' : 'OFF'; ?>
+                                        </span>
+                                    </summary>
+                                    <div class="wcem-partner-subsection-body">
+                                        <div class="wcem-asit-mode-section">
+                                            <label class="wcem-asit-mode-label"><?php _e('Discount Mode', 'prepmedico-course-management'); ?></label>
+                                            <div class="wcem-asit-mode-toggle" data-partner="<?php echo esc_attr($cp_slug); ?>" data-course="<?php echo esc_attr($slug); ?>">
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($cp_mode === 'none') ? 'active' : ''; ?>" data-mode="none"><?php _e('No Discount', 'prepmedico-course-management'); ?></button>
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($cp_mode === 'early_bird_only') ? 'active' : ''; ?>" data-mode="early_bird_only"><?php _e('Early Bird', 'prepmedico-course-management'); ?></button>
+                                                <button type="button" class="wcem-asit-mode-btn wcem-partner-mode-btn <?php echo ($cp_mode === 'always') ? 'active' : ''; ?>" data-mode="always"><?php _e('Always Active', 'prepmedico-course-management'); ?></button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][mode]" value="<?php echo esc_attr($cp_mode); ?>" class="wcem-partner-mode-input" data-partner="<?php echo esc_attr($cp_slug); ?>" data-course="<?php echo esc_attr($slug); ?>">
+                                        <div class="wcem-partner-discount-fields wcem-partner-discount-row" data-partner="<?php echo esc_attr($cp_slug); ?>" data-course="<?php echo esc_attr($slug); ?>"<?php echo ($cp_mode === 'none') ? ' style="display:none;"' : ''; ?>>
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('EB Discount', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-discount-type-toggle" data-partner="<?php echo esc_attr($cp_slug); ?>" data-field="eb" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($cp_eb_type === 'percent') ? 'active' : ''; ?>" data-type="percent">%</button>
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($cp_eb_type === 'fixed') ? 'active' : ''; ?>" data-type="fixed"><?php echo get_woocommerce_currency_symbol(); ?></button>
+                                                </div>
+                                                <input type="hidden" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][eb_discount_type]" value="<?php echo esc_attr($cp_eb_type); ?>" class="wcem-discount-type-input" data-partner="<?php echo esc_attr($cp_slug); ?>" data-field="eb" data-course="<?php echo esc_attr($slug); ?>">
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <input type="number" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][eb_discount]" value="<?php echo esc_attr($cp_eb); ?>" min="0" <?php echo ($cp_eb_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
+                                                    <span class="wcem-discount-symbol"><?php echo ($cp_eb_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
+                                                </div>
+                                                <div class="wcem-discount-expiry-row">
+                                                    <span class="wcem-discount-expiry-label"><?php _e('Until', 'prepmedico-course-management'); ?></span>
+                                                    <input type="datetime-local" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][eb_discount_expiry]" value="<?php echo esc_attr($cp_eb_exp); ?>" class="wcem-discount-expiry-input">
+                                                </div>
+                                            </div>
+                                            <div class="wcem-asit-discount-field">
+                                                <label><?php _e('Normal', 'prepmedico-course-management'); ?></label>
+                                                <div class="wcem-discount-type-toggle" data-partner="<?php echo esc_attr($cp_slug); ?>" data-field="normal" data-course="<?php echo esc_attr($slug); ?>">
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($cp_norm_type === 'percent') ? 'active' : ''; ?>" data-type="percent">%</button>
+                                                    <button type="button" class="wcem-discount-type-btn <?php echo ($cp_norm_type === 'fixed') ? 'active' : ''; ?>" data-type="fixed"><?php echo get_woocommerce_currency_symbol(); ?></button>
+                                                </div>
+                                                <input type="hidden" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][normal_discount_type]" value="<?php echo esc_attr($cp_norm_type); ?>" class="wcem-discount-type-input" data-partner="<?php echo esc_attr($cp_slug); ?>" data-field="normal" data-course="<?php echo esc_attr($slug); ?>">
+                                                <div class="wcem-asit-discount-input-wrap">
+                                                    <input type="number" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][normal_discount]" value="<?php echo esc_attr($cp_norm); ?>" min="0" <?php echo ($cp_norm_type === 'percent') ? 'max="100"' : ''; ?> class="wcem-asit-card-discount-input">
+                                                    <span class="wcem-discount-symbol"><?php echo ($cp_norm_type === 'fixed') ? get_woocommerce_currency_symbol() : '%'; ?></span>
+                                                </div>
+                                                <div class="wcem-discount-expiry-row">
+                                                    <span class="wcem-discount-expiry-label"><?php _e('Until', 'prepmedico-course-management'); ?></span>
+                                                    <input type="datetime-local" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][normal_discount_expiry]" value="<?php echo esc_attr($cp_norm_exp); ?>" class="wcem-discount-expiry-input">
+                                                </div>
+                                            </div>
+                                            <label class="wcem-asit-toggle-item">
+                                                <span><?php _e('Show Field', 'prepmedico-course-management'); ?></span>
+                                                <input type="checkbox" name="<?php echo esc_attr($cp_slug); ?>_config[<?php echo esc_attr($slug); ?>][show_field]" value="1" <?php checked($cp_show, true); ?> class="wcem-asit-toggle-checkbox">
+                                                <span class="wcem-asit-toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                        <?php if ($cp_mode === 'none'): ?>
+                                        <span class="wcem-asit-footer-status disabled wcem-partner-status-pill">
+                                            <span class="material-icons-round">block</span>
+                                            <?php _e('Disabled', 'prepmedico-course-management'); ?>
+                                        </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </details>
+                                <?php endforeach; ?>
+
                                 <div class="wcem-asit-card-footer">
                                     <?php if ($mode === 'early_bird_only'): ?>
                                         <?php if ($edition_scope === 'next' || $edition_scope === 'both'): ?>
@@ -1870,6 +2043,93 @@ class PMCM_Admin
                     }
 
                     $card.attr('data-status', mode === 'always' ? 'active' : (mode === 'early_bird_only' ? 'early-bird' : 'inactive'));
+                });
+
+                // ============================================
+                // PARTNER MANAGEMENT
+                // ============================================
+                var adminNonce = '<?php echo wp_create_nonce('wcem_admin_nonce'); ?>';
+
+                // Toggle add-partner form
+                $('#wcem-toggle-add-partner').on('click', function() {
+                    $('#wcem-add-partner-form').slideToggle(200);
+                    $('#wcem-new-partner-name').focus();
+                });
+
+                $('#wcem-cancel-add-partner').on('click', function() {
+                    $('#wcem-add-partner-form').slideUp(200);
+                    $('#wcem-add-partner-msg').text('').removeClass('success error');
+                });
+
+                // Auto-generate slug from name
+                $('#wcem-new-partner-name').on('input', function() {
+                    var slug = $(this).val()
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .trim()
+                        .replace(/[\s]+/g, '-')
+                        .replace(/-+/g, '-')
+                        .substring(0, 20);
+                    $('#wcem-new-partner-slug').val(slug);
+                });
+
+                // Add new partner
+                $('#wcem-save-new-partner').on('click', function() {
+                    var $btn  = $(this).prop('disabled', true);
+                    var $msg  = $('#wcem-add-partner-msg').text('').removeClass('success error');
+                    var name  = $.trim($('#wcem-new-partner-name').val());
+                    var slug  = $.trim($('#wcem-new-partner-slug').val());
+                    var label = $.trim($('#wcem-new-partner-number-label').val());
+                    var min   = parseInt($('#wcem-new-partner-min').val(), 10) || 5;
+                    var max   = parseInt($('#wcem-new-partner-max').val(), 10) || 10;
+
+                    if (!name || !slug) {
+                        $msg.addClass('error').text('<?php echo esc_js(__('Name and slug are required.', 'prepmedico-course-management')); ?>');
+                        $btn.prop('disabled', false);
+                        return;
+                    }
+
+                    $.post(ajaxurl, {
+                        action: 'pmcm_add_custom_partner',
+                        nonce: adminNonce,
+                        name: name, slug: slug, number_label: label,
+                        number_min: min, number_max: max
+                    }).done(function(res) {
+                        if (res.success) {
+                            $msg.addClass('success').text(res.data.message);
+                            setTimeout(function() { location.reload(); }, 800);
+                        } else {
+                            $msg.addClass('error').text(res.data.message || '<?php echo esc_js(__('Error adding partner.', 'prepmedico-course-management')); ?>');
+                            $btn.prop('disabled', false);
+                        }
+                    }).fail(function() {
+                        $msg.addClass('error').text('<?php echo esc_js(__('Request failed.', 'prepmedico-course-management')); ?>');
+                        $btn.prop('disabled', false);
+                    });
+                });
+
+                // Delete custom partner
+                $(document).on('click', '.wcem-delete-partner-btn', function() {
+                    var slug = $(this).data('slug');
+                    if (!confirm('<?php echo esc_js(__('Remove this partner? Their discount settings on all courses will remain saved but inactive.', 'prepmedico-course-management')); ?>')) {
+                        return;
+                    }
+                    var $btn = $(this).prop('disabled', true);
+                    $.post(ajaxurl, {
+                        action: 'pmcm_delete_custom_partner',
+                        nonce: adminNonce,
+                        slug: slug
+                    }).done(function(res) {
+                        if (res.success) {
+                            location.reload();
+                        } else {
+                            alert(res.data.message || '<?php echo esc_js(__('Error removing partner.', 'prepmedico-course-management')); ?>');
+                            $btn.prop('disabled', false);
+                        }
+                    }).fail(function() {
+                        alert('<?php echo esc_js(__('Request failed.', 'prepmedico-course-management')); ?>');
+                        $btn.prop('disabled', false);
+                    });
                 });
 
                 // Discount type toggle (% / fixed)
@@ -3152,5 +3412,79 @@ class PMCM_Admin
         } else {
             wp_send_json_error(['message' => 'Course not found.']);
         }
+    }
+
+    /**
+     * AJAX: Add a custom academic partner
+     */
+    public static function ajax_add_custom_partner()
+    {
+        check_ajax_referer('wcem_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+
+        $name         = sanitize_text_field($_POST['name'] ?? '');
+        $slug         = sanitize_title($_POST['slug'] ?? '');
+        $number_label = sanitize_text_field($_POST['number_label'] ?? '');
+        $number_min   = max(1, min(20, absint($_POST['number_min'] ?? 5)));
+        $number_max   = max(1, min(30, absint($_POST['number_max'] ?? 10)));
+
+        if (empty($name) || empty($slug)) {
+            wp_send_json_error(['message' => 'Name and slug are required.']);
+        }
+
+        if (in_array($slug, ['asit', 'bomss', 'rouleaux'], true)) {
+            wp_send_json_error(['message' => 'This slug is reserved for a built-in partner.']);
+        }
+
+        $partners = PMCM_Core::get_custom_partners();
+
+        if (isset($partners[$slug])) {
+            wp_send_json_error(['message' => 'A partner with this slug already exists.']);
+        }
+
+        $partners[$slug] = [
+            'name'         => $name,
+            'number_label' => $number_label ?: $name . ' Membership Number',
+            'number_min'   => $number_min,
+            'number_max'   => max($number_min, $number_max),
+        ];
+
+        update_option('pmcm_custom_partners', $partners);
+        PMCM_Core::clear_cache();
+
+        wp_send_json_success(['message' => 'Partner added successfully.', 'slug' => $slug, 'name' => $name]);
+    }
+
+    /**
+     * AJAX: Delete a custom academic partner
+     */
+    public static function ajax_delete_custom_partner()
+    {
+        check_ajax_referer('wcem_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => 'Permission denied.']);
+        }
+
+        $slug = sanitize_title($_POST['slug'] ?? '');
+
+        if (empty($slug) || in_array($slug, ['asit', 'bomss', 'rouleaux'], true)) {
+            wp_send_json_error(['message' => 'Invalid partner slug.']);
+        }
+
+        $partners = PMCM_Core::get_custom_partners();
+
+        if (!isset($partners[$slug])) {
+            wp_send_json_error(['message' => 'Partner not found.']);
+        }
+
+        unset($partners[$slug]);
+        update_option('pmcm_custom_partners', $partners);
+        PMCM_Core::clear_cache();
+
+        wp_send_json_success(['message' => 'Partner removed.']);
     }
 }

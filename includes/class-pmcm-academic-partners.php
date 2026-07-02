@@ -12,11 +12,7 @@ if (!defined('ABSPATH')) {
 
 class PMCM_Academic_Partners {
 
-    private static $partner_labels = [
-        'asit'     => 'ASiT',
-        'bomss'    => 'BOMSS',
-        'rouleaux' => 'Rouleaux Club',
-    ];
+    // Resolved dynamically via PMCM_Core::get_partner_label()
 
     // -------------------------------------------------------------------------
     // Bootstrap
@@ -75,7 +71,11 @@ class PMCM_Academic_Partners {
         $session_partner = WC()->session ? WC()->session->get('pmcm_selected_partner', '') : '';
         $session_number  = WC()->session ? WC()->session->get('pmcm_partner_number', '') : '';
 
+        // Default to the first eligible partner when no session partner is set
+        $active_partner = !empty($session_partner) ? $session_partner : $eligible[0];
+
         echo '<div class="pmcm-partners-section" style="margin-top:20px;padding-top:20px;border-top:1px solid #e0e0e0;">';
+        echo '<span class="pmcm-section-optional">' . esc_html__('Optional', 'prepmedico-course-management') . '</span>';
         echo '<h3 style="font-size:16px;font-weight:600;color:#333;margin-bottom:12px;">' . esc_html__('Academic Partner Discount', 'prepmedico-course-management') . '</h3>';
 
         echo '<div class="form-row form-row-wide pmcm-partner-row">';
@@ -83,33 +83,30 @@ class PMCM_Academic_Partners {
         echo '<select id="pmcm_selected_partner" name="pmcm_selected_partner" class="pmcm-partner-select">';
         echo '<option value="">' . esc_html__('— None —', 'prepmedico-course-management') . '</option>';
         foreach ($eligible as $slug) {
-            $label = isset(self::$partner_labels[$slug]) ? self::$partner_labels[$slug] : strtoupper($slug);
+            $label = PMCM_Core::get_partner_label($slug);
             printf(
                 '<option value="%s"%s>%s</option>',
                 esc_attr($slug),
-                selected($session_partner, $slug, false),
+                selected($active_partner, $slug, false),
                 esc_html($label)
             );
         }
         echo '</select>';
         echo '</div>';
 
-        $hide = empty($session_partner) ? 'style="display:none;"' : '';
-        echo '<div class="pmcm-partner-number-wrap" ' . $hide . '>';
+        echo '<div class="pmcm-partner-number-wrap">';
         echo '<div class="pmcm-field-wrapper">';
 
-        woocommerce_form_field('pmcm_partner_number', [
-            'type'              => 'text',
-            'class'             => ['form-row-first', 'pmcm-partner-input-field'],
-            'label'             => __('Membership Number', 'prepmedico-course-management'),
-            'placeholder'       => __('Enter your membership number', 'prepmedico-course-management'),
-            'required'          => false,
-            'maxlength'         => 10,
-            'custom_attributes' => [
-                'pattern' => '[0-9]{5,10}',
-                'title'   => 'Please enter your membership number (5–10 digits)',
-            ],
-        ], $checkout->get_value('pmcm_partner_number') ?: $session_number);
+        $saved_number = $checkout->get_value('pmcm_partner_number') ?: $session_number;
+        echo '<p class="form-row form-row-first pmcm-partner-input-field">
+                <label for="pmcm_partner_number">' . esc_html__('Membership Number', 'prepmedico-course-management') . '</label>
+                <input type="text" id="pmcm_partner_number" name="pmcm_partner_number"
+                    class="input-text"
+                    placeholder="' . esc_attr__('Enter your membership number', 'prepmedico-course-management') . '"
+                    value="' . esc_attr($saved_number) . '"
+                    pattern="[0-9]{5,10}" maxlength="10"
+                    title="' . esc_attr__('Please enter your membership number (5–10 digits)', 'prepmedico-course-management') . '">
+              </p>';
 
         echo '<p class="form-row form-row-last pmcm-button-wrapper">
                 <button type="button" id="apply_partner_membership" class="pmcm-apply-button">' . esc_html__('Apply', 'prepmedico-course-management') . '</button>
@@ -131,7 +128,7 @@ class PMCM_Academic_Partners {
         $partner = isset($_POST['pmcm_selected_partner']) ? sanitize_text_field($_POST['pmcm_selected_partner']) : '';
         $number  = isset($_POST['pmcm_partner_number'])   ? sanitize_text_field($_POST['pmcm_partner_number'])   : '';
 
-        if (!empty($partner) && !in_array($partner, ['asit', 'bomss', 'rouleaux'], true)) {
+        if (!empty($partner) && !in_array($partner, PMCM_Core::get_all_partner_slugs(), true)) {
             wc_add_notice(__('Invalid academic partner selected.', 'prepmedico-course-management'), 'error');
             return;
         }
@@ -141,8 +138,8 @@ class PMCM_Academic_Partners {
             return;
         }
 
-        if (!empty($partner) && !empty($number) && !preg_match('/^[0-9]{5,10}$/', $number)) {
-            wc_add_notice(__('Membership number must be 5–10 digits.', 'prepmedico-course-management'), 'error');
+        if (!empty($partner) && !empty($number) && !preg_match(PMCM_Core::get_partner_number_pattern($partner), $number)) {
+            wc_add_notice(__('Invalid membership number format.', 'prepmedico-course-management'), 'error');
         }
     }
 
@@ -157,7 +154,7 @@ class PMCM_Academic_Partners {
         $partner = isset($data['pmcm_selected_partner']) ? sanitize_text_field($data['pmcm_selected_partner']) : '';
         $number  = isset($data['pmcm_partner_number'])   ? sanitize_text_field($data['pmcm_partner_number'])   : '';
 
-        if (empty($partner) || empty($number) || !preg_match('/^[0-9]{5,10}$/', $number)) {
+        if (empty($partner) || empty($number) || !preg_match(PMCM_Core::get_partner_number_pattern($partner), $number)) {
             if (WC()->session) {
                 WC()->session->set('pmcm_selected_partner', '');
                 WC()->session->set('pmcm_partner_number', '');
@@ -191,14 +188,14 @@ class PMCM_Academic_Partners {
         $number  = isset($_POST['number'])  ? sanitize_text_field(trim($_POST['number'])) : '';
 
         // Clear session if inputs are empty or invalid
-        if (empty($partner) || empty($number) || !in_array($partner, ['asit', 'bomss', 'rouleaux'], true)) {
+        if (empty($partner) || empty($number) || !in_array($partner, PMCM_Core::get_all_partner_slugs(), true)) {
             WC()->session->set('pmcm_selected_partner', '');
             WC()->session->set('pmcm_partner_number', '');
             wp_send_json_success(['applied' => false, 'message' => '']);
         }
 
-        // Validate number format (5-10 digits)
-        if (!preg_match('/^[0-9]{5,10}$/', $number)) {
+        // Validate number format (per-partner pattern)
+        if (!preg_match(PMCM_Core::get_partner_number_pattern($partner), $number)) {
             wp_send_json_error(['message' => __('Membership number must be 5–10 digits.', 'prepmedico-course-management')]);
         }
 
@@ -225,7 +222,7 @@ class PMCM_Academic_Partners {
             }
         }
 
-        $label = isset(self::$partner_labels[$partner]) ? self::$partner_labels[$partner] : strtoupper($partner);
+        $label = PMCM_Core::get_partner_label($partner);
 
         if ($eligible) {
             wp_send_json_success([
@@ -252,7 +249,7 @@ class PMCM_Academic_Partners {
         $partner = WC()->session->get('pmcm_selected_partner', '');
         $number  = WC()->session->get('pmcm_partner_number', '');
 
-        if (empty($partner) || !preg_match('/^[0-9]{5,10}$/', $number)) {
+        if (empty($partner) || !preg_match(PMCM_Core::get_partner_number_pattern($partner), $number)) {
             return;
         }
 
@@ -277,7 +274,7 @@ class PMCM_Academic_Partners {
         }
 
         if ($total_discount > 0) {
-            $label = isset(self::$partner_labels[$partner]) ? self::$partner_labels[$partner] : strtoupper($partner);
+            $label = PMCM_Core::get_partner_label($partner);
             WC()->cart->add_fee($label . ' Member Discount', -$total_discount, false);
         }
     }
@@ -324,7 +321,7 @@ class PMCM_Academic_Partners {
         }
 
         $eligible = [];
-        foreach (['asit', 'bomss', 'rouleaux'] as $partner) {
+        foreach (PMCM_Core::get_all_partner_slugs() as $partner) {
             foreach (WC()->cart->get_cart() as $key => $cart_item) {
                 $config = PMCM_Core::get_partner_config_for_product(
                     $cart_item['product_id'],
@@ -362,6 +359,7 @@ class PMCM_Academic_Partners {
         ?>
         <style>
             .pmcm-partners-section { margin-top: 25px; }
+            .pmcm-section-optional { display: block; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
             .pmcm-partners-section select { border: 1px solid #d1d5db; background: #fff; padding: 10px; border-radius: 6px; width: 100%; }
             .pmcm-partners-section select:focus { border-color: #8d2063; box-shadow: 0 0 6px rgba(141,32,99,0.2); outline: none; }
             .pmcm-field-wrapper { display: flex; gap: 10px; align-items: flex-end; }

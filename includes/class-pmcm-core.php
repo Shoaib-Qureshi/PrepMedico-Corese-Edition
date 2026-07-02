@@ -32,6 +32,47 @@ class PMCM_Core {
     const PARTNERS = ['asit', 'bomss', 'rouleaux'];
 
     /**
+     * Get all custom (non-built-in) partners from the database.
+     * Returns array keyed by slug: ['slug' => ['name', 'number_label', 'number_min', 'number_max']]
+     */
+    public static function get_custom_partners() {
+        $partners = get_option('pmcm_custom_partners', []);
+        return is_array($partners) ? $partners : [];
+    }
+
+    /**
+     * Get every partner slug — built-in first, then custom.
+     */
+    public static function get_all_partner_slugs() {
+        return array_merge(self::PARTNERS, array_keys(self::get_custom_partners()));
+    }
+
+    /**
+     * Display label for any partner slug.
+     */
+    public static function get_partner_label($slug) {
+        $built_in = ['asit' => 'ASiT', 'bomss' => 'BOMSS', 'rouleaux' => 'Rouleaux Club'];
+        if (isset($built_in[$slug])) {
+            return $built_in[$slug];
+        }
+        $custom = self::get_custom_partners();
+        return isset($custom[$slug]['name']) ? $custom[$slug]['name'] : strtoupper($slug);
+    }
+
+    /**
+     * Get the membership-number regex pattern for a partner.
+     */
+    public static function get_partner_number_pattern($slug) {
+        $custom = self::get_custom_partners();
+        if (isset($custom[$slug])) {
+            $min = max(1, intval($custom[$slug]['number_min'] ?? 5));
+            $max = max($min, intval($custom[$slug]['number_max'] ?? 10));
+            return '/^[0-9]{' . $min . ',' . $max . '}$/';
+        }
+        return '/^[0-9]{5,10}$/';
+    }
+
+    /**
      * Default courses - used as fallback and for initial migration
      */
     private static $default_courses = [
@@ -742,8 +783,8 @@ class PMCM_Core {
         // Set asit_eligible based on mode for backward compatibility
         $course_data['asit_eligible'] = ($course_data['asit_discount_mode'] !== 'none');
 
-        // BOMSS/Rouleaux configuration defaults
-        foreach (['bomss', 'rouleaux'] as $partner) {
+        // BOMSS/Rouleaux/custom partners configuration defaults
+        foreach (array_merge(['bomss', 'rouleaux'], array_keys(self::get_custom_partners())) as $partner) {
             if (!isset($course_data[$partner . '_discount_mode'])) {
                 $course_data[$partner . '_discount_mode'] = 'none';
             }
